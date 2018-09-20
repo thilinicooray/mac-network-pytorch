@@ -12,7 +12,7 @@ import random
 #from graphviz import Digraph
 
 
-def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler, max_epoch, model_dir, encoder, gpu_mode, clip_norm, lr_max, model_name, args,eval_frequency=4):
+def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler, max_epoch, model_dir, encoder, gpu_mode, clip_norm, lr_max, model_name, args,eval_frequency=4000):
     model.train()
     train_loss = 0
     total_steps = 0
@@ -212,7 +212,7 @@ def eval(model, dev_loader, encoder, gpu_mode):
             top5.add_point_eval(verb_predict, verb, role_predict, labels)
 
             del verb_predict, role_predict, img, verb, roles, labels
-            break
+            #break
 
     #return top1, top5, val_loss/mx
 
