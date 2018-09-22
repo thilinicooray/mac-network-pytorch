@@ -145,7 +145,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 max_score = max(dev_score_list)
 
                 if max_score == dev_score_list[-1]:
-                    torch.save(model.state_dict(), model_dir + "/{}_{}_macnet.model".format(max_score, model_name))
+                    torch.save(model.state_dict(), model_dir + "/{}_macnet5layer.model".format( model_name))
                     print ('New best model saved! {0}'.format(max_score))
 
                 #eval on the trainset
@@ -205,11 +205,11 @@ def eval(model, dev_loader, encoder, gpu_mode):
                 roles = torch.autograd.Variable(roles)
                 labels = torch.autograd.Variable(labels)
 
-            verb_predict, role_predict = model.forward_eval(img)
+            verb_predict, role_predict = model.forward_eval5(img)
             '''loss = model.calculate_eval_loss(verb_predict, verb, role_predict, labels)
             val_loss += loss.item()'''
-            top1.add_point_eval(verb_predict, verb, role_predict, labels)
-            top5.add_point_eval(verb_predict, verb, role_predict, labels)
+            top1.add_point_eval5(verb_predict, verb, role_predict, labels)
+            top5.add_point_eval5(verb_predict, verb, role_predict, labels)
 
             del verb_predict, role_predict, img, verb, roles, labels
             #break

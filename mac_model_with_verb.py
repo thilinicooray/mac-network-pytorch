@@ -246,7 +246,7 @@ class E2ENetwork(nn.Module):
         self.role_lookup = nn.Embedding(self.n_roles+1, embed_hidden, padding_idx=self.n_roles)
         self.verb_lookup = nn.Embedding(self.n_verbs, embed_hidden)
 
-        self.role_labeller = MACNetwork(mlp_hidden, max_step=4, self_attention=False, memory_gate=False,
+        self.role_labeller = MACNetwork(mlp_hidden, max_step=5, self_attention=False, memory_gate=False,
                                         classes=self.vocab_size)
 
         self.conv_hidden = self.conv.base_size()
@@ -326,6 +326,57 @@ class E2ENetwork(nn.Module):
         role_label_pred = role_label_pred.contiguous().view(batch_size, -1, self.vocab_size)
 
         return verb_pred, role_label_pred
+
+    def forward_eval5(self, image, topk = 5):
+
+        img_features, conv = self.conv(image)
+        batch_size, n_channel, conv_h, conv_w = img_features.size()
+        beam_role_idx = None
+
+        #verb pred
+        verb_pred = self.verb(conv)
+
+        sorted_idx = torch.sort(verb_pred, 1, True)[1]
+        #print('sorted ', sorted_idx.size())
+        verbs = sorted_idx[:,:topk]
+        #print('size verbs :', verbs.size())
+        #print('top1 verbs', verbs)
+
+        #print('verbs :', verbs.size(), verbs)
+        for k in range(0,5):
+            topk_verb = verbs[:,k]
+            roles = self.encoder.get_role_ids_batch(topk_verb)
+
+            roles = roles.type(torch.LongTensor)
+            topk_verb = topk_verb.type(torch.LongTensor)
+
+            if self.gpu_mode >= 0:
+                roles = roles.to(torch.device('cuda'))
+                topk_verb = topk_verb.to(torch.device('cuda'))
+
+            verb_embd = self.verb_lookup(topk_verb)
+            role_embd = self.role_lookup(roles)
+
+            role_embed_reshaped = role_embd.transpose(0,1)
+            verb_embed_expand = verb_embd.expand(self.max_role_count, verb_embd.size(0), verb_embd.size(1))
+            role_verb_embd = verb_embed_expand * role_embed_reshaped
+            role_verb_embd = role_verb_embd.transpose(0,1)
+            role_verb_embd = role_verb_embd.contiguous().view(-1, self.embed_hidden)
+            img_features = img_features.repeat(1,self.max_role_count, 1, 1)
+            img_features = img_features.view(-1, n_channel, conv_h, conv_w)
+
+            role_label_pred = self.role_labeller(img_features, role_verb_embd)
+
+            role_label_pred = role_label_pred.contiguous().view(batch_size, -1, self.vocab_size)
+
+            if k == 0:
+                beam_role_idx = role_label_pred
+            else:
+                beam_role_idx = torch.cat((beam_role_idx.clone(), role_label_pred), 1)
+
+        #print('role idx size :', beam_role_idx.size())
+
+        return verb_pred, beam_role_idx
 
 
     def calculate_loss(self, verb_pred, gt_verbs, role_label_pred, gt_labels,args):
