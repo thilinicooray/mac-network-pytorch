@@ -83,7 +83,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
             g.view()'''
 
             #loss = model.calculate_loss(verb_predict, verb, role_predict, labels, args)
-            loss = model.calculate_loss(verb_predict, verb, rol1pred, labels, args)
+            loss = model.calculate_eval_loss_new(verb_predict, verb, rol1pred, labels, args)
             #loss = loss_ * random.random() #try random loss
             #print ("loss time = {}".format(time.time() - t1))
             t1 = time.time()
@@ -150,7 +150,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 max_score = max(dev_score_list)
 
                 if max_score == dev_score_list[-1]:
-                    torch.save(model.state_dict(), model_dir + "/{}_macnet4layer_predverb_top5_lossallrole.model".format( model_name))
+                    torch.save(model.state_dict(), model_dir + "/{}_macnet4layer_predverb_top5_lossmatchingrole.model".format( model_name))
                     print ('New best model saved! {0}'.format(max_score))
 
                 #eval on the trainset
@@ -254,7 +254,7 @@ def main():
     dataset_folder = 'imSitu'
     imgset_folder = 'resized_256'
 
-    print('model spec :, mac net v pred for training and loss calc on all roles assuming all are in gt. but actually NOT ')
+    print('model spec :, mac net v pred for training and loss calc normalizing from only matching role count ')
 
     train_set = json.load(open(dataset_folder + "/train.json"))
     encoder = imsitu_encoder(train_set)
