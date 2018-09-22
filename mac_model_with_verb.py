@@ -330,8 +330,8 @@ class E2ENetwork(nn.Module):
 
     def forward_eval5(self, image, topk = 5):
 
-        img_features, conv = self.conv(image)
-        batch_size, n_channel, conv_h, conv_w = img_features.size()
+        img_features_org, conv = self.conv(image)
+        batch_size, n_channel, conv_h, conv_w = img_features_org.size()
         beam_role_idx = None
         top1role_label_pred = None
 
@@ -346,6 +346,7 @@ class E2ENetwork(nn.Module):
 
         #print('verbs :', verbs.size(), verbs)
         for k in range(0,topk):
+            img_features = img_features_org
             print('k :', k)
             topk_verb = verbs[:,k]
             print('ver size :', topk_verb.size())
