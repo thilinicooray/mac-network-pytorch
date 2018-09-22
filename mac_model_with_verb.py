@@ -39,6 +39,7 @@ class ReadUnit(nn.Module):
 
     def forward(self, memory, know, control):
         mem = self.mem(memory[-1]).unsqueeze(2)
+        print('read concat :', mem.size(), know.size())
         concat = self.concat(torch.cat([mem * know, know], 1) \
                              .permute(0, 2, 1))
         attn = concat * control[-1].unsqueeze(1)
