@@ -511,10 +511,10 @@ class E2ENetwork(nn.Module):
                             #print('found idx' , g_idx)
                             frame_loss += utils.cross_entropy_loss(role_label_pred[i][j], gt_labels[i,index,g_idx] ,self.vocab_size)
                             matching_role_count +=1
-
-                    frame_loss = verb_loss + frame_loss/matching_role_count
-                    #print('frame loss', frame_loss)
-                    loss += frame_loss
+                    if matching_role_count > 0:
+                        frame_loss = verb_loss + frame_loss/matching_role_count
+                        #print('frame loss', frame_loss)
+                        loss += frame_loss
         else:
             loss = 0
             for i in range(batch_size):
@@ -536,9 +536,10 @@ class E2ENetwork(nn.Module):
                             frame_loss += utils.cross_entropy_loss(role_label_pred[i][j], gt_labels[i,index,g_idx] ,self.vocab_size)
                             matching_role_count +=1
 
-                    frame_loss = frame_loss/matching_role_count
-                    #print('frame loss', frame_loss)
-                    loss += frame_loss
+                    if matching_role_count > 0:
+                        frame_loss = frame_loss/matching_role_count
+                        #print('frame loss', frame_loss)
+                        loss += frame_loss
 
 
         final_loss = loss/batch_size
