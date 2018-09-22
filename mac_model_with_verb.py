@@ -332,6 +332,7 @@ class E2ENetwork(nn.Module):
         img_features, conv = self.conv(image)
         batch_size, n_channel, conv_h, conv_w = img_features.size()
         beam_role_idx = None
+        top1role_label_pred = None
 
         #verb pred
         verb_pred = self.verb(conv)
@@ -343,7 +344,7 @@ class E2ENetwork(nn.Module):
         #print('top1 verbs', verbs)
 
         #print('verbs :', verbs.size(), verbs)
-        for k in range(0,5):
+        for k in range(0,topk):
             topk_verb = verbs[:,k]
             roles = self.encoder.get_role_ids_batch(topk_verb)
 
@@ -370,13 +371,17 @@ class E2ENetwork(nn.Module):
             role_label_pred = role_label_pred.contiguous().view(batch_size, -1, self.vocab_size)
 
             if k == 0:
-                beam_role_idx = role_label_pred
+                top1role_label_pred = role_label_pred
+                idx = torch.max(role_label_pred,-1)[1]
+                #print(idx[1])
+                beam_role_idx = idx
             else:
-                beam_role_idx = torch.cat((beam_role_idx.clone(), role_label_pred), 1)
+                idx = torch.max(role_label_pred,-1)[1]
+                beam_role_idx = torch.cat((beam_role_idx.clone(), idx), 1)
 
-        #print('role idx size :', beam_role_idx.size())
+        #print('role idx size :', beam_role_idx.size(), top1role_label_pred.size())
 
-        return verb_pred, beam_role_idx
+        return verb_pred, top1role_label_pred, beam_role_idx
 
 
     def calculate_loss(self, verb_pred, gt_verbs, role_label_pred, gt_labels,args):

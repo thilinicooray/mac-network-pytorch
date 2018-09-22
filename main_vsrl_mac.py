@@ -74,15 +74,16 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
             print('=========================================================================')
             print(labels)'''
 
-            verb_predict, role_predict = pmodel(img, verb, roles)
-            #verb_predict, role_predict = pmodel.forward_eval5(img)
+            #verb_predict, role_predict = pmodel(img, verb, roles)
+            verb_predict, rol1pred, role_predict = pmodel.forward_eval5(img)
             #print ("forward time = {}".format(time.time() - t1))
             t1 = time.time()
 
             '''g = make_dot(verb_predict, model.state_dict())
             g.view()'''
 
-            loss = model.calculate_loss(verb_predict, verb, role_predict, labels, args)
+            #loss = model.calculate_loss(verb_predict, verb, role_predict, labels, args)
+            loss = model.calculate_eval_loss(verb_predict, verb, rol1pred, labels, args)
             #loss = loss_ * random.random() #try random loss
             #print ("loss time = {}".format(time.time() - t1))
             t1 = time.time()
@@ -113,11 +114,11 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
 
             train_loss += loss.item()
 
-            #top1.add_point_eval5(verb_predict, verb, role_predict, labels)
-            #top5.add_point_eval5(verb_predict, verb, role_predict, labels)
+            top1.add_point_eval5(verb_predict, verb, role_predict, labels)
+            top5.add_point_eval5(verb_predict, verb, role_predict, labels)
 
-            top1.add_point(verb_predict, verb, role_predict, labels)
-            top5.add_point(verb_predict, verb, role_predict, labels)
+            #top1.add_point(verb_predict, verb, role_predict, labels)
+            #top5.add_point(verb_predict, verb, role_predict, labels)
 
 
             if total_steps % print_freq == 0:
@@ -149,7 +150,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 max_score = max(dev_score_list)
 
                 if max_score == dev_score_list[-1]:
-                    torch.save(model.state_dict(), model_dir + "/{}_macnet4layer_top5.model".format( model_name))
+                    torch.save(model.state_dict(), model_dir + "/{}_macnet4layer_predverb_top5.model".format( model_name))
                     print ('New best model saved! {0}'.format(max_score))
 
                 #eval on the trainset
@@ -209,7 +210,7 @@ def eval(model, dev_loader, encoder, gpu_mode):
                 roles = torch.autograd.Variable(roles)
                 labels = torch.autograd.Variable(labels)
 
-            verb_predict, role_predict = model.forward_eval5(img)
+            verb_predict, _, role_predict = model.forward_eval5(img)
             '''loss = model.calculate_eval_loss(verb_predict, verb, role_predict, labels)
             val_loss += loss.item()'''
             top1.add_point_eval5(verb_predict, verb, role_predict, labels)
@@ -269,7 +270,7 @@ def main():
 
     dev_set = json.load(open(dataset_folder +"/dev.json"))
     dev_set = imsitu_loader(imgset_folder, dev_set, encoder, model.dev_preprocess())
-    dev_loader = torch.utils.data.DataLoader(dev_set, batch_size=32, shuffle=True, num_workers=n_worker)
+    dev_loader = torch.utils.data.DataLoader(dev_set, batch_size=64, shuffle=True, num_workers=n_worker)
 
     traindev_set = json.load(open(dataset_folder +"/dev.json"))
     traindev_set = imsitu_loader(imgset_folder, traindev_set, encoder, model.dev_preprocess())
