@@ -380,6 +380,8 @@ class E2ENetwork(nn.Module):
             else:
                 idx = torch.max(role_label_pred,-1)[1]
                 beam_role_idx = torch.cat((beam_role_idx.clone(), idx), 1)
+            if self.gpu_mode >= 0:
+                torch.cuda.empty_cache()
 
         #print('role idx size :', beam_role_idx.size(), top1role_label_pred.size())
 
