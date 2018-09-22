@@ -168,7 +168,7 @@ class imsitu_scorer():
             #print('check sizes:', verb_pred.size(), gt_verb.size(), label_pred.size(), gt_label.size())
             sorted_idx = torch.sort(verb_pred, 0, True)[1]
             #print('top 1:', sorted_idx[0])
-            role_set = self.encoder.get_role_ids(sorted_idx[0])
+
             gt_v = gt_verb
             gt_role_set = self.encoder.get_role_ids(gt_v)
             #print('sorted idx:',self.topk, sorted_idx[:self.topk], gt_v)
@@ -202,21 +202,11 @@ class imsitu_scorer():
             score_card["n_value"] += gt_role_count
 
             all_found = True
-            pred_list = []
-            for k in range(0, self.encoder.get_max_role_count()):
-                role_id = role_set[k]
-                if role_id == len(self.encoder.role_list):
-                    continue
-                current_role = self.encoder.role_list[role_id]
-                if current_role not in gt_role_list:
-                    continue
-                g_idx = (gt_role_set == role_id).nonzero()
+            for k in range(0, gt_role_count):
                 label_id = torch.max(label_pred[k],0)[1]
-                pred_list.append(label_id.item())
                 found = False
                 for r in range(0,self.nref):
-                    gt_label_id = gt_label[r][g_idx]
-                    #print('ground truth label id = ', gt_label_id)
+                    gt_label_id = gt_label[r][k]
                     if label_id == gt_label_id:
                         found = True
                         break
@@ -228,9 +218,6 @@ class imsitu_scorer():
                 if found: score_card["value*"] += 1
             '''if self.topk == 1:
                 print('predicted labels :',pred_list)'''
-
-            if len(pred_list) < gt_role_count:
-                all_found = False
             #both verb and all values found
             score_card["value*"] /= gt_role_count
             score_card["value"] /= gt_role_count
