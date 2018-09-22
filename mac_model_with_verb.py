@@ -345,7 +345,9 @@ class E2ENetwork(nn.Module):
 
         #print('verbs :', verbs.size(), verbs)
         for k in range(0,topk):
+            print('k :', k)
             topk_verb = verbs[:,k]
+            print('ver size :', topk_verb.size())
             roles = self.encoder.get_role_ids_batch(topk_verb)
 
             roles = roles.type(torch.LongTensor)
