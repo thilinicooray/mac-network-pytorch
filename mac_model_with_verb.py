@@ -507,7 +507,7 @@ class E2ENetwork(nn.Module):
                             continue
                         if pred_role_list[j] in gt_role_list:
                             #print('eval loss :', gt_role_list, pred_role_list[j])
-                            g_idx = gt_role_list.index(pred_role_list[j])
+                            g_idx = (gt_role_list == pred_role_list[j]).nonzero()
                             #print('found idx' , g_idx)
                             frame_loss += utils.cross_entropy_loss(role_label_pred[i][j], gt_labels[i,index,g_idx] ,self.vocab_size)
                             matching_role_count +=1
@@ -531,7 +531,7 @@ class E2ENetwork(nn.Module):
                             continue
                         if pred_role_list[j] in gt_role_list:
                             #print('eval loss :', gt_role_list, pred_role_list[j])
-                            g_idx = gt_role_list.index(pred_role_list[j])
+                            g_idx = (gt_role_list == pred_role_list[j]).nonzero()
                             #print('found idx' , g_idx)
                             frame_loss += utils.cross_entropy_loss(role_label_pred[i][j], gt_labels[i,index,g_idx] ,self.vocab_size)
                             matching_role_count +=1
