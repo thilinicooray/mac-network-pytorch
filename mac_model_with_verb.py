@@ -412,3 +412,62 @@ class E2ENetwork(nn.Module):
         final_loss = loss/batch_size
         #print('loss :', final_loss)
         return final_loss
+
+    def calculate_eval_loss(self, verb_pred, gt_verbs, role_label_pred, gt_labels,args):
+
+        batch_size = verb_pred.size()[0]
+
+        sorted_idx = torch.sort(verb_pred, 1, True)[1]
+        pred_verbs = sorted_idx[:,0]
+        #print('eval pred verbs :', pred_verbs)
+        if args.train_all:
+            loss = 0
+            for i in range(batch_size):
+                for index in range(gt_labels.size()[1]):
+                    frame_loss = 0
+                    verb_loss = utils.cross_entropy_loss(verb_pred[i], gt_verbs[i])
+                    gt_role_list = self.encoder.get_role_ids(gt_verbs[i])
+                    pred_role_list = self.encoder.get_role_ids(pred_verbs[i])
+
+                    #print ('role list diff :', gt_role_list, pred_role_list)
+
+                    for j in range(0, self.max_role_count):
+                        if pred_role_list[j] == len(self.encoder.role_list):
+                            continue
+                        if pred_role_list[j] in gt_role_list:
+                            #print('eval loss :', gt_role_list, pred_role_list[j])
+                            g_idx = (gt_role_list == pred_role_list[j]).nonzero()
+                            #print('found idx' , g_idx)
+                            frame_loss += utils.cross_entropy_loss(role_label_pred[i][j], gt_labels[i,index,g_idx] ,self.vocab_size)
+
+                    frame_loss = verb_loss + frame_loss/len(self.encoder.verb2_role_dict[self.encoder.verb_list[gt_verbs[i]]])
+                    #print('frame loss', frame_loss)
+                    loss += frame_loss
+        else:
+            loss = 0
+            for i in range(batch_size):
+                for index in range(gt_labels.size()[1]):
+                    frame_loss = 0
+                    verb_loss = utils.cross_entropy_loss(verb_pred[i], gt_verbs[i])
+                    gt_role_list = self.encoder.get_role_ids(gt_verbs[i])
+                    pred_role_list = self.encoder.get_role_ids(pred_verbs[i])
+
+                    #print ('role list diff :', gt_role_list, pred_role_list)
+
+                    for j in range(0, self.max_role_count):
+                        if pred_role_list[j] == len(self.encoder.role_list):
+                            continue
+                        if pred_role_list[j] in gt_role_list:
+                            #print('eval loss :', gt_role_list, pred_role_list[j])
+                            g_idx = (gt_role_list == pred_role_list[j]).nonzero()
+                            #print('found idx' , g_idx)
+                            frame_loss += utils.cross_entropy_loss(role_label_pred[i][j], gt_labels[i,index,g_idx] ,self.vocab_size)
+
+                    frame_loss = frame_loss/len(self.encoder.verb2_role_dict[self.encoder.verb_list[gt_verbs[i]]])
+                    #print('frame loss', frame_loss)
+                    loss += frame_loss
+
+
+        final_loss = loss/batch_size
+        #print('loss :', final_loss)
+        return final_loss
