@@ -39,7 +39,7 @@ class ReadUnit(nn.Module):
 
     def forward(self, memory, know, control):
         mem = self.mem(memory[-1]).unsqueeze(2)
-        print('read concat :', mem.size(), know.size())
+        #print('read concat :', mem.size(), know.size())
         concat = self.concat(torch.cat([mem * know, know], 1) \
                              .permute(0, 2, 1))
         attn = concat * control[-1].unsqueeze(1)
@@ -347,9 +347,9 @@ class E2ENetwork(nn.Module):
         #print('verbs :', verbs.size(), verbs)
         for k in range(0,topk):
             img_features = img_features_org
-            print('k :', k)
+            #print('k :', k)
             topk_verb = verbs[:,k]
-            print('ver size :', topk_verb.size())
+            #print('ver size :', topk_verb.size())
             roles = self.encoder.get_role_ids_batch(topk_verb)
 
             roles = roles.type(torch.LongTensor)
