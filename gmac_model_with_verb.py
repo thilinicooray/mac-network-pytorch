@@ -160,7 +160,8 @@ class WriteUnit(nn.Module):
             next_mem = gate * prev_mem + (1 - gate) * next_mem
 
         if self.gmac_enabled:
-            ctrl_att_weghted_mem = self.neighbour_att(controls[-1], controls[-1], prev_mem, mask)
+            #changed key and query also to currently predicted role label rep
+            ctrl_att_weghted_mem = self.neighbour_att(prev_mem, prev_mem, prev_mem, mask)
             next_mem = ctrl_att_weghted_mem + concat
         #print('prev next_mem :', next_mem.size())
         return next_mem
