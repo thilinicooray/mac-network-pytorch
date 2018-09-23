@@ -72,13 +72,13 @@ class MultiHeadedAttention(nn.Module):
         '''query, key, value = \
             [self.linear1(x).view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
              for x in [query, key, value]]'''
-        #query = self.linear1(query).view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
-        #key = self.linear1(key).view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
+        query = self.linear1(query).view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
+        key = self.linear1(key).view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
         value = value.view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
         #print('after linears :query', len(query), query[0].size())
 
         # 2) Apply attention on all the projected vectors in batch.
-        x, self.attn = attention(value, value, value, mask=mask,
+        x, self.attn = attention(query, key, value, mask=mask,
                                  dropout=self.dropout)
         #print('x out from att:', x.size())
         # 3) "Concat" using a view and apply a final linear.
@@ -161,7 +161,7 @@ class WriteUnit(nn.Module):
         prev_mem = memories[-1]
 
         concat = self.concat(torch.cat([retrieved, prev_mem], 2))
-        print('prev mem :', prev_mem.size(), concat.size())
+        #print('prev mem :', prev_mem.size(), concat.size())
         next_mem = concat
 
         if self.self_attention:
@@ -182,7 +182,7 @@ class WriteUnit(nn.Module):
         if self.gmac_enabled:
             #changed key and query also to currently predicted role label rep
             #concat = self.norm(concat)
-            ctrl_att_weghted_mem = self.neighbour_att(concat, concat, concat, mask)
+            ctrl_att_weghted_mem = self.neighbour_att(controls[-1], controls[-1], concat, mask)
             next_mem =  concat + self.dropout(ctrl_att_weghted_mem)
         #print('prev next_mem :', next_mem.size())
         return next_mem
