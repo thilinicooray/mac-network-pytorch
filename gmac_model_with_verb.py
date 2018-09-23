@@ -38,8 +38,8 @@ class MultiHeadedAttention(nn.Module):
         self.d_k = d_model // h
         self.h = h
         #only 1 linear layer
-        #self.linears = clones(linear(d_model, d_model), 4)
-        self.linear1 = nn.Linear(d_model, d_model)
+        self.linears = clones(linear(d_model, d_model), 1)
+        #self.linear1 = nn.Linear(d_model, d_model)
         self.linear2 = nn.Linear(d_model, d_model)
         self.attn = None
         self.dropout = nn.Dropout(p=dropout)
@@ -56,14 +56,13 @@ class MultiHeadedAttention(nn.Module):
 
         # 1) Do all the linear projections in batch from d_model => h x d_k
         #print('before linears : query', query.size())
-        '''query, key, value = \
+        query, key, value = \
             [l(x).view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
-             for l, x in zip(self.linears, (query, key, value))]'''
-        value = self.linear1(value).view(nbatches, -1, self.h, self.d_k)
+             for l, x in zip(self.linears, (query, key, value))]
         #print('after linears :query', len(query), query[0].size())
 
         # 2) Apply attention on all the projected vectors in batch.
-        x, self.attn = attention(value, value, value, mask=mask,
+        x, self.attn = attention(query, key, value, mask=mask,
                                  dropout=self.dropout)
         #print('x out from att:', x.size())
         # 3) "Concat" using a view and apply a final linear.
