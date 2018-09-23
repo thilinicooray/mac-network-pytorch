@@ -182,8 +182,8 @@ class WriteUnit(nn.Module):
         if self.gmac_enabled:
             #changed key and query also to currently predicted role label rep
             #concat = self.norm(concat)
-            ctrl_att_weghted_mem = self.neighbour_att(controls[-1], controls[-1], concat, mask)
-            next_mem =  concat + self.dropout(ctrl_att_weghted_mem)
+            ctrl_att_weghted_mem = self.neighbour_att(prev_mem, prev_mem, concat, mask)
+            next_mem =  ctrl_att_weghted_mem
         #print('prev next_mem :', next_mem.size())
         return next_mem
 
