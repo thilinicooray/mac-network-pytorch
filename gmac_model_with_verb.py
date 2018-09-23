@@ -13,6 +13,19 @@ def clones(module, N):
     "Produce N identical layers."
     return nn.ModuleList([copy.deepcopy(module) for _ in range(N)])
 
+class LayerNorm(nn.Module):
+    "Construct a layernorm module (See citation for details)."
+    def __init__(self, features, eps=1e-6):
+        super(LayerNorm, self).__init__()
+        self.a_2 = nn.Parameter(torch.ones(features))
+        self.b_2 = nn.Parameter(torch.zeros(features))
+        self.eps = eps
+
+    def forward(self, x):
+        mean = x.mean(-1, keepdim=True)
+        std = x.std(-1, keepdim=True)
+        return self.a_2 * (x - mean) / (std + self.eps) + self.b_2
+
 def attention(query, key, value, mask=None, dropout=None):
     "Compute 'Scaled Dot Product Attention'"
     #print('inside single att: query', query.size())
@@ -39,7 +52,7 @@ class MultiHeadedAttention(nn.Module):
         self.h = h
         #only 1 linear layer
         #self.linears = clones(linear(d_model, d_model), 1)
-        self.linear1 = nn.Linear(d_model, d_model)
+        #self.linear1 = nn.Linear(d_model, d_model)
         self.linear2 = nn.Linear(d_model, d_model)
         self.attn = None
         self.dropout = nn.Dropout(p=dropout)
@@ -59,13 +72,13 @@ class MultiHeadedAttention(nn.Module):
         '''query, key, value = \
             [self.linear1(x).view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
              for x in [query, key, value]]'''
-        query = self.linear1(query).view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
-        key = self.linear1(key).view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
-        value = self.linear1(value).view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
+        #query = self.linear1(query).view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
+        #key = self.linear1(key).view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
+        value = value.view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
         #print('after linears :query', len(query), query[0].size())
 
         # 2) Apply attention on all the projected vectors in batch.
-        x, self.attn = attention(query, key, value, mask=mask,
+        x, self.attn = attention(value, value, value, mask=mask,
                                  dropout=self.dropout)
         #print('x out from att:', x.size())
         # 3) "Concat" using a view and apply a final linear.
@@ -141,6 +154,8 @@ class WriteUnit(nn.Module):
         self.self_attention = self_attention
         self.memory_gate = memory_gate
         self.gmac_enabled = gmac_enabled
+        self.norm = LayerNorm(dim)
+        self.dropout = nn.Dropout(0.5)
 
     def forward(self, memories, retrieved, controls, mask=None):
         prev_mem = memories[-1]
@@ -165,8 +180,9 @@ class WriteUnit(nn.Module):
 
         if self.gmac_enabled:
             #changed key and query also to currently predicted role label rep
-            ctrl_att_weghted_mem = self.neighbour_att(prev_mem, prev_mem, prev_mem, mask)
-            next_mem = ctrl_att_weghted_mem + concat
+            concat = self.norm(concat)
+            ctrl_att_weghted_mem = self.neighbour_att(concat, concat, concat, mask)
+            next_mem =  concat + self.dropout(ctrl_att_weghted_mem)
         #print('prev next_mem :', next_mem.size())
         return next_mem
 
