@@ -72,8 +72,8 @@ class MultiHeadedAttention(nn.Module):
         '''query, key, value = \
             [self.linear1(x).view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
              for x in [query, key, value]]'''
-        query = self.linear1(query).view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
-        key = self.linear1(key).view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
+        query = query.view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
+        key = key.view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
         value = value.view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
         #print('after linears :query', len(query), query[0].size())
 
