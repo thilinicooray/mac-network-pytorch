@@ -154,7 +154,7 @@ class WriteUnit(nn.Module):
         self.self_attention = self_attention
         self.memory_gate = memory_gate
         self.gmac_enabled = gmac_enabled
-        self.norm = LayerNorm(dim)
+        #self.norm = LayerNorm(dim)
         self.dropout = nn.Dropout(0.5)
 
     def forward(self, memories, retrieved, controls, mask=None):
@@ -180,7 +180,7 @@ class WriteUnit(nn.Module):
 
         if self.gmac_enabled:
             #changed key and query also to currently predicted role label rep
-            concat = self.norm(concat)
+            #concat = self.norm(concat)
             ctrl_att_weghted_mem = self.neighbour_att(concat, concat, concat, mask)
             next_mem =  concat + self.dropout(ctrl_att_weghted_mem)
         #print('prev next_mem :', next_mem.size())
