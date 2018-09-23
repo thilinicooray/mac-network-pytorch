@@ -38,8 +38,8 @@ class MultiHeadedAttention(nn.Module):
         self.d_k = d_model // h
         self.h = h
         #only 1 linear layer
-        self.linears = clones(linear(d_model, d_model), 1)
-        #self.linear1 = nn.Linear(d_model, d_model)
+        #self.linears = clones(linear(d_model, d_model), 1)
+        self.linear1 = nn.Linear(d_model, d_model)
         self.linear2 = nn.Linear(d_model, d_model)
         self.attn = None
         self.dropout = nn.Dropout(p=dropout)
@@ -56,9 +56,12 @@ class MultiHeadedAttention(nn.Module):
 
         # 1) Do all the linear projections in batch from d_model => h x d_k
         #print('before linears : query', query.size())
-        query, key, value = \
-            [l(x).view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
-             for l, x in zip(self.linears, (query, key, value))]
+        '''query, key, value = \
+            [self.linear1(x).view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
+             for x in [query, key, value]]'''
+        query = self.linear1(query).view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
+        key = self.linear1(key).view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
+        value = self.linear1(value).view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
         #print('after linears :query', len(query), query[0].size())
 
         # 2) Apply attention on all the projected vectors in batch.
