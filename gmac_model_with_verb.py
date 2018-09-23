@@ -110,15 +110,22 @@ class ControlUnit(nn.Module):
 
 
 class ReadUnit(nn.Module):
-    def __init__(self, dim):
+    def __init__(self, dim, gmac_enabled):
         super().__init__()
-
+        self.gmac_enabled = gmac_enabled
+        if gmac_enabled:
+            self.neighbour_att = MultiHeadedAttention(h=1, d_model=dim)
         self.mem = linear(dim, dim)
         self.concat = linear(dim * 2, dim)
         self.attn = linear(dim, 1)
 
-    def forward(self, memory, know, control):
-        mem = self.mem(memory[-1]).unsqueeze(-1)
+    def forward(self, memory, know, control, mask):
+        if self.gmac_enabled:
+            #changed key and query also to currently predicted role label rep
+            #concat = self.norm(concat)
+            ctrl_att_weghted_mem = self.neighbour_att(memory[-1], memory[-1], memory[-1], mask)
+            mem_input =  ctrl_att_weghted_mem
+        mem = self.mem(mem_input).unsqueeze(-1)
         #print('read concat :', mem.size(), know.size(), control[-1].size())
         concat = self.concat(torch.cat([mem * know, know], 2) \
                              .permute(0, 1, 3, 2))
@@ -148,8 +155,8 @@ class WriteUnit(nn.Module):
         if memory_gate:
             self.control = linear(dim, 1)
 
-        if gmac_enabled:
-            self.neighbour_att = MultiHeadedAttention(h=1, d_model=dim)
+        '''if gmac_enabled:
+            self.neighbour_att = MultiHeadedAttention(h=1, d_model=dim)'''
 
         self.self_attention = self_attention
         self.memory_gate = memory_gate
@@ -179,11 +186,11 @@ class WriteUnit(nn.Module):
             gate = F.sigmoid(control)
             next_mem = gate * prev_mem + (1 - gate) * next_mem
 
-        if self.gmac_enabled:
+        '''if self.gmac_enabled:
             #changed key and query also to currently predicted role label rep
             #concat = self.norm(concat)
             ctrl_att_weghted_mem = self.neighbour_att(prev_mem, prev_mem, concat, mask)
-            next_mem =  ctrl_att_weghted_mem
+            next_mem =  ctrl_att_weghted_mem'''
         #print('prev next_mem :', next_mem.size())
         return next_mem
 
@@ -195,7 +202,7 @@ class MACUnit(nn.Module):
         super().__init__()
 
         self.control = ControlUnit(dim, max_step)
-        self.read = ReadUnit(dim)
+        self.read = ReadUnit(dim, gmac_enabled)
         self.write = WriteUnit(dim, self_attention, memory_gate, gmac_enabled)
 
         self.mem_0 = nn.Parameter(torch.zeros(1, dim))
@@ -245,7 +252,7 @@ class MACUnit(nn.Module):
                 control = control * control_mask
             controls.append(control)
 
-            read = self.read(memories, knowledge, controls)
+            read = self.read(memories, knowledge, controls, mask)
             memory = self.write(memories, read, controls, mask)
             if self.training:
                 memory = memory * memory_mask
