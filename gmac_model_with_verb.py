@@ -59,7 +59,7 @@ class MultiHeadedAttention(nn.Module):
         '''query, key, value = \
             [l(x).view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
              for l, x in zip(self.linears, (query, key, value))]'''
-        query, key, value = self.linear1((query, key, value))
+        query, key, value = self.linear1(zip(query, key, value))
         #print('after linears :query', len(query), query[0].size())
 
         # 2) Apply attention on all the projected vectors in batch.
