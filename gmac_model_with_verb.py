@@ -59,11 +59,11 @@ class MultiHeadedAttention(nn.Module):
         '''query, key, value = \
             [l(x).view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
              for l, x in zip(self.linears, (query, key, value))]'''
-        query, key, value = self.linear1(zip(query, key, value))
+        value = self.linear1(value)
         #print('after linears :query', len(query), query[0].size())
 
         # 2) Apply attention on all the projected vectors in batch.
-        x, self.attn = attention(query, key, value, mask=mask,
+        x, self.attn = attention(value, value, value, mask=mask,
                                  dropout=self.dropout)
         #print('x out from att:', x.size())
         # 3) "Concat" using a view and apply a final linear.
