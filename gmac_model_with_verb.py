@@ -159,8 +159,9 @@ class WriteUnit(nn.Module):
 
     def forward(self, memories, retrieved, controls, mask=None):
         prev_mem = memories[-1]
-        #print('prev mem :', prev_mem.size())
+
         concat = self.concat(torch.cat([retrieved, prev_mem], 2))
+        print('prev mem :', prev_mem.size(), concat.size())
         next_mem = concat
 
         if self.self_attention:
