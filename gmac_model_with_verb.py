@@ -38,8 +38,9 @@ class MultiHeadedAttention(nn.Module):
         self.d_k = d_model // h
         self.h = h
         #only 1 linear layer
-        self.linears = clones(linear(d_model, d_model), 4)
-        #self.linears = nn.Linear(d_model, d_model)
+        #self.linears = clones(linear(d_model, d_model), 4)
+        self.linear1 = nn.Linear(d_model, d_model)
+        self.linear2 = nn.Linear(d_model, d_model)
         self.attn = None
         self.dropout = nn.Dropout(p=dropout)
         self.size = d_model
@@ -55,9 +56,10 @@ class MultiHeadedAttention(nn.Module):
 
         # 1) Do all the linear projections in batch from d_model => h x d_k
         #print('before linears : query', query.size())
-        query, key, value = \
+        '''query, key, value = \
             [l(x).view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
-             for l, x in zip(self.linears, (query, key, value))]
+             for l, x in zip(self.linears, (query, key, value))]'''
+        query, key, value = self.linear1((query, key, value))
         #print('after linears :query', len(query), query[0].size())
 
         # 2) Apply attention on all the projected vectors in batch.
@@ -67,7 +69,7 @@ class MultiHeadedAttention(nn.Module):
         # 3) "Concat" using a view and apply a final linear.
         x = x.transpose(1, 2).contiguous() \
             .view(nbatches, -1, self.h * self.d_k)
-        return self.linears[-1](x)
+        return self.linear2(x)
 
 def linear(in_dim, out_dim, bias=True):
     lin = nn.Linear(in_dim, out_dim, bias=bias)
@@ -132,7 +134,7 @@ class WriteUnit(nn.Module):
             self.control = linear(dim, 1)
 
         if gmac_enabled:
-            self.neighbour_att = MultiHeadedAttention(h=4, d_model=dim)
+            self.neighbour_att = MultiHeadedAttention(h=1, d_model=dim)
 
         self.self_attention = self_attention
         self.memory_gate = memory_gate
