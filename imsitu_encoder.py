@@ -203,7 +203,7 @@ class imsitu_encoder():
         for id in verb_ids:
             encoding = self.verb2role_encoding[id]
 
-            encoding = torch.unsqueeze(encoding, 1)
+            encoding = torch.unsqueeze(torch.tensor(encoding),1)
             #print('encoding unsqe :', encoding.size())
             encoding = encoding.repeat(1,dim)
             #encoding = torch.squeeze(encoding)
