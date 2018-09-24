@@ -52,8 +52,8 @@ class MultiHeadedAttention(nn.Module):
         self.h = h
         #only 1 linear layer
         #self.linears = clones(linear(d_model, d_model), 1)
-        self.linear1 = nn.Linear(d_model, d_model/2)
-        self.linear2 = nn.Linear(d_model/2, d_model)
+        self.linear1 = nn.Linear(d_model, 256)
+        self.linear2 = nn.Linear(256, d_model)
         self.attn = None
         self.dropout = nn.Dropout(p=dropout)
         self.size = d_model
