@@ -140,7 +140,8 @@ class ReadUnit(nn.Module):
         super().__init__()
         self.gmac_enabled = gmac_enabled
         if gmac_enabled:
-            self.neighbour_att = ContextComputer(dim)
+            #self.neighbour_att = ContextComputer(dim)
+            self.neighbour_att = MultiHeadedAttention(h=1,d_model=dim)
         self.mem = linear(dim, dim)
         self.concat = linear(dim * 2, dim)
         self.attn = linear(dim, 1)
@@ -287,8 +288,8 @@ class MACUnit(nn.Module):
             memory = self.write(memory, read, control, mask)
             if self.training:
                 memory = memory * memory_mask
-            #memories.append(memory)
-            #print('control, read, memory', control.size(), read.size(), memory.size())
+                #memories.append(memory)
+                #print('control, read, memory', control.size(), read.size(), memory.size())
 
         return memory
 
@@ -505,7 +506,8 @@ class E2ENetwork(nn.Module):
 
             if self.gmac_enabled:
                 #mask = self.encoder.get_adj_matrix(topk_verb)
-                mask = self.encoder.get_extended_encoding(topk_verb, self.mlp_hidden)
+                #mask = self.encoder.get_extended_encoding(topk_verb, self.mlp_hidden)
+                mask = self.encoder.getadj(topk_verb)
                 #print('mask size :', mask.size())
                 if self.gpu_mode >= 0:
                     mask = mask.to(torch.device('cuda'))

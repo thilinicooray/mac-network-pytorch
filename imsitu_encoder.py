@@ -186,6 +186,26 @@ class imsitu_encoder():
 
         return torch.stack(adj_matrix_list).type(torch.FloatTensor)
 
+    def getadj(self, verb_ids):
+        adj_matrix_list = []
+
+        for id in verb_ids:
+            #print('ids :', id)
+            '''encoding = self.verb2role_encoding[id]
+            encoding_tensor = torch.unsqueeze(torch.tensor(encoding),0)
+            role_count = self.get_role_count(id)
+            #print('role count :', role_count)
+            pad_count = self.max_role_count - role_count
+            expanded = encoding_tensor.expand(self.max_role_count, encoding_tensor.size(1))
+            transpose = torch.t(expanded)
+            adj = expanded*transpose'''
+            adj = torch.zeros(6, 6)
+            for idx in range(0,6):
+                adj[idx][idx] = 1
+            adj_matrix_list.append(adj)
+
+        return torch.stack(adj_matrix_list).type(torch.FloatTensor)
+
     def get_mask(self, verb_ids, org_tensor):
         org = org_tensor.clone()
         org_reshaped = org.view(len(verb_ids), self.max_role_count, -1, org.size(2))
