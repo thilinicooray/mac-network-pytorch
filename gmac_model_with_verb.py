@@ -56,12 +56,12 @@ class ContextComputer(nn.Module):
                 if i != j:
                     mj = memory[:,j] * mask[:,j]
                     cat = torch.cat([mi, mj], -1)
-                    transformed = F.sigmoid(self.linear(cat))
+                    transformed = torch.sigmoid(self.linear(cat))
                     if curr_context is None:
                         curr_context = transformed * mj
                     else:
                         curr_context += transformed * mj
-
+            print('curr conext :', curr_context.size())
             context[:,i] = curr_context
 
         return context
