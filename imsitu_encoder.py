@@ -174,7 +174,7 @@ class imsitu_encoder():
             encoding = self.verb2role_encoding[id]
             encoding_tensor = torch.unsqueeze(torch.tensor(encoding),0)
             role_count = self.get_role_count(id)
-            print('role count :', role_count)
+            #print('role count :', role_count)
             pad_count = self.max_role_count - role_count
             expanded = encoding_tensor.expand(self.max_role_count, encoding_tensor.size(1))
             transpose = torch.t(expanded)
