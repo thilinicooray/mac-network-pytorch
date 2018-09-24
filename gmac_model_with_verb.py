@@ -48,7 +48,8 @@ class MultiHeadedAttention(nn.Module):
         super(MultiHeadedAttention, self).__init__()
         assert d_model % h == 0
         # We assume d_v always equals d_k
-        self.d_k = d_model // h
+        #self.d_k = d_model // h
+        self.d_k = 256
         self.h = h
         #only 1 linear layer
         #self.linears = clones(linear(d_model, d_model), 1)
@@ -74,8 +75,9 @@ class MultiHeadedAttention(nn.Module):
              for x in [query, key, value]]'''
         #query = query.view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
         #key = key.view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
-        value = self.linear1(value).view(nbatches, -1, self.h, 256).transpose(1, 2)
+        value = self.linear1(value).view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
         #print('after linears :query', len(query), query[0].size())
+        #print('val :', value.size())
 
         # 2) Apply attention on all the projected vectors in batch.
         x, self.attn = attention(value, value, value, mask=mask,
