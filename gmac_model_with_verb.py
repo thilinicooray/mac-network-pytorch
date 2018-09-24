@@ -153,7 +153,7 @@ class ReadUnit(nn.Module):
             #print('mem usage before att :', torch.cuda.memory_allocated())
             #memory = self.norm(memory)
             ctrl_att_weghted_mem = self.neighbour_att(memory, mask)
-            mem_input =  ctrl_att_weghted_mem
+            mem_input =  ctrl_att_weghted_mem.to(torch.device('cuda'))
             print('mem input :', mem_input.size(), mem_input.type(), memory.type(), mask.type())
         mem = self.mem(mem_input).unsqueeze(-1)
         #print('read concat :', mem.size(), know.size(), control[-1].size())
