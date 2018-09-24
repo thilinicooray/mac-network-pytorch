@@ -371,7 +371,7 @@ class E2ENetwork(nn.Module):
             encoder,
             gpu_mode,
             embed_hidden=300,
-            mlp_hidden=512,
+            mlp_hidden=256,
             gmac_enabled=True
     ):
         super(E2ENetwork, self).__init__()
@@ -505,9 +505,9 @@ class E2ENetwork(nn.Module):
             img_features = img_features.view(-1, n_channel, conv_h, conv_w)
 
             if self.gmac_enabled:
-                #mask = self.encoder.get_adj_matrix(topk_verb)
+                mask = self.encoder.get_adj_matrix(topk_verb)
                 #mask = self.encoder.get_extended_encoding(topk_verb, self.mlp_hidden)
-                mask = self.encoder.getadj(topk_verb)
+                #mask = self.encoder.getadj(topk_verb)
                 #print('mask size :', mask.size())
                 if self.gpu_mode >= 0:
                     mask = mask.to(torch.device('cuda'))
