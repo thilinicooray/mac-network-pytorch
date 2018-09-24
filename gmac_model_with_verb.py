@@ -74,7 +74,7 @@ class MultiHeadedAttention(nn.Module):
              for x in [query, key, value]]'''
         #query = query.view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
         #key = key.view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
-        value = self.linear1(value).view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
+        value = self.linear1(value).view(nbatches, -1, self.h, 256).transpose(1, 2)
         #print('after linears :query', len(query), query[0].size())
 
         # 2) Apply attention on all the projected vectors in batch.
