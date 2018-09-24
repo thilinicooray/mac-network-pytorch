@@ -48,13 +48,13 @@ class MultiHeadedAttention(nn.Module):
         super(MultiHeadedAttention, self).__init__()
         assert d_model % h == 0
         # We assume d_v always equals d_k
-        #self.d_k = d_model // h
-        self.d_k = 256
+        self.d_k = d_model // h
+        #self.d_k = 256
         self.h = h
         #only 1 linear layer
         #self.linears = clones(linear(d_model, d_model), 1)
-        self.linear1 = nn.Linear(d_model, 256)
-        self.linear2 = nn.Linear(256, d_model)
+        self.linear1 = nn.Linear(d_model, d_model)
+        self.linear2 = nn.Linear(d_model, d_model)
         self.attn = None
         self.dropout = nn.Dropout(p=dropout)
         self.size = d_model
@@ -127,14 +127,14 @@ class ReadUnit(nn.Module):
             #changed key and query also to currently predicted role label rep
             #concat = self.norm(concat)
             #print('mem usage before att :', torch.cuda.memory_allocated())
-            ctrl_att_weghted_mem = self.neighbour_att(memory[-1], memory[-1], memory[-1], mask)
+            ctrl_att_weghted_mem = self.neighbour_att(memory, memory, memory, mask)
             mem_input =  ctrl_att_weghted_mem
         mem = self.mem(mem_input).unsqueeze(-1)
         #print('read concat :', mem.size(), know.size(), control[-1].size())
         concat = self.concat(torch.cat([mem * know, know], 2) \
                              .permute(0, 1, 3, 2))
         #print('concat :', concat.size())
-        attn = concat * control[-1].unsqueeze(2)
+        attn = concat * control.unsqueeze(2)
         #print('attn :', attn.size())
         attn = self.attn(attn).squeeze(3)
         #print('attn after lin :', attn.size())
@@ -169,7 +169,7 @@ class WriteUnit(nn.Module):
         self.dropout = nn.Dropout(0.5)
 
     def forward(self, memories, retrieved, controls, mask=None):
-        prev_mem = memories[-1]
+        prev_mem = memories
 
         concat = self.concat(torch.cat([retrieved, prev_mem], 2))
         #print('prev mem :', prev_mem.size(), concat.size())
@@ -248,20 +248,20 @@ class MACUnit(nn.Module):
             control = control * control_mask
             memory = memory * memory_mask
 
-        controls = [control]
-        memories = [memory]
+        #controls = [control]
+        #memories = [memory]
 
         for i in range(self.max_step):
             control = self.control(i, question, control)
             if self.training:
                 control = control * control_mask
-            controls.append(control)
+            #controls.append(control)
 
-            read = self.read(memories, knowledge, controls, mask)
-            memory = self.write(memories, read, controls, mask)
+            read = self.read(memory, knowledge, control, mask)
+            memory = self.write(memory, read, control, mask)
             if self.training:
                 memory = memory * memory_mask
-            memories.append(memory)
+            #memories.append(memory)
 
         return memory
 
