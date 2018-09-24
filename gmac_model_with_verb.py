@@ -121,14 +121,14 @@ class ReadUnit(nn.Module):
         self.mem = linear(dim, dim)
         self.concat = linear(dim * 2, dim)
         self.attn = linear(dim, 1)
-        self.norm = LayerNorm(dim)
+        #self.norm = LayerNorm(dim)
 
     def forward(self, memory, know, control, mask):
         if self.gmac_enabled:
             #changed key and query also to currently predicted role label rep
             #concat = self.norm(concat)
             #print('mem usage before att :', torch.cuda.memory_allocated())
-            memory = self.norm(memory)
+            #memory = self.norm(memory)
             ctrl_att_weghted_mem = self.neighbour_att(memory, memory, memory, mask)
             mem_input =  ctrl_att_weghted_mem
         mem = self.mem(mem_input).unsqueeze(-1)
