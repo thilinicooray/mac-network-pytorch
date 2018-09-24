@@ -48,15 +48,18 @@ class ContextComputer(nn.Module):
         self.linear = linear(dim*2, dim)
 
     def forward(self, memory, mask): #mask to be one hot expanded
+        print('mem :', memory.size())
         context = torch.zeros(memory.size())
         for i in range(0,6):
             mi = memory[:,i]
+            print('mi :', mi.size())
             curr_context = None
             for j in range(0,6):
                 if i != j:
                     mj = memory[:,j] * mask[:,j]
                     cat = torch.cat([mi, mj], -1)
                     transformed = torch.sigmoid(self.linear(cat))
+                    print('transformed :', transformed.size(), mj.size())
                     if curr_context is None:
                         curr_context = transformed * mj
                     else:
@@ -155,6 +158,7 @@ class ReadUnit(nn.Module):
             #memory = self.norm(memory)
             ctrl_att_weghted_mem = self.neighbour_att(memory, mask)
             mem_input =  ctrl_att_weghted_mem
+            print('mem input :', mem_input.size())
         mem = self.mem(mem_input).unsqueeze(-1)
         #print('read concat :', mem.size(), know.size(), control[-1].size())
         concat = self.concat(torch.cat([mem * know, know], 2) \
