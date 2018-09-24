@@ -12,7 +12,7 @@ import random
 #from graphviz import Digraph
 
 
-def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler, max_epoch, model_dir, encoder, gpu_mode, clip_norm, lr_max, model_name, args,eval_frequency=4000):
+def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler, max_epoch, model_dir, encoder, gpu_mode, clip_norm, lr_max, model_name, args,eval_frequency=2000):
     model.train()
     train_loss = 0
     total_steps = 0
@@ -249,7 +249,7 @@ def main():
     clip_norm = 50
     weight_decay = 1e-4
     n_epoch = 500
-    n_worker = 3
+    n_worker = 4
 
     dataset_folder = 'imSitu'
     imgset_folder = 'resized_256'
