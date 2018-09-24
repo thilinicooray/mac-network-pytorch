@@ -404,11 +404,11 @@ class E2ENetwork(nn.Module):
         self.conv = vgg16_modified()
 
         self.verb = nn.Sequential(
-            linear(mlp_hidden*8, mlp_hidden*2),
-            nn.BatchNorm1d(mlp_hidden*2),
+            linear(mlp_hidden*16, mlp_hidden*4),
+            nn.BatchNorm1d(mlp_hidden*4),
             nn.ReLU(),
             nn.Dropout(0.5),
-            linear(mlp_hidden*2, self.n_verbs),
+            linear(mlp_hidden*4, self.n_verbs),
         )
         #todo: init embedding
         self.role_lookup = nn.Embedding(self.n_roles+1, embed_hidden, padding_idx=self.n_roles)
