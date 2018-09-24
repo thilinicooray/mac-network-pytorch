@@ -83,6 +83,7 @@ class MultiHeadedAttention(nn.Module):
         x, self.attn = attention(value, value, value, mask=mask,
                                  dropout=self.dropout)
         #print('x out from att:', x.size())
+        print('mem usage inside att :', torch.cuda.memory_allocated())
         # 3) "Concat" using a view and apply a final linear.
         x = x.transpose(1, 2).contiguous() \
             .view(nbatches, -1, self.h * self.d_k)
@@ -125,6 +126,7 @@ class ReadUnit(nn.Module):
         if self.gmac_enabled:
             #changed key and query also to currently predicted role label rep
             #concat = self.norm(concat)
+            print('mem usage before att :', torch.cuda.memory_allocated())
             ctrl_att_weghted_mem = self.neighbour_att(memory[-1], memory[-1], memory[-1], mask)
             mem_input =  ctrl_att_weghted_mem
         mem = self.mem(mem_input).unsqueeze(-1)
@@ -194,6 +196,7 @@ class WriteUnit(nn.Module):
             ctrl_att_weghted_mem = self.neighbour_att(prev_mem, prev_mem, concat, mask)
             next_mem =  ctrl_att_weghted_mem'''
         #print('prev next_mem :', next_mem.size())
+        print('mem usage in write :', torch.cuda.memory_allocated())
         return next_mem
 
 
