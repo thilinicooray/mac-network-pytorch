@@ -41,6 +41,30 @@ def attention(query, key, value, mask=None, dropout=None):
         p_attn = dropout(p_attn)
     return torch.matmul(p_attn, value), p_attn
 
+class ContextComputer(nn.Module):
+    def __init__(self, dim, dropout=0.5):
+        "Take in model size and number of heads."
+        super(ContextComputer, self).__init__()
+        self.linear = linear(dim*2, dim)
+
+    def forward(self, memory, mask): #mask to be one hot expanded
+        context = torch.zeros(memory.size())
+        for i in range(0,6):
+            mi = memory[:,i]
+            curr_context = None
+            for j in range(0,6):
+                if i != j:
+                    mj = memory[:,j] * mask[:,j]
+                    cat = torch.cat([mi, mj], -1)
+                    transformed = F.sigmoid(self.linear(cat))
+                    if curr_context is None:
+                        curr_context = transformed * mj
+                    else:
+                        curr_context += transformed * mj
+
+            context[:,i] = curr_context
+
+        return context
 
 class MultiHeadedAttention(nn.Module):
     def __init__(self, h, d_model, dropout=0.5):
@@ -117,7 +141,7 @@ class ReadUnit(nn.Module):
         super().__init__()
         self.gmac_enabled = gmac_enabled
         if gmac_enabled:
-            self.neighbour_att = MultiHeadedAttention(h=1, d_model=dim)
+            self.neighbour_att = ContextComputer(dim)
         self.mem = linear(dim, dim)
         self.concat = linear(dim * 2, dim)
         self.attn = linear(dim, 1)
@@ -129,7 +153,7 @@ class ReadUnit(nn.Module):
             #concat = self.norm(concat)
             #print('mem usage before att :', torch.cuda.memory_allocated())
             #memory = self.norm(memory)
-            ctrl_att_weghted_mem = self.neighbour_att(memory, memory, memory, mask)
+            ctrl_att_weghted_mem = self.neighbour_att(memory, mask)
             mem_input =  ctrl_att_weghted_mem
         mem = self.mem(mem_input).unsqueeze(-1)
         #print('read concat :', mem.size(), know.size(), control[-1].size())
@@ -423,7 +447,9 @@ class E2ENetwork(nn.Module):
         img_features = img_features.view(-1, n_channel, conv_h, conv_w)
 
         if self.gmac_enabled:
-            mask = self.encoder.get_adj_matrix(verbs)
+            #mask = self.encoder.get_adj_matrix(verbs)
+            mask = self.encoder.get_extended_encoding(verbs, self.mlp_hidden)
+            print('mask size :', mask.size())
             if self.gpu_mode >= 0:
                 mask = mask.to(torch.device('cuda'))
 
@@ -477,7 +503,9 @@ class E2ENetwork(nn.Module):
             img_features = img_features.view(-1, n_channel, conv_h, conv_w)
 
             if self.gmac_enabled:
-                mask = self.encoder.get_adj_matrix(topk_verb)
+                #mask = self.encoder.get_adj_matrix(topk_verb)
+                mask = self.encoder.get_extended_encoding(topk_verb, self.mlp_hidden)
+                #print('mask size :', mask.size())
                 if self.gpu_mode >= 0:
                     mask = mask.to(torch.device('cuda'))
 

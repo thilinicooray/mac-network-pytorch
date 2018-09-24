@@ -197,3 +197,17 @@ class imsitu_encoder():
                     org_reshaped[i][j:] = 0
                     break
         return org_reshaped.view(org_tensor.size())
+
+    def get_extended_encoding(self, verb_ids, dim):
+        encoding_list = []
+        for id in verb_ids:
+            encoding = self.verb2role_encoding[id]
+
+            encoding = torch.unsqueeze(encoding, 1)
+            #print('encoding unsqe :', encoding.size())
+            encoding = encoding.repeat(1,dim)
+            #encoding = torch.squeeze(encoding)
+            #print('extended :', encoding.size(), encoding)
+            encoding_list.append(encoding)
+
+        return torch.stack(encoding_list).type(torch.FloatTensor)
