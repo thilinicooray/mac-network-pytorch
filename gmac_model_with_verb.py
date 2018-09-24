@@ -267,11 +267,12 @@ class MACUnit(nn.Module):
 
 
 class MACNetwork(nn.Module):
-    def __init__(self, dim,
+    def __init__(self, gpu_mode, dim,
                  max_step=12, self_attention=False, memory_gate=False, gmac_enabled=False,
                  classes=28, dropout=0.15):
         super().__init__()
 
+        self.gpu_mode = gpu_mode
         self.q_trasform = linear(300, dim)
         self.mac = MACUnit(dim, max_step,
                            self_attention, memory_gate, gmac_enabled, dropout)
@@ -385,7 +386,7 @@ class E2ENetwork(nn.Module):
         self.role_lookup = nn.Embedding(self.n_roles+1, embed_hidden, padding_idx=self.n_roles)
         self.verb_lookup = nn.Embedding(self.n_verbs, embed_hidden)
 
-        self.role_labeller = MACNetwork(mlp_hidden, max_step=4, self_attention=False, memory_gate=False,
+        self.role_labeller = MACNetwork(self.gpu_mode, mlp_hidden, max_step=4, self_attention=False, memory_gate=False,
                                         gmac_enabled=True,
                                         classes=self.vocab_size)
 
