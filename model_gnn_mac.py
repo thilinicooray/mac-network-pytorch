@@ -118,8 +118,8 @@ class GMACUnit(nn.Module):
         self.write = WriteUnit(state_dim, self_attention, memory_gate)
 
         self.tansform = nn.Sequential(
-            nn.Linear(state_dim*3, state_dim),
-            nn.ELU()
+            nn.Linear(state_dim*2, state_dim),
+            #nn.ELU()
         )
 
     def forward(self, question, knowledge, in_states, out_states, memory,control, A, control_mask, memory_mask):
@@ -132,11 +132,11 @@ class GMACUnit(nn.Module):
             control = control * control_mask
         a_in = torch.bmm(A_in, in_states)
         a_out = torch.bmm(A_out, out_states)
-        #a = torch.cat((a_in, a_out, memory), 2)
+        a = torch.cat((a_in, a_out, memory), 2)
 
-        read = self.read(memory, knowledge, control)
+        read = self.read(a, knowledge, control)
 
-        joined_input = torch.cat((a_in, a_out, read * memory), 2)
+        joined_input = torch.cat((read , memory), 2)
         transformed = self.tansform(joined_input)
 
         memory = self.write(transformed)
