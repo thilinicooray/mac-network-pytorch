@@ -132,9 +132,9 @@ class GMACUnit(nn.Module):
             control = control * control_mask
         a_in = torch.bmm(A_in, in_states)
         a_out = torch.bmm(A_out, out_states)
-        a = torch.cat((a_in, a_out, memory), 2)
+        #a = torch.cat((a_in, a_out, memory), 2)
 
-        read = self.read(a, knowledge, control)
+        read = self.read(memory, knowledge, control)
 
         joined_input = torch.cat((a_in, a_out, read * memory), 2)
         transformed = self.tansform(joined_input)
