@@ -314,7 +314,7 @@ class E2ENetwork(nn.Module):
     def dev_preprocess(self):
         return self.dev_transform
 
-    '''def forward(self, image, verbs, roles, mask=None):
+    def forward(self, image, verbs, roles, mask=None):
 
         img_features, conv = self.conv(image)
         batch_size, n_channel, conv_h, conv_w = img_features.size()
@@ -342,10 +342,10 @@ class E2ENetwork(nn.Module):
 
         #role_label_pred = role_label_pred.contiguous().view(batch_size, -1, self.vocab_size)
 
-        return verb_pred, role_label_pred'''
+        return verb_pred, role_label_pred
 
 
-    def forward(self, image, topk = 5, mask=None):
+    def forward_eval5(self, image, topk = 5, mask=None):
 
         img_features_org, conv = self.conv(image)
         batch_size, n_channel, conv_h, conv_w = img_features_org.size()
