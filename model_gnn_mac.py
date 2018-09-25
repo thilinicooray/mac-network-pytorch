@@ -334,7 +334,7 @@ class E2ENetwork(nn.Module):
         img_features = img_features.view(batch_size, self.max_role_count, self.mlp_hidden, -1)
 
 
-        mask = self.encoder.get_adj_matrix(verbs)
+        mask = self.encoder.get_adj_matrix_noself(verbs)
         if self.gpu_mode >= 0:
             mask = mask.to(torch.device('cuda'))
 
@@ -388,7 +388,7 @@ class E2ENetwork(nn.Module):
             img_features = img_features.view(batch_size, self.max_role_count, self.mlp_hidden, -1)
 
 
-            mask = self.encoder.get_adj_matrix(topk_verb)
+            mask = self.encoder.get_adj_matrix_noself(topk_verb)
             if self.gpu_mode >= 0:
                 mask = mask.to(torch.device('cuda'))
 
