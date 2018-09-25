@@ -75,7 +75,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
             print(labels)'''
 
             #verb_predict, role_predict = pmodel(img, verb, roles)
-            verb_predict, rol1pred, role_predict = pmodel.forward_eval5(img)
+            verb_predict, rol1pred, role_predict = pmodel(img)
             #print ("forward time = {}".format(time.time() - t1))
             t1 = time.time()
 
@@ -210,7 +210,7 @@ def eval(model, dev_loader, encoder, gpu_mode):
                 roles = torch.autograd.Variable(roles)
                 labels = torch.autograd.Variable(labels)
 
-            verb_predict, _, role_predict = model.forward_eval5(img)
+            verb_predict, _, role_predict = model(img)
             '''loss = model.calculate_eval_loss(verb_predict, verb, role_predict, labels)
             val_loss += loss.item()'''
             top1.add_point_eval5(verb_predict, verb, role_predict, labels)
