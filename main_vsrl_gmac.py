@@ -114,11 +114,11 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
 
             train_loss += loss.item()
 
-            top1.add_point_eval5(verb_predict, verb, role_predict, labels)
-            top5.add_point_eval5(verb_predict, verb, role_predict, labels)
+            #top1.add_point_eval5(verb_predict, verb, role_predict, labels)
+            #top5.add_point_eval5(verb_predict, verb, role_predict, labels)
 
-            #top1.add_point(verb_predict, verb, role_predict, labels)
-            #top5.add_point(verb_predict, verb, role_predict, labels)
+            top1.add_point(verb_predict, verb, role_predict, labels)
+            top5.add_point(verb_predict, verb, role_predict, labels)
 
 
             if total_steps % print_freq == 0:
