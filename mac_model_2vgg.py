@@ -311,52 +311,10 @@ class E2ENetwork(nn.Module):
 
         return verb_pred, role_label_pred
 
-    def forward_eval(self, image):
-
-        conv = self.conv(image)
-        img_features = self.conv_nouns(image)
-        batch_size, n_channel, conv_h, conv_w = img_features.size()
-
-        #verb pred
-        verb_pred = self.verb(conv)
-
-        sorted_idx = torch.sort(verb_pred, 1, True)[1]
-        #print('sorted ', sorted_idx.size())
-        verbs = sorted_idx[:,0]
-        #todo:change for 5
-        #print('top1 verbs', verbs)
-
-        #print('verbs :', verbs.size(), verbs)
-
-        roles = self.encoder.get_role_ids_batch(verbs)
-
-        roles = roles.type(torch.LongTensor)
-        verbs = verbs.type(torch.LongTensor)
-
-        if self.gpu_mode >= 0:
-            roles = roles.to(torch.device('cuda'))
-            verbs = verbs.to(torch.device('cuda'))
-
-        verb_embd = self.verb_lookup(verbs)
-        role_embd = self.role_lookup(roles)
-
-        role_embed_reshaped = role_embd.transpose(0,1)
-        verb_embed_expand = verb_embd.expand(self.max_role_count, verb_embd.size(0), verb_embd.size(1))
-        role_verb_embd = verb_embed_expand * role_embed_reshaped
-        role_verb_embd = role_verb_embd.transpose(0,1)
-        role_verb_embd = role_verb_embd.contiguous().view(-1, self.embed_hidden)
-        img_features = img_features.repeat(1,self.max_role_count, 1, 1)
-        img_features = img_features.view(-1, n_channel, conv_h, conv_w)
-
-        role_label_pred = self.role_labeller(img_features, role_verb_embd)
-
-        role_label_pred = role_label_pred.contiguous().view(batch_size, -1, self.vocab_size)
-
-        return verb_pred, role_label_pred
-
     def forward_eval5(self, image, topk = 5):
 
-        img_features_org, conv = self.conv(image)
+        conv = self.conv(image)
+        img_features_org = self.conv_nouns(image)
         batch_size, n_channel, conv_h, conv_w = img_features_org.size()
         beam_role_idx = None
         top1role_label_pred = None
