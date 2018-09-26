@@ -120,17 +120,20 @@ def group_features(net_):
 
     cnn_features = list(net_.conv.parameters())
     cnn_feature_len = len(list(net_.conv.parameters()))
+    cnn_noun_features = list(net_.conv_nouns.parameters())
+    cnn_noun_feature_len = len(list(net_.conv_nouns.parameters()))
     verb_features = list(net_.verb.parameters())
     verb_feature_len = len(list(net_.verb.parameters()))
-    role_features = list(net_.parameters())[(cnn_feature_len + verb_feature_len):]
+    role_features = list(net_.parameters())[(cnn_feature_len + cnn_noun_feature_len + verb_feature_len):]
 
     print('Network details :')
     print('\tcnn features :', cnn_feature_len)
+    print('\tcnn noun features :', cnn_noun_feature_len)
     print('\tverb features :', verb_feature_len)
     print('\trole features :', len(role_features))
 
 
-    return cnn_features, verb_features, role_features
+    return cnn_features, cnn_noun_features, verb_features, role_features
 
 
 def set_trainable(model, requires_grad):
@@ -140,7 +143,7 @@ def set_trainable_param(parameters, requires_grad):
     for param in parameters:
         param.requires_grad = requires_grad
 
-def get_optimizer(lr, decay, mode, cnn_features, verb_features, role_features):
+def get_optimizer(lr, decay, mode, cnn_features,cnn_noun_features,  verb_features, role_features):
     """ To get the optimizer
     mode 0: training from scratch
     mode 1: cnn fix, verb fix, role training
@@ -148,6 +151,7 @@ def get_optimizer(lr, decay, mode, cnn_features, verb_features, role_features):
     mode 3: cnn finetune, verb finetune, role training"""
     if mode == 0:
         set_trainable_param(cnn_features, True)
+        set_trainable_param(cnn_noun_features, True)
         set_trainable_param(verb_features, True)
         set_trainable_param(role_features, True)
         optimizer = torch.optim.Adam([
@@ -172,6 +176,7 @@ def get_optimizer(lr, decay, mode, cnn_features, verb_features, role_features):
 
     elif mode == 3:
         set_trainable_param(cnn_features, True)
+        set_trainable_param(cnn_noun_features, True)
         set_trainable_param(verb_features, True)
         set_trainable_param(role_features, True)
         optimizer = torch.optim.Adam([
