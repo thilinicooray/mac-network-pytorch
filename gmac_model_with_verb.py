@@ -450,7 +450,7 @@ class E2ENetwork(nn.Module):
         if self.gmac_enabled:
             #mask = self.encoder.get_adj_matrix(verbs)
             mask = self.encoder.get_extended_encoding(verbs, self.mlp_hidden)
-            print('mask size :', mask.size())
+            #print('mask size :', mask.size())
             if self.gpu_mode >= 0:
                 mask = mask.to(torch.device('cuda'))
 
