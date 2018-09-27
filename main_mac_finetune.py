@@ -150,7 +150,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 max_score = max(dev_score_list)
 
                 if max_score == dev_score_list[-1]:
-                    torch.save(model.state_dict(), model_dir + "/{}_macnet4layer_gtv.model".format( model_name))
+                    torch.save(model.state_dict(), model_dir + "/{}_macnet4layer_gtv_finetune.model".format( model_name))
                     print ('New best model saved! {0}'.format(max_score))
 
                 #eval on the trainset
