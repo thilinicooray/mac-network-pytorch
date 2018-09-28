@@ -191,7 +191,7 @@ def main():
     parser = argparse.ArgumentParser(description="imsitu VSRL. Training, evaluation and prediction.")
     parser.add_argument("--gpuid", default=-1, help="put GPU id > -1 in GPU mode", type=int)
     parser.add_argument("--command", choices = ["train", "eval", "resume", 'predict'], required = True)
-    parser.add_argument("--batch_size", '-b', type=int, default=16)
+    parser.add_argument("--batch_size", '-b', type=int, default=32)
     parser.add_argument("--weights_file", help="the model to start from")
     parser.add_argument("--verb_group_file", help="csv containing most probable words for triplets")
     parser.add_argument('--margin', type=float, default=0.2,
