@@ -131,7 +131,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
         max_score = max(dev_score_list)
 
         if max_score == dev_score_list[-1]:
-            torch.save(model.state_dict(), model_dir + "/verbonly_vgg16.model")
+            torch.save(model.state_dict(), model_dir + "/verbonly_vgg16_rank.model")
             print ('New best model saved! {0}'.format(max_score))
 
         print('current train loss', train_loss)
