@@ -109,6 +109,15 @@ class RelationNetworks(nn.Module):
 
         return verb_pred
 
+    def classifier_eval(self, image):
+
+        conv = self.conv(image)
+        #verb pred
+        verb_rep = self.verb(conv)
+        verb_pred = self.classifier(verb_rep)
+
+        return verb_pred
+
 
     def calculate_loss(self, verb_pred, gt_verbs):
 

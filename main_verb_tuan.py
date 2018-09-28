@@ -172,7 +172,7 @@ def eval(model, dev_loader, encoder, gpu_mode):
                 roles = torch.autograd.Variable(roles)
                 labels = torch.autograd.Variable(labels)
 
-            verb_predict = model(img)
+            verb_predict = model.classifier_eval(img)
             '''loss = model.calculate_eval_loss(verb_predict, verb, role_predict, labels)
             val_loss += loss.item()'''
             top1.add_point_verb_only(verb_predict, verb)
