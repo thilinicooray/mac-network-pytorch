@@ -77,13 +77,13 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
             '''g = make_dot(verb_predict, model.state_dict())
             g.view()'''
 
-            #predicted_labels = torch.cat([p_img_pred,n_img_pred], 0)
-            #gt_labels = torch.cat([p_verb,n_verb], 0)
+            predicted_labels = torch.cat([p_img_pred,n_img_pred], 0)
+            gt_labels = torch.cat([p_verb,n_verb], 0)
 
-            p_loss = model.calculate_loss(p_img_pred, p_verb)
-            n_loss = model.calculate_loss(n_img_pred, n_verb)
+            p_loss = model.calculate_loss(predicted_labels, gt_labels)
+            #n_loss = model.calculate_loss(n_img_pred, n_verb)
             triplet_loss = model.triplet_loss(p_img_rep, p_verb_rep, n_img_rep, n_verb_rep)
-            loss = triplet_loss + (p_loss + n_loss)/2
+            loss = triplet_loss + p_loss
             #loss = triplet_loss
             #print('current loss = ', loss)
 
@@ -191,7 +191,7 @@ def main():
     parser = argparse.ArgumentParser(description="imsitu VSRL. Training, evaluation and prediction.")
     parser.add_argument("--gpuid", default=-1, help="put GPU id > -1 in GPU mode", type=int)
     parser.add_argument("--command", choices = ["train", "eval", "resume", 'predict'], required = True)
-    parser.add_argument("--batch_size", '-b', type=int, default=64)
+    parser.add_argument("--batch_size", '-b', type=int, default=32)
     parser.add_argument("--weights_file", help="the model to start from")
     parser.add_argument("--verb_group_file", help="csv containing most probable words for triplets")
     parser.add_argument('--margin', type=float, default=0.2,
