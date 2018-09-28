@@ -212,7 +212,7 @@ def main():
 
     # print('LR scheme : lr decay, vgg, fc as per gnn paper batch 64', 1e-5, 0.1,25)
 
-    dataset_folder = 'imsitu'
+    dataset_folder = 'imSitu'
     imgset_folder = 'resized_256'
     model_dir = 'trained_models'
 
