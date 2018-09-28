@@ -100,12 +100,12 @@ class RelationNetworks(nn.Module):
 
         return verb_rep, verb_embedding
 
-    def classifier_forward(self, image_features):
+    def classifier_forward(self, image):
 
-        #conv = self.conv(image)
+        conv = self.conv(image)
         #verb pred
-        #verb_rep = self.verb(conv)
-        verb_pred = self.classifier(image_features)
+        verb_rep = self.verb(conv)
+        verb_pred = self.classifier(verb_rep)
 
         return verb_pred
 
@@ -135,12 +135,12 @@ class RelationNetworks(nn.Module):
         d_p_img = self.pdist(p_img_rep, p_verb_rep)
         d_n_img = self.pdist(p_img_rep, n_verb_rep)
 
-        dist_hinge1 = torch.clamp(margin - d_p_img + d_n_img, min=0.0)
+        dist_hinge1 = torch.clamp(margin + d_p_img - d_n_img, min=0.0)
 
         d_p_label = self.pdist(p_verb_rep, p_img_rep)
         d_n_label = self.pdist(p_verb_rep, n_img_rep)
 
-        dist_hinge2 = torch.clamp(margin - d_p_label + d_n_label, min=0.0)
+        dist_hinge2 = torch.clamp(margin + d_p_label - d_n_label, min=0.0)
         loss = torch.mean(dist_hinge1 + dist_hinge2)
         return loss
 
