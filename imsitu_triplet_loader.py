@@ -28,11 +28,14 @@ class imsitu_triplet_loader(data.Dataset):
         #group verbs with top 5 negative verbs
         df = pd.read_csv(verb_grouping, header=None, names=['GT', 'PRED', 'count'])
         for index, row in df.iterrows():
-            if row["GT"] not in verb_dict:
-                verb_dict[row["GT"]] = []
-            else:
-                if len(verb_dict[row["GT"]]) < neg_verb_count and row["GT"] != row["PRED"]:
-                    verb_dict[row["GT"]].append(row["PRED"])
+            #print(row["GT"], row["PRED"])
+            if row["GT"] != row["PRED"]:
+                if row["GT"] not in verb_dict :
+                    verb_dict[row["GT"]] = [row["PRED"]]
+                else:
+                    if len(verb_dict[row["GT"]]) < neg_verb_count :
+                        #print('added')
+                        verb_dict[row["GT"]].append(row["PRED"])
 
         #group verbs with all available images of that verb
         for idx in ids:
@@ -44,29 +47,43 @@ class imsitu_triplet_loader(data.Dataset):
             else:
                 img_group_verb[verb].append(_id)
 
+        #print('len verbs :', len(img_group_verb))
+
         for key, value in verb_dict.items():
             all_img_len = len(img_group_verb[key])
             curr_imgs = img_group_verb[key]
-            img_per_verb = all_img_len // neg_verb_count
+            img_per_verb = all_img_len // len(value)
 
             current_neg_count = 0
             current_finished_img_count = 0
 
-            for neg_verb in  value:
-                if current_neg_count == (neg_verb_count-1):
+            for neg_verb in value:
+                if current_neg_count == (len(value)-1):
                     img_per_verb = all_img_len - current_finished_img_count
 
                 current_neg_count += 1
-                rand_ids = random.sample(range(0, len(img_group_verb[neg_verb])-1), img_per_verb)
+                if img_per_verb > len(img_group_verb[neg_verb]) -1 :
+                    rand_ids = random.sample(range(0, len(img_group_verb[neg_verb])-1), len(img_group_verb[neg_verb])-1)
+                    additional = img_per_verb - len(rand_ids)
+                    additional_ids = random.sample(range(0, len(img_group_verb[neg_verb])-1), additional)
+                    rand_ids = rand_ids + additional_ids
+                else:
+                    rand_ids = random.sample(range(0, len(img_group_verb[neg_verb])-1), img_per_verb)
 
                 for img_idx in range(img_per_verb):
                     curr_img_id = curr_imgs[current_finished_img_count]
                     neg_sample_id = rand_ids[img_idx]
-                    triplets[curr_img_id] = [curr_img_id, img_group_verb[neg_verb][neg_sample_id]]
+                    triplets[curr_img_id] = [img_group_verb[neg_verb][neg_sample_id]]
                     current_finished_img_count += 1
 
-        with open('triplets.json', 'w') as fp:
-            json.dump(triplets, fp)
+            #print('verb :', key, all_img_len, current_finished_img_count, len(value))
+
+        '''for idx in ids:
+            if idx not in triplets:
+                print(idx)'''
+
+        '''with open('triplets.json', 'w') as fp:
+            json.dump(triplets, fp)'''
 
         return triplets
 
@@ -75,7 +92,7 @@ class imsitu_triplet_loader(data.Dataset):
         p_id = self.ids[index]
         #print('p id :', p_id)
         #print('p dict :', self.training_triplets[p_id])
-        n_id = self.training_triplets[p_id][1]
+        n_id = self.training_triplets[p_id][0]
         p_ann = self.annotations[p_id]
         n_ann = self.annotations[n_id]
         p_img = Image.open(os.path.join(self.img_dir, p_id)).convert('RGB')
