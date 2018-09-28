@@ -77,13 +77,13 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
             '''g = make_dot(verb_predict, model.state_dict())
             g.view()'''
 
-            predicted_labels = torch.cat([p_img_pred,n_img_pred], 0)
-            gt_labels = torch.cat([p_verb,n_verb], 0)
+            #predicted_labels = torch.cat([p_img_pred,n_img_pred], 0)
+            #gt_labels = torch.cat([p_verb,n_verb], 0)
 
-            p_loss = model.calculate_loss(predicted_labels, gt_labels)
-            #n_loss = model.calculate_loss(n_img_pred, n_verb)
+            p_loss = model.calculate_loss(p_img_pred, p_verb)
+            n_loss = model.calculate_loss(n_img_pred, n_verb)
             triplet_loss = model.triplet_loss(p_img_rep, p_verb_rep, n_img_rep, n_verb_rep)
-            loss = triplet_loss + p_loss
+            loss = triplet_loss + (p_loss + n_loss)/2
             #loss = triplet_loss
             #print('current loss = ', loss)
 
