@@ -80,12 +80,12 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
             predicted_labels = torch.cat([p_img_pred,n_img_pred], 0)
             gt_labels = torch.cat([p_verb,n_verb], 0)
 
-            p_loss = model.calculate_loss(predicted_labels, gt_labels)
+            #p_loss = model.calculate_loss(predicted_labels, gt_labels)
             #n_loss = model.calculate_loss(n_img_pred, n_verb)
-            #triplet_loss = model.triplet_loss(p_img_rep, p_verb_rep, n_img_rep, n_verb_rep)
+            triplet_loss = model.triplet_loss(p_img_rep, p_verb_rep, n_img_rep, n_verb_rep)
             #loss = triplet_loss + p_loss
-            loss = p_loss
-            #loss = triplet_loss
+            #loss = p_loss
+            loss = triplet_loss
             #print('current loss = ', loss)
 
             loss.backward()
@@ -240,7 +240,7 @@ def main():
 
     #print(model)
     if args.gpuid >= 0:
-        print('GPU enabled')
+        #print('GPU enabled')
         model.cuda()
 
     # optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
