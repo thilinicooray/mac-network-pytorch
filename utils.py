@@ -4,6 +4,7 @@ from torch.nn import init
 import torch
 import pdb
 import numpy as np
+from torch.autograd import Function
 
 '''def init_weight(module):
     if isinstance(module, nn.Linear):
