@@ -19,7 +19,7 @@ class imsitu_loader(data.Dataset):
         if self.transform is not None: img = self.transform(img)
         verb, roles, labels = self.encoder.encode(ann)
 
-        return img, verb, roles, labels
+        return _id, img, verb, roles, labels
 
     def __len__(self):
         return len(self.annotations)

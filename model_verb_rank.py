@@ -94,7 +94,7 @@ class RelationNetworks(nn.Module):
         verb_rep = self.verb(conv)
         verb_embedding = self.verb_transform(self.verb_lookup(verb_id))
 
-        return verb_rep, verb_embedding
+        return utils.l2norm(verb_rep), utils.l2norm(verb_embedding)
 
 
     def calculate_loss(self, verb_pred, gt_verbs):

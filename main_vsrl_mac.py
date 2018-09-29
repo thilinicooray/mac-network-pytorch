@@ -1,7 +1,7 @@
 import torch
 from imsitu_encoder import imsitu_encoder
 from imsitu_loader import imsitu_loader
-from imsitu_scorer_updated import imsitu_scorer
+from imsitu_scorer_log import imsitu_scorer
 import json
 import mac_model_with_verb
 import os
@@ -46,7 +46,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
         #print('current sample : ', i, img.size(), verb.size(), roles.size(), labels.size())
         #sizes batch_size*3*height*width, batch*504*1, batch*6*190*1, batch*3*6*lebale_count*1
         mx = len(train_loader)
-        for i, (img, verb, roles,labels) in enumerate(train_loader):
+        for i, (_, img, verb, roles,labels) in enumerate(train_loader):
             #print("epoch{}-{}/{} batches\r".format(epoch,i+1,mx)) ,
             t0 = time.time()
             t1 = time.time()
@@ -180,16 +180,16 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
         scheduler.step()
         #break
 
-def eval(model, dev_loader, encoder, gpu_mode):
+def eval(model, dev_loader, encoder, gpu_mode, write_to_file = True):
     model.eval()
     val_loss = 0
 
     print ('evaluating model...')
-    top1 = imsitu_scorer(encoder, 1, 3)
+    top1 = imsitu_scorer(encoder, 1, 3, write_to_file)
     top5 = imsitu_scorer(encoder, 5, 3)
     with torch.no_grad():
         mx = len(dev_loader)
-        for i, (img, verb, roles,labels) in enumerate(dev_loader):
+        for i, (img_id, img, verb, roles,labels) in enumerate(dev_loader):
             #print("{}/{} batches\r".format(i+1,mx)) ,
             '''im_data = torch.squeeze(im_data,0)
             im_info = torch.squeeze(im_info,0)
@@ -213,8 +213,8 @@ def eval(model, dev_loader, encoder, gpu_mode):
             verb_predict, _, role_predict = model.forward_eval5(img)
             '''loss = model.calculate_eval_loss(verb_predict, verb, role_predict, labels)
             val_loss += loss.item()'''
-            top1.add_point_eval5(verb_predict, verb, role_predict, labels)
-            top5.add_point_eval5(verb_predict, verb, role_predict, labels)
+            top1.add_point_eval5_log(img_id, verb_predict, verb, role_predict, labels)
+            top5.add_point_eval5_log(img_id, verb_predict, verb, role_predict, labels)
 
             del verb_predict, role_predict, img, verb, roles, labels
             #break
@@ -236,6 +236,7 @@ def main():
     parser.add_argument('--finetune_verb', action='store_true', help='cnn fix, verb finetune, role train from the scratch')
     parser.add_argument('--finetune_cnn', action='store_true', help='cnn finetune, verb finetune, role train from the scratch')
     parser.add_argument('--output_dir', type=str, default='./trained_models', help='Location to output the model')
+    parser.add_argument('--evaluate', action='store_true', help='Only use the testing mode')
     #todo: train role module separately with gt verbs
 
     args = parser.parse_args()
@@ -338,8 +339,40 @@ def main():
     #gradient clipping, grad check
     scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.9)
 
-    print('Model training started!')
-    train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler, n_epoch, args.output_dir, encoder, args.gpuid, clip_norm, lr_max, model_name, args)
+    if args.evaluate:
+        top1, top5, val_loss = eval(model, dev_loader, encoder, args.gpuid, write_to_file = True)
+
+        top1_avg = top1.get_average_results()
+        top5_avg = top5.get_average_results()
+
+        avg_score = top1_avg["verb"] + top1_avg["value"] + top1_avg["value-all"] + top5_avg["verb"] + \
+                    top5_avg["value"] + top5_avg["value-all"]
+        avg_score /= 8
+
+        print ('Dev average :{:.2f} {} {}'.format( avg_score*100,
+                                                   utils.format_dict(top1_avg,'{:.2f}', '1-'),
+                                                   utils.format_dict(top5_avg, '{:.2f}', '5-')))
+
+        #write results to csv file
+        role_dict = top1.role_dict
+        fail_val_all = top1.value_all_dict
+
+        with open('role_pred_data.json', 'w') as fp:
+            json.dump(role_dict, fp, indent=4)
+
+        with open('fail_val_all.json', 'w') as fp:
+            json.dump(fail_val_all, fp, indent=4)
+
+        print('Writing predictions to file completed !')
+
+
+    else:
+
+        print('Model training started!')
+        train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler, n_epoch, args.output_dir, encoder, args.gpuid, clip_norm, lr_max, model_name, args)
+
+
+
 
 
 

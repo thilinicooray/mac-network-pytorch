@@ -26,6 +26,12 @@ def init_weight(linear, pad_idx=None):
         if pad_idx is not None:
             linear.weight.data[pad_idx] = 0
 
+def l2norm(input, p=2.0, dim=1, eps=1e-12):
+    """
+    Compute L2 norm, row-wise
+    """
+    return input / input.norm(p, dim).clamp(min=eps).expand_as(input)
+
 def init_gru_cell(input):
 
     weight = eval('input.weight_ih')

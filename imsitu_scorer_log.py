@@ -3,11 +3,15 @@
 import torch
 
 class imsitu_scorer():
-    def __init__(self, encoder,topk, nref):
+    def __init__(self, encoder,topk, nref, write_to_file=False):
         self.score_cards = []
         self.topk = topk
         self.nref = nref
         self.encoder = encoder
+        self.write_to_file = write_to_file
+        if self.write_to_file:
+            self.role_dict = {}
+            self.value_all_dict = {}
 
     def clear(self):
         self.score_cards = {}
@@ -230,12 +234,13 @@ class imsitu_scorer():
 
             self.score_cards.append(new_card)
 
-    def add_point_eval5_log(self, verb_predict, gt_verbs, labels_predict, gt_labels):
+    def add_point_eval5_log(self, img_id, verb_predict, gt_verbs, labels_predict, gt_labels):
         #encoded predictions should be batch x verbs x values #assumes the are the same order as the references
         #encoded reference should be batch x 1+ references*roles,values (sorted)
 
         batch_size = verb_predict.size()[0]
         for i in range(batch_size):
+            imgid = img_id[i]
             verb_pred = verb_predict[i]
             gt_verb = gt_verbs[i]
             label_pred = labels_predict[i]
@@ -278,12 +283,28 @@ class imsitu_scorer():
             score_card["n_value"] += gt_role_count
 
             all_found = True
+            pred_situ = []
             for k in range(0, gt_role_count):
                 #label_id = torch.max(label_pred[k],0)[1]
                 label_id = label_pred[k]
                 found = False
+                pred_situ.append({gt_role_list[k] : self.encoder.label_list[label_id]})
                 for r in range(0,self.nref):
                     gt_label_id = gt_label[r][k]
+                    #################################
+                    if self.write_to_file and verb_found:
+                        role = gt_role_list[k]
+                        gt_label_name = self.encoder.label_list[gt_label_id]
+                        pred_label_name = self.encoder.label_list[label_id]
+                        if role not in self.role_dict:
+                            self.role_dict[role] = {gt_label_name : [pred_label_name]}
+                        elif gt_label_name not in self.role_dict[role]:
+                            self.role_dict[role][gt_label_name] = [pred_label_name]
+                        else:
+                            self.role_dict[role][gt_label_name].append(pred_label_name)
+
+
+                    #######################################################################
                     if label_id == gt_label_id:
                         found = True
                         break
@@ -301,6 +322,8 @@ class imsitu_scorer():
             '''if all_found:
                 print('all found role sets :pred, gt', role_set, gt_role_set)'''
             if all_found and verb_found: score_card["value-all"] += 1
+            if verb_found and not all_found and self.write_to_file:
+                self.value_all_dict[imgid] = pred_situ
             #all values found
             if all_found: score_card["value-all*"] += 1
 
