@@ -263,7 +263,7 @@ def main():
     model = mac_model_with_verb.E2ENetwork(encoder, args.gpuid)
 
     # To group up the features
-    cnn_features, verb_features, role_features = utils.group_features(model)
+    cnn_features, verb_features, role_features = utils.group_features_single(model)
 
     train_set = imsitu_loader(imgset_folder, train_set, encoder, model.train_preprocess())
 
@@ -319,7 +319,7 @@ def main():
         args.train_all = True
         model_name = 'train_full'
 
-    optimizer = utils.get_optimizer(lr,weight_decay,optimizer_select,
+    optimizer = utils.get_optimizer_single(lr,weight_decay,optimizer_select,
                                     cnn_features, verb_features, role_features)
 
     if not os.path.exists(args.output_dir):
