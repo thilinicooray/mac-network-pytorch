@@ -42,7 +42,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
         #sizes batch_size*3*height*width, batch*504*1, batch*6*190*1, batch*3*6*lebale_count*1
         mx = len(train_loader)
         for i, (_, img, verb, roles,labels) in enumerate(train_loader):
-            print("epoch{}-{}/{} batches\r".format(epoch,i+1,mx)) ,
+            #print("epoch{}-{}/{} batches\r".format(epoch,i+1,mx)) ,
             total_steps += 1
             if gpu_mode >= 0:
                 img = torch.autograd.Variable(img.cuda())
