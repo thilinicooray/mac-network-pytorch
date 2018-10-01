@@ -34,6 +34,8 @@ class imsitu_encoder():
                     if len(self.verb2_role_dict[current_verb]) > self.max_role_count:
                         self.max_role_count = len(self.verb2_role_dict[current_verb])
                     if label not in self.label_list:
+                        if len(label) == 0:
+                            continue
                         if label not in label_frequency:
                             label_frequency[label] = 1
                         else:
@@ -148,7 +150,9 @@ class imsitu_encoder():
             label_id_list = []
             for role,label in frame.items():
                 #use UNK when unseen labels come
-                if label in self.label_list:
+                if len(label) == 0:
+                    label_id = -1
+                elif label in self.label_list:
                     label_id = self.label_list.index(label)
                 else:
                     label_id = self.label_list.index('#UNK#')

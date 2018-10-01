@@ -62,13 +62,16 @@ class imsitu_scorer():
                 label_id = torch.max(label_pred[k],0)[1]
                 pred_list.append(label_id.item())
                 found = False
+                blank = True
                 for r in range(0,self.nref):
                     gt_label_id = gt_label[r][k]
+                    if gt_label_id != -1:
+                        blank = False
                     #print('ground truth label id = ', gt_label_id)
                     if label_id == gt_label_id:
                         found = True
                         break
-                if not found: all_found = False
+                if not blank and not found: all_found = False
                 #both verb and at least one val found
                 if found and verb_found: score_card["value"] += 1
                 #at least one val found
@@ -211,12 +214,15 @@ class imsitu_scorer():
                 #label_id = torch.max(label_pred[k],0)[1]
                 label_id = label_pred[k]
                 found = False
+                blank = True
                 for r in range(0,self.nref):
                     gt_label_id = gt_label[r][k]
+                    if gt_label_id != -1:
+                        blank = False
                     if label_id == gt_label_id:
                         found = True
                         break
-                if not found: all_found = False
+                if not blank and not found: all_found = False
 
                 #both verb and at least one val found
                 if found and verb_found: score_card["value"] += 1
