@@ -234,7 +234,7 @@ def main():
     # optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     utils.set_trainable(model, False)
     utils.set_trainable_param(model.classifier.parameters(), True)
-    optimizer = torch.optim.Adam([{'params': model.classifier.parameters(), 'lr': 5e-5},
+    optimizer = torch.optim.Adam([{'params': model.classifier.parameters(), 'lr': 1e-3},
                                   ]
                                  )
     # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=lr_step, gamma=lr_gamma)
