@@ -237,6 +237,7 @@ def main():
     parser.add_argument('--finetune_cnn', action='store_true', help='cnn finetune, verb finetune, role train from the scratch')
     parser.add_argument('--output_dir', type=str, default='./trained_models', help='Location to output the model')
     parser.add_argument('--evaluate', action='store_true', help='Only use the testing mode')
+    parser.add_argument('--test', action='store_true', help='Only use the testing mode')
     #todo: train role module separately with gt verbs
 
     args = parser.parse_args()
@@ -272,6 +273,10 @@ def main():
     dev_set = json.load(open(dataset_folder +"/dev.json"))
     dev_set = imsitu_loader(imgset_folder, dev_set, encoder, model.dev_preprocess())
     dev_loader = torch.utils.data.DataLoader(dev_set, batch_size=64, shuffle=True, num_workers=n_worker)
+
+    test_set = json.load(open(dataset_folder +"/test.json"))
+    test_set = imsitu_loader(imgset_folder, test_set, encoder, model.dev_preprocess())
+    test_loader = torch.utils.data.DataLoader(test_set, batch_size=64, shuffle=True, num_workers=n_worker)
 
     traindev_set = json.load(open(dataset_folder +"/dev.json"))
     traindev_set = imsitu_loader(imgset_folder, traindev_set, encoder, model.dev_preprocess())
@@ -364,6 +369,20 @@ def main():
             json.dump(fail_val_all, fp, indent=4)
 
         print('Writing predictions to file completed !')
+
+    elif args.test:
+        top1, top5, val_loss = eval(model, test_loader, encoder, args.gpuid, write_to_file = True)
+
+        top1_avg = top1.get_average_results()
+        top5_avg = top5.get_average_results()
+
+        avg_score = top1_avg["verb"] + top1_avg["value"] + top1_avg["value-all"] + top5_avg["verb"] + \
+                    top5_avg["value"] + top5_avg["value-all"]
+        avg_score /= 8
+
+        print ('Test average :{:.2f} {} {}'.format( avg_score*100,
+                                                   utils.format_dict(top1_avg,'{:.2f}', '1-'),
+                                                   utils.format_dict(top5_avg, '{:.2f}', '5-')))
 
 
     else:
