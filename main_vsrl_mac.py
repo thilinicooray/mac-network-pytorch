@@ -8,6 +8,7 @@ import os
 import utils
 import time
 import random
+import csv
 #from torchviz import make_dot
 #from graphviz import Digraph
 
@@ -356,12 +357,19 @@ def main():
         #write results to csv file
         role_dict = top1.role_dict
         fail_val_all = top1.value_all_dict
+        role_pred = top1.role_pred
 
         with open('role_pred_data.json', 'w') as fp:
             json.dump(role_dict, fp, indent=4)
 
         with open('fail_val_all.json', 'w') as fp:
             json.dump(fail_val_all, fp, indent=4)
+
+        with open("rolepred_tot.csv", "w") as f:
+            writer = csv.writer(f)
+            writer.writerow(['role', 'total', 'predicted', 'accuracy'])
+            for key, value in role_pred.items():
+                writer.writerow([key, value[0], value[1], value[1]/value[0]])
 
         print('Writing predictions to file completed !')
 
