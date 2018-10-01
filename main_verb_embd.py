@@ -42,7 +42,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
         #sizes batch_size*3*height*width, batch*504*1, batch*6*190*1, batch*3*6*lebale_count*1
         mx = len(train_loader)
         for i, (_, img, verb, roles,labels) in enumerate(train_loader):
-            #print("epoch{}-{}/{} batches\r".format(epoch,i+1,mx)) ,
+            print("epoch{}-{}/{} batches\r".format(epoch,i+1,mx)) ,
             total_steps += 1
             if gpu_mode >= 0:
                 img = torch.autograd.Variable(img.cuda())
@@ -222,12 +222,11 @@ def main():
         model.load_state_dict(torch.load(args.weights_file))
     elif args.finetune_verb:
         print('CNN fix, Verb fc fixed, train verb classifier layer from the scratch from: {}'.format(args.verb_module))
-        args.train_all = True
         if len(args.verb_module) == 0:
             raise Exception('[pretrained verb module] not specified')
         utils.load_net(args.verb_module, [model.conv, model.verb], ['conv', 'verb'])
 
-    print(model)
+    #print(model)
     if args.gpuid >= 0:
         print('GPU enabled')
         model.cuda()
