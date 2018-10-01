@@ -177,7 +177,7 @@ def main():
     parser = argparse.ArgumentParser(description="imsitu VSRL. Training, evaluation and prediction.")
     parser.add_argument("--gpuid", default=-1, help="put GPU id > -1 in GPU mode", type=int)
     parser.add_argument("--command", choices = ["train", "eval", "resume", 'predict', 'finetune'], required = True)
-    parser.add_argument("--batch_size", '-b', type=int, default=4)
+    parser.add_argument("--batch_size", '-b', type=int, default=64)
     parser.add_argument("--weights_file", help="the model to start from")
     parser.add_argument('--finetune_verb', action='store_true', help='verb classifier train from the scratch, all others fixed')
     parser.add_argument('--verb_module', type=str, default='', help='pretrained verb module')
@@ -197,8 +197,8 @@ def main():
 
     # print('LR scheme : lr decay, vgg, fc as per gnn paper batch 64', 1e-5, 0.1,25)
 
-    dataset_folder = 'imsitu_data'
-    imgset_folder = 'of500_images_resized'
+    dataset_folder = 'imSitu'
+    imgset_folder = 'resized_256'
     model_dir = 'trained_models'
 
     train_set = json.load(open(dataset_folder + "/train.json"))
