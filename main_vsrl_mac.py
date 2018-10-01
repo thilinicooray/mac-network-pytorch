@@ -8,7 +8,6 @@ import os
 import utils
 import time
 import random
-import csv
 #from torchviz import make_dot
 #from graphviz import Digraph
 
@@ -151,7 +150,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 max_score = max(dev_score_list)
 
                 if max_score == dev_score_list[-1]:
-                    torch.save(model.state_dict(), model_dir + "/{}_macnet4layer_gtv_noblank.model".format( model_name))
+                    torch.save(model.state_dict(), model_dir + "/{}_macnet4layer_gtv.model".format( model_name))
                     print ('New best model saved! {0}'.format(max_score))
 
                 #eval on the trainset
@@ -214,8 +213,8 @@ def eval(model, dev_loader, encoder, gpu_mode, write_to_file = True):
             verb_predict, _, role_predict = model.forward_eval5(img)
             '''loss = model.calculate_eval_loss(verb_predict, verb, role_predict, labels)
             val_loss += loss.item()'''
-            top1.add_point_eval5(verb_predict, verb, role_predict, labels)
-            top5.add_point_eval5(verb_predict, verb, role_predict, labels)
+            top1.add_point_eval5_log(img_id, verb_predict, verb, role_predict, labels)
+            top5.add_point_eval5_log(img_id, verb_predict, verb, role_predict, labels)
 
             del verb_predict, role_predict, img, verb, roles, labels
             #break
@@ -357,19 +356,12 @@ def main():
         #write results to csv file
         role_dict = top1.role_dict
         fail_val_all = top1.value_all_dict
-        role_pred = top1.role_pred
 
         with open('role_pred_data.json', 'w') as fp:
             json.dump(role_dict, fp, indent=4)
 
         with open('fail_val_all.json', 'w') as fp:
             json.dump(fail_val_all, fp, indent=4)
-
-        with open("rolepred_tot.csv", "w") as f:
-            writer = csv.writer(f)
-            writer.writerow(['role', 'total', 'predicted', 'accuracy'])
-            for key, value in role_pred.items():
-                writer.writerow([key, value[0], value[1], value[1]/value[0]])
 
         print('Writing predictions to file completed !')
 

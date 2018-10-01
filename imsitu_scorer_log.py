@@ -62,16 +62,13 @@ class imsitu_scorer():
                 label_id = torch.max(label_pred[k],0)[1]
                 pred_list.append(label_id.item())
                 found = False
-                blank = True
                 for r in range(0,self.nref):
                     gt_label_id = gt_label[r][k]
-                    if gt_label_id != -1:
-                        blank = False
                     #print('ground truth label id = ', gt_label_id)
                     if label_id == gt_label_id:
                         found = True
                         break
-                if not blank and not found: all_found = False
+                if not found: all_found = False
                 #both verb and at least one val found
                 if found and verb_found: score_card["value"] += 1
                 #at least one val found
@@ -214,15 +211,12 @@ class imsitu_scorer():
                 #label_id = torch.max(label_pred[k],0)[1]
                 label_id = label_pred[k]
                 found = False
-                blank = True
                 for r in range(0,self.nref):
                     gt_label_id = gt_label[r][k]
-                    if gt_label_id != -1:
-                        blank = False
                     if label_id == gt_label_id:
                         found = True
                         break
-                if not blank and not found: all_found = False
+                if not found: all_found = False
 
                 #both verb and at least one val found
                 if found and verb_found: score_card["value"] += 1
@@ -294,19 +288,13 @@ class imsitu_scorer():
             for k in range(0, gt_role_count):
                 #label_id = torch.max(label_pred[k],0)[1]
                 label_id = label_pred[k]
-                role = gt_role_list[k]
                 found = False
                 pred_situ.append({gt_role_list[k] : self.encoder.label_list[label_id]})
-                if self.write_to_file and verb_found:
-                    if role not in self.role_pred:
-                        self.role_pred[role] = [1,0]
-                    else:
-                        self.role_pred[role][0] += 1
                 for r in range(0,self.nref):
                     gt_label_id = gt_label[r][k]
                     #################################
                     if self.write_to_file and verb_found:
-
+                        role = gt_role_list[k]
                         gt_label_name = self.encoder.label_list[gt_label_id]
                         pred_label_name = self.encoder.label_list[label_id]
                         if role not in self.role_dict:
@@ -319,8 +307,6 @@ class imsitu_scorer():
 
                     #######################################################################
                     if label_id == gt_label_id:
-                        if self.write_to_file and verb_found:
-                            self.role_pred[role][1] += 1
                         found = True
                         break
                 if not found: all_found = False
