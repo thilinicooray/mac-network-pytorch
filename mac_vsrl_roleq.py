@@ -164,7 +164,7 @@ class MACNetwork(nn.Module):
                  classes=28, dropout=0.15):
         super().__init__()
 
-        self.embed = nn.Embedding(n_vocab + 1, embed_hidden)
+        self.embed = nn.Embedding(n_vocab + 1, embed_hidden, padding_idx=n_vocab)
         self.lstm = nn.LSTM(embed_hidden, dim,
                             batch_first=True, bidirectional=True)
         self.lstm_proj = nn.Linear(dim * 2, dim)
@@ -179,10 +179,11 @@ class MACNetwork(nn.Module):
         self.max_step = max_step
         self.dim = dim
 
-        self.reset()
+        self.reset(n_vocab)
 
-    def reset(self):
+    def reset(self, pad_idx):
         self.embed.weight.data.uniform_(0, 1)
+        self.embed.weight.data[pad_idx] = 0
 
         kaiming_uniform_(self.classifier[0].weight)
 
