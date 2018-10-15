@@ -167,7 +167,7 @@ class MACNetwork(nn.Module):
         self.embed = nn.Embedding(n_vocab + 1, embed_hidden, padding_idx=n_vocab)
         self.lstm = nn.LSTM(embed_hidden, dim,
                             batch_first=True, bidirectional=True)
-        self.lstm_proj = nn.Linear(dim * 2, dim)
+        self.lstm_proj = linear(dim * 2, dim)
         self.mac = MACUnit(dim, max_step,
                            self_attention, memory_gate, dropout)
 
@@ -355,6 +355,10 @@ class E2ENetwork(nn.Module):
             topk_verb = verbs[:,k]
             #print('ver size :', topk_verb.size())
             role_q,  q_len= self.encoder.get_role_questions_batch(topk_verb)
+
+            if self.gpu_mode >= 0:
+                role_q = role_q.to(torch.device('cuda'))
+                q_len = q_len.to(torch.device('cuda'))
 
             #print('out from val :', role_q.size(), q_len.size())
 
