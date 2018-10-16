@@ -28,6 +28,7 @@ class imsitu_encoder():
                 question = info['question']
                 self.vrole_question[verb+'_'+role] = question
                 words = nltk.word_tokenize(question)
+                words = words[:-1] #ignore ? mark
                 if len(words) > self.max_q_word_count:
                     self.max_q_word_count = len(words)
                 #print('q words :', words)
@@ -174,7 +175,7 @@ class imsitu_encoder():
                 #print('question :', question)
                 q_tokens = []
                 words = nltk.word_tokenize(question)
-
+                words = words[:-1]
                 for word in words:
                     q_tokens.append(self.question_words[word])
                 padding_words = self.max_q_word_count - len(q_tokens)
@@ -191,13 +192,10 @@ class imsitu_encoder():
             for i in range(role_padding_count):
                 q_tokens = []
                 for k in range(0,self.max_q_word_count):
-                    if k == 0:
-                        q_tokens.append(self.question_words['?'])
-                    else:
-                        q_tokens.append(len(self.question_words))
+                    q_tokens.append(len(self.question_words))
 
                 rquestion_tokens.append(torch.tensor(q_tokens))
-                q_len.append(1)
+                q_len.append(0)
             role_batch_list.append(torch.stack(rquestion_tokens,0))
             q_len_batch.append(torch.tensor(q_len))
 
@@ -217,7 +215,7 @@ class imsitu_encoder():
             #print('question :', question)
             q_tokens = []
             words = nltk.word_tokenize(question)
-
+            words = words[:-1]
             for word in words:
                 q_tokens.append(self.question_words[word])
             padding_words = self.max_q_word_count - len(q_tokens)
@@ -234,13 +232,10 @@ class imsitu_encoder():
         for i in range(role_padding_count):
             q_tokens = []
             for k in range(0,self.max_q_word_count):
-                if k == 0:
-                    q_tokens.append(self.question_words['?'])
-                else:
-                    q_tokens.append(len(self.question_words))
+                q_tokens.append(len(self.question_words))
 
             rquestion_tokens.append(torch.tensor(q_tokens))
-            q_len.append(1)
+            q_len.append(0)
 
         return torch.stack(rquestion_tokens,0), torch.tensor(q_len)
 

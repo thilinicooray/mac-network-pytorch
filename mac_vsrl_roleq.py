@@ -27,7 +27,7 @@ class ControlUnit(nn.Module):
 
         self.dim = dim
 
-    def forward(self, step, context, question, control):
+    def forward(self, step, context, question, control, verb):
         position_aware = self.position_aware[step](question)
 
         control_question = torch.cat([control, position_aware], 1)
@@ -40,6 +40,7 @@ class ControlUnit(nn.Module):
         attn = F.softmax(attn_weight, 1)
 
         next_control = (attn * context).sum(1)
+        next_control = next_control*verb
 
         return next_control
 
@@ -128,7 +129,7 @@ class MACUnit(nn.Module):
 
         return mask
 
-    def forward(self, context, question, knowledge):
+    def forward(self, context, question, knowledge, verb):
         b_size = question.size(0)
 
         control = self.control_0.expand(b_size, self.dim)
@@ -144,7 +145,7 @@ class MACUnit(nn.Module):
         memories = [memory]
 
         for i in range(self.max_step):
-            control = self.control(i, context, question, control)
+            control = self.control(i, context, question, control, verb)
             if self.training:
                 control = control * control_mask
             controls.append(control)
@@ -187,7 +188,7 @@ class MACNetwork(nn.Module):
 
         kaiming_uniform_(self.classifier[0].weight)
 
-    def forward(self, image, question, question_length, dropout=0.15):
+    def forward(self, image, question, question_length, verb, dropout=0.15):
         #print('sizes :', image.size(),question.size(), question_length.size())
         question_length = torch.squeeze(question_length, -1)
 
@@ -208,7 +209,7 @@ class MACNetwork(nn.Module):
         lstm_out = self.lstm_proj(lstm_out)
         h = h.permute(1, 0, 2).contiguous().view(b_size, -1)
 
-        memory = self.mac(lstm_out, h, img)
+        memory = self.mac(lstm_out, h, img, verb)
 
         out = torch.cat([memory, h], 1)
         out = self.classifier(out)
@@ -289,10 +290,12 @@ class E2ENetwork(nn.Module):
         )
         #todo: init embedding
         #self.role_lookup = nn.Embedding(self.n_roles+1, embed_hidden, padding_idx=self.n_roles)
-        #self.verb_lookup = nn.Embedding(self.n_verbs, embed_hidden)
+        self.verb_lookup = nn.Embedding(self.n_verbs, embed_hidden)
 
-        self.role_labeller = MACNetwork(mlp_hidden, self.n_role_q_vocab, max_step=8, self_attention=False, memory_gate=False,
+        self.role_labeller = MACNetwork(mlp_hidden, self.n_role_q_vocab, max_step=5, self_attention=False, memory_gate=False,
                                         classes=self.vocab_size)
+
+        self.verb_transform = linear(embed_hidden, mlp_hidden)
 
         self.conv_hidden = self.conv.base_size()
         self.mlp_hidden = mlp_hidden
@@ -313,7 +316,10 @@ class E2ENetwork(nn.Module):
         #verb pred
         verb_pred = self.verb(conv)
 
-        #verb_embd = self.verb_lookup(verbs)
+        verb_embd = self.verb_transform(self.verb_lookup(verbs))
+        verb_embed_expand = verb_embd.expand(self.max_role_count, verb_embd.size(0), verb_embd.size(1))
+        verb_embed_expand = verb_embed_expand.transpose(0,1)
+        verb_embed_expand = verb_embed_expand.contiguous().view(-1, self.mlp_hidden)
         #role_embd = self.role_lookup(roles)
 
         '''role_embed_reshaped = role_embd.transpose(0,1)
@@ -326,7 +332,7 @@ class E2ENetwork(nn.Module):
         role_q = role_q.view(-1, role_q.size(-1))
         q_len = q_len.view(-1, 1)
 
-        role_label_pred = self.role_labeller(img_features, role_q, q_len)
+        role_label_pred = self.role_labeller(img_features, role_q, q_len, verb_embed_expand)
 
         role_label_pred = role_label_pred.contiguous().view(batch_size, -1, self.vocab_size)
 
@@ -353,6 +359,10 @@ class E2ENetwork(nn.Module):
             img_features = img_features_org
             #print('k :', k)
             topk_verb = verbs[:,k]
+            verb_embd = self.verb_transform(self.verb_lookup(topk_verb))
+            verb_embed_expand = verb_embd.expand(self.max_role_count, verb_embd.size(0), verb_embd.size(1))
+            verb_embed_expand = verb_embed_expand.transpose(0,1)
+            verb_embed_expand = verb_embed_expand.contiguous().view(-1, self.mlp_hidden)
             #print('ver size :', topk_verb.size())
             role_q,  q_len= self.encoder.get_role_questions_batch(topk_verb)
 
@@ -367,7 +377,7 @@ class E2ENetwork(nn.Module):
             role_q = role_q.view(-1, role_q.size(-1))
             q_len = q_len.view(-1, 1)
 
-            role_label_pred = self.role_labeller(img_features, role_q, q_len)
+            role_label_pred = self.role_labeller(img_features, role_q, q_len, verb_embed_expand)
 
             role_label_pred = role_label_pred.contiguous().view(batch_size, -1, self.vocab_size)
 
