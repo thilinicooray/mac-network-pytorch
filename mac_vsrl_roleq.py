@@ -291,7 +291,7 @@ class E2ENetwork(nn.Module):
         #self.role_lookup = nn.Embedding(self.n_roles+1, embed_hidden, padding_idx=self.n_roles)
         #self.verb_lookup = nn.Embedding(self.n_verbs, embed_hidden)
 
-        self.role_labeller = MACNetwork(mlp_hidden, self.n_role_q_vocab, max_step=5, self_attention=False, memory_gate=False,
+        self.role_labeller = MACNetwork(mlp_hidden, self.n_role_q_vocab, max_step=8, self_attention=False, memory_gate=False,
                                         classes=self.vocab_size)
 
         self.conv_hidden = self.conv.base_size()

@@ -154,7 +154,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 max_score = max(dev_score_list)
 
                 if max_score == dev_score_list[-1]:
-                    torch.save(model.state_dict(), model_dir + "/{}_macnet4layer_gtv.model".format( model_name))
+                    torch.save(model.state_dict(), model_dir + "/{}_macnlroleq_step8.model".format( model_name))
                     print ('New best model saved! {0}'.format(max_score))
 
                 #eval on the trainset
@@ -264,7 +264,7 @@ def main():
     dataset_folder = 'imSitu'
     imgset_folder = 'resized_256'
 
-    print('model spec :, mac net v pred for training and loss calc normalizing from only matching role count ')
+    print('model spec :, mac net v nlp role q. steps 8 ')
 
     train_set = json.load(open(dataset_folder + "/train.json"))
     imsitu_roleq = json.load(open("imsitu_data/imsitu_questions.json"))
