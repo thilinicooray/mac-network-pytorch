@@ -37,8 +37,20 @@ class ReadUnit(nn.Module):
         self.concat = linear(dim * 2, dim)
         self.attn = linear(dim, 1)
 
-    def forward(self, memory, know, control):
-        mem = self.mem(memory[-1]).unsqueeze(2)
+    def forward(self, memory, know, control, mask):
+        #print('memsize :', memory[-1].size(), know.size())
+        #concat or multiply? -> role_label
+        role_label = control[-1]*memory[-1]
+        context = self.mem(role_label)
+        context = context.view(-1, mask.size(1), context.size(-1))
+        context_updated = context.unsqueeze(0)
+        context_updated = context_updated.expand(mask.size(1), context.size(0), context.size(1), context.size(2))
+        context = context_updated.transpose(0,1)
+        masked_context = mask * context
+        final_context = masked_context.sum(2)
+        #print('final_context ', final_context.size())
+        mem = final_context.view(-1, final_context.size(-1)).unsqueeze(2)
+        #mem = self.mem(memory[-1]).unsqueeze(2)
         #print('read concat :', mem.size(), know.size())
         concat = self.concat(torch.cat([mem * know, know], 1) \
                              .permute(0, 2, 1))
@@ -113,7 +125,7 @@ class MACUnit(nn.Module):
 
         return mask
 
-    def forward(self, question, knowledge):
+    def forward(self, question, knowledge, mask):
         b_size = question.size(0)
 
         control = self.control_0.expand(b_size, self.dim)
@@ -134,7 +146,7 @@ class MACUnit(nn.Module):
                 control = control * control_mask
             controls.append(control)
 
-            read = self.read(memories, knowledge, controls)
+            read = self.read(memories, knowledge, controls, mask)
             memory = self.write(memories, read, controls)
             if self.training:
                 memory = memory * memory_mask
@@ -166,11 +178,11 @@ class MACNetwork(nn.Module):
     def reset(self):
         kaiming_uniform_(self.classifier[0].weight)
 
-    def forward(self, image, question, dropout=0.15):
+    def forward(self, image, question, mask, dropout=0.15):
         b_size = question.size(0)
         transformed_q = self.q_trasform(question)
         img = image.view(b_size, self.dim, -1)
-        memory = self.mac(transformed_q, img)
+        memory = self.mac(transformed_q, img, mask)
 
         out = torch.cat([memory, transformed_q], 1)
         out = self.classifier(out)
@@ -247,7 +259,7 @@ class E2ENetwork(nn.Module):
         self.role_lookup = nn.Embedding(self.n_roles+1, embed_hidden, padding_idx=self.n_roles)
         self.verb_lookup = nn.Embedding(self.n_verbs, embed_hidden)
 
-        self.role_labeller = MACNetwork(mlp_hidden, max_step=3, self_attention=True, memory_gate=False,
+        self.role_labeller = MACNetwork(mlp_hidden, max_step=3, self_attention=False, memory_gate=False,
                                         classes=self.vocab_size)
 
         self.conv_hidden = self.conv.base_size()
@@ -282,7 +294,11 @@ class E2ENetwork(nn.Module):
         img_features = img_features.transpose(0,1)
         img_features = img_features.contiguous().view(-1, n_channel, conv_h, conv_w)
 
-        role_label_pred = self.role_labeller(img_features, role_verb_embd)
+        mask = self.encoder.get_adj_matrix_noself_expanded(verbs, self.mlp_hidden)
+        if self.gpu_mode >= 0:
+            mask = mask.to(torch.device('cuda'))
+
+        role_label_pred = self.role_labeller(img_features, role_verb_embd, mask)
 
         role_label_pred = role_label_pred.contiguous().view(batch_size, -1, self.vocab_size)
 
@@ -332,7 +348,11 @@ class E2ENetwork(nn.Module):
             img_features = img_features.transpose(0,1)
             img_features = img_features.contiguous().view(-1, n_channel, conv_h, conv_w)
 
-            role_label_pred = self.role_labeller(img_features, role_verb_embd)
+            mask = self.encoder.get_adj_matrix_noself_expanded(topk_verb, self.mlp_hidden)
+            if self.gpu_mode >= 0:
+                mask = mask.to(torch.device('cuda'))
+
+            role_label_pred = self.role_labeller(img_features, role_verb_embd, mask)
 
             role_label_pred = role_label_pred.contiguous().view(batch_size, -1, self.vocab_size)
 
