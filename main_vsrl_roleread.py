@@ -12,7 +12,7 @@ import random
 #from graphviz import Digraph
 
 
-def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler, max_epoch, model_dir, encoder, gpu_mode, clip_norm, lr_max, model_name, args,eval_frequency=2):
+def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler, max_epoch, model_dir, encoder, gpu_mode, clip_norm, lr_max, model_name, args,eval_frequency=4000):
     model.train()
     train_loss = 0
     total_steps = 0
@@ -217,7 +217,7 @@ def eval(model, dev_loader, encoder, gpu_mode, write_to_file = True):
             top5.add_point_eval5_log(img_id, verb_predict, verb, role_predict, labels)
 
             del verb_predict, role_predict, img, verb, roles, labels
-            break
+            #break
 
     #return top1, top5, val_loss/mx
 
@@ -253,9 +253,8 @@ def main():
     n_epoch = 500
     n_worker = 3
 
-    dataset_folder = 'imsitu_data'
-    imgset_folder = 'of500_images_resized'
-
+    dataset_folder = 'imSitu'
+    imgset_folder = 'resized_256'
     print('model spec :, mac net v pred for training and loss calc normalizing from only matching role count ')
 
     train_set = json.load(open(dataset_folder + "/train.json"))
@@ -268,11 +267,11 @@ def main():
 
     train_set = imsitu_loader(imgset_folder, train_set, encoder, model.train_preprocess())
 
-    train_loader = torch.utils.data.DataLoader(train_set, batch_size=4, shuffle=True, num_workers=n_worker)
+    train_loader = torch.utils.data.DataLoader(train_set, batch_size=64, shuffle=True, num_workers=n_worker)
 
     dev_set = json.load(open(dataset_folder +"/dev.json"))
     dev_set = imsitu_loader(imgset_folder, dev_set, encoder, model.dev_preprocess())
-    dev_loader = torch.utils.data.DataLoader(dev_set, batch_size=4, shuffle=True, num_workers=n_worker)
+    dev_loader = torch.utils.data.DataLoader(dev_set, batch_size=64, shuffle=True, num_workers=n_worker)
 
     test_set = json.load(open(dataset_folder +"/test.json"))
     test_set = imsitu_loader(imgset_folder, test_set, encoder, model.dev_preprocess())
