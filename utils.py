@@ -158,6 +158,19 @@ def group_features_single(net_):
 
     return cnn_features, verb_features, role_features
 
+def group_features_noun(net_):
+
+    cnn_features = list(net_.conv.parameters())
+    cnn_feature_len = len(list(net_.conv.parameters()))
+    role_features = list(net_.parameters())[(cnn_feature_len):]
+
+    print('Network details :')
+    print('\tcnn features :', cnn_feature_len)
+    print('\trole features :', len(role_features))
+
+
+    return cnn_features, role_features
+
 def set_trainable(model, requires_grad):
     set_trainable_param(model.parameters(), requires_grad)
 
@@ -248,6 +261,42 @@ def get_optimizer_single(lr, decay, mode, cnn_features,  verb_features, role_fea
         optimizer = torch.optim.Adam([
             {'params': cnn_features},
             {'params': verb_features},
+            {'params': role_features}
+        ], lr=lr, weight_decay=decay)
+
+    return optimizer
+
+def get_optimizer_noun(lr, decay, mode, cnn_features, role_features):
+    """ To get the optimizer
+    mode 0: training from scratch
+    mode 1: cnn fix, verb fix, role training
+    mode 2: cnn fix, verb fine tune, role training
+    mode 3: cnn finetune, verb finetune, role training"""
+    if mode == 0:
+        set_trainable_param(cnn_features, True)
+        set_trainable_param(role_features, True)
+        optimizer = torch.optim.Adam([
+            {'params': cnn_features},
+            {'params': role_features}
+        ], lr=lr, weight_decay=decay)
+
+    elif mode == 1:
+        set_trainable_param(role_features, True)
+        optimizer = torch.optim.Adam([
+            {'params': role_features}
+        ], lr=lr, weight_decay=decay)
+
+    elif mode == 2:
+        set_trainable_param(role_features, True)
+        optimizer = torch.optim.Adam([
+            {'params': role_features}],
+            lr=1e-3)
+
+    elif mode == 3:
+        set_trainable_param(cnn_features, True)
+        set_trainable_param(role_features, True)
+        optimizer = torch.optim.Adam([
+            {'params': cnn_features},
             {'params': role_features}
         ], lr=lr, weight_decay=decay)
 
