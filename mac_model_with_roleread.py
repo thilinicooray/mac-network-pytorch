@@ -5,6 +5,7 @@ from torch.nn.init import kaiming_uniform_, xavier_uniform_, normal
 import torch.nn.functional as F
 import torchvision as tv
 import utils
+import math
 
 def linear(in_dim, out_dim, bias=True):
     lin = nn.Linear(in_dim, out_dim, bias=bias)
@@ -14,7 +15,22 @@ def linear(in_dim, out_dim, bias=True):
 
     return lin
 
-class ControlUnit(nn.Module):
+def attention(query, key, value, mask=None, dropout=None):
+    "Compute 'Scaled Dot Product Attention'"
+    #print('inside single att: query', query.size())
+    d_k = query.size(-1)
+    scores = torch.matmul(query, key.transpose(-2, -1)) \
+             / math.sqrt(d_k)
+    #print('scores :', scores)
+    if mask is not None:
+        scores = scores.masked_fill(mask == 0, -1e9)
+    p_attn = F.softmax(scores, dim = -1)
+    #print('att ', p_attn)
+    if dropout is not None:
+        p_attn = dropout(p_attn)
+    return torch.matmul(p_attn, value), p_attn
+
+'''class ControlUnit(nn.Module):
     def __init__(self, dim, max_step):
         super().__init__()
 
@@ -26,21 +42,22 @@ class ControlUnit(nn.Module):
         #most simple : just pass the input
 
         next_control = question
-        return next_control
+        return next_control'''
 
 
 class ReadUnit(nn.Module):
     def __init__(self, dim):
         super().__init__()
 
-        self.mem = linear(dim, dim)
+        self.mem = linear(dim*2, dim)
+        self.fullq = linear(dim*2, dim)
         self.concat = linear(dim * 2, dim)
         self.attn = linear(dim, 1)
 
     def forward(self, memory, know, control, mask):
         #print('memsize :', memory[-1].size(), know.size())
         #concat or multiply? -> role_label
-        role_label = control[-1]*memory[-1]
+        role_label = torch.cat([control[-1],memory[-1]],1)
         context = self.mem(role_label)
         context = context.view(-1, mask.size(1), context.size(-1))
         context_updated = context.unsqueeze(0)
@@ -49,16 +66,21 @@ class ReadUnit(nn.Module):
         masked_context = mask * context
         final_context = masked_context.sum(2)
         #print('final_context ', final_context.size())
-        mem = final_context.view(-1, final_context.size(-1)).unsqueeze(2)
-        #mem = self.mem(memory[-1]).unsqueeze(2)
-        #print('read concat :', mem.size(), know.size())
-        concat = self.concat(torch.cat([mem * know, know], 1) \
-                             .permute(0, 2, 1))
-        attn = concat * control[-1].unsqueeze(1)
-        attn = self.attn(attn).squeeze(2)
+        #mem had details about all labels and answers for other roles
+        mem = final_context.view(-1, final_context.size(-1))
+        #trying to model, if a=man, b=bat, what's c?
+        detailed_q = torch.cat([mem, control[-1]],1)
+        projectedq = self.fullq(detailed_q)
+
+        #print('know, proj q', know.size(),projectedq.size())
+        '''concat = self.concat(torch.cat([mem * know, know], 1) \
+                             .permute(0, 2, 1))'''
+        attn = know * projectedq
+        '''attn = self.attn(attn).squeeze(2)
         attn = F.softmax(attn, 1).unsqueeze(1)
 
-        read = (attn * know).sum(2)
+        read = (attn * know).sum(2)'''
+        read = attn
 
         return read
 
@@ -67,7 +89,8 @@ class WriteUnit(nn.Module):
     def __init__(self, dim, self_attention=False, memory_gate=False):
         super().__init__()
 
-        self.concat = linear(dim * 2, dim)
+        #self.concat = linear(dim * 2, dim)
+        self.rnn = nn.GRUCell(dim, dim)
 
         if self_attention:
             self.attn = linear(dim, 1)
@@ -78,11 +101,18 @@ class WriteUnit(nn.Module):
 
         self.self_attention = self_attention
         self.memory_gate = memory_gate
+        self.dim = dim
 
-    def forward(self, memories, retrieved, controls):
+    def forward(self, memories, retrieved, controls, mask):
         prev_mem = memories[-1]
-        concat = self.concat(torch.cat([retrieved, prev_mem], 1))
-        next_mem = concat
+        #concat = self.concat(torch.cat([retrieved, prev_mem], 1))
+
+        #join with its dependent role memories
+        #get mask, apply self att, pass new rep to lstm
+        retrieved = retrieved.view(-1,mask.size(1) ,self.dim)
+        updated_retreived, att = attention(retrieved, retrieved, retrieved, mask)
+        updated_retreived = updated_retreived.view(-1, self.dim)
+        next_mem = self.rnn(updated_retreived, prev_mem)
 
         if self.self_attention:
             controls_cat = torch.stack(controls[:-1], 2)
@@ -92,7 +122,7 @@ class WriteUnit(nn.Module):
 
             memories_cat = torch.stack(memories, 2)
             attn_mem = (attn * memories_cat).sum(2)
-            next_mem = self.mem(attn_mem) + concat
+            #next_mem = self.mem(attn_mem) + concat
 
         if self.memory_gate:
             control = self.control(controls[-1])
@@ -105,10 +135,10 @@ class WriteUnit(nn.Module):
 class MACUnit(nn.Module):
     def __init__(self, dim, max_step=12,
                  self_attention=False, memory_gate=False,
-                 dropout=0.15):
+                 dropout=0.5):
         super().__init__()
 
-        self.control = ControlUnit(dim, max_step)
+        #self.control = ControlUnit(dim, max_step)
         self.read = ReadUnit(dim)
         self.write = WriteUnit(dim, self_attention, memory_gate)
 
@@ -125,7 +155,7 @@ class MACUnit(nn.Module):
 
         return mask
 
-    def forward(self, question, knowledge, mask):
+    def forward(self, question, knowledge, context_mask, adj):
         b_size = question.size(0)
 
         control = self.control_0.expand(b_size, self.dim)
@@ -141,13 +171,14 @@ class MACUnit(nn.Module):
         memories = [memory]
 
         for i in range(self.max_step):
-            control = self.control(i, question, control)
+            #control = self.control(i, question, control)
+            control = question
             if self.training:
                 control = control * control_mask
             controls.append(control)
 
-            read = self.read(memories, knowledge, controls, mask)
-            memory = self.write(memories, read, controls)
+            read = self.read(memories, knowledge, controls, context_mask)
+            memory = self.write(memories, read, controls, adj)
             if self.training:
                 memory = memory * memory_mask
             memories.append(memory)
@@ -168,6 +199,7 @@ class MACNetwork(nn.Module):
 
         self.classifier = nn.Sequential(linear(dim * 2, dim),
                                         nn.ELU(),
+                                        nn.Dropout(0.5),
                                         linear(dim, classes))
 
         self.max_step = max_step
@@ -178,11 +210,11 @@ class MACNetwork(nn.Module):
     def reset(self):
         kaiming_uniform_(self.classifier[0].weight)
 
-    def forward(self, image, question, mask, dropout=0.15):
+    def forward(self, image, question, context_mask, adj, dropout=0.15):
         b_size = question.size(0)
         transformed_q = self.q_trasform(question)
-        img = image.view(b_size, self.dim, -1)
-        memory = self.mac(transformed_q, img, mask)
+        #img = image.view(b_size, self.dim, -1)
+        memory = self.mac(transformed_q, image, context_mask, adj)
 
         out = torch.cat([memory, transformed_q], 1)
         out = self.classifier(out)
@@ -255,11 +287,18 @@ class E2ENetwork(nn.Module):
             nn.Dropout(0.5),
             linear(mlp_hidden*2, self.n_verbs),
         )
+
+        self.role_img = nn.Sequential(
+            linear(mlp_hidden*8, mlp_hidden),
+            nn.BatchNorm1d(mlp_hidden),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+        )
         #todo: init embedding
         self.role_lookup = nn.Embedding(self.n_roles+1, embed_hidden, padding_idx=self.n_roles)
         self.verb_lookup = nn.Embedding(self.n_verbs, embed_hidden)
 
-        self.role_labeller = MACNetwork(mlp_hidden, max_step=4, self_attention=False, memory_gate=False,
+        self.role_labeller = MACNetwork(mlp_hidden, max_step=6, self_attention=False, memory_gate=False,
                                         classes=self.vocab_size)
 
         self.conv_hidden = self.conv.base_size()
@@ -280,6 +319,7 @@ class E2ENetwork(nn.Module):
 
         #verb pred
         verb_pred = self.verb(conv)
+        role_img = self.role_img(conv)
 
         verb_embd = self.verb_lookup(verbs)
         role_embd = self.role_lookup(roles)
@@ -289,16 +329,19 @@ class E2ENetwork(nn.Module):
         role_verb_embd = verb_embed_expand * role_embed_reshaped
         role_verb_embd = role_verb_embd.transpose(0,1)
         role_verb_embd = role_verb_embd.contiguous().view(-1, self.embed_hidden)
-        img_features = img_features.unsqueeze(0)
-        img_features = img_features.expand(self.max_role_count, batch_size, n_channel, conv_h, conv_w)
+        #print('role img :', role_img.size())
+        img_features = role_img.expand(self.max_role_count, role_img.size(0), role_img.size(1))
         img_features = img_features.transpose(0,1)
-        img_features = img_features.contiguous().view(-1, n_channel, conv_h, conv_w)
+        img_features = img_features.contiguous().view(-1, self.mlp_hidden)
+        #print('img feat ' , img_features.size())
 
-        mask = self.encoder.get_adj_matrix_noself_expanded(verbs, self.mlp_hidden)
+        context_mask = self.encoder.get_adj_matrix_noself_expanded(verbs, self.mlp_hidden)
+        adj = self.encoder.get_adj_matrix(verbs)
         if self.gpu_mode >= 0:
-            mask = mask.to(torch.device('cuda'))
+            context_mask = context_mask.to(torch.device('cuda'))
+            adj = adj.to(torch.device('cuda'))
 
-        role_label_pred = self.role_labeller(img_features, role_verb_embd, mask)
+        role_label_pred = self.role_labeller(img_features, role_verb_embd, context_mask, adj)
 
         role_label_pred = role_label_pred.contiguous().view(batch_size, -1, self.vocab_size)
 
@@ -313,6 +356,7 @@ class E2ENetwork(nn.Module):
 
         #verb pred
         verb_pred = self.verb(conv)
+        role_img = self.role_img(conv)
 
         sorted_idx = torch.sort(verb_pred, 1, True)[1]
         #print('sorted ', sorted_idx.size())
@@ -343,16 +387,18 @@ class E2ENetwork(nn.Module):
             role_verb_embd = verb_embed_expand * role_embed_reshaped
             role_verb_embd = role_verb_embd.transpose(0,1)
             role_verb_embd = role_verb_embd.contiguous().view(-1, self.embed_hidden)
-            img_features = img_features.unsqueeze(0)
-            img_features = img_features.expand(self.max_role_count, batch_size, n_channel, conv_h, conv_w)
+            img_features = role_img.expand(self.max_role_count, role_img.size(0), role_img.size(1))
             img_features = img_features.transpose(0,1)
-            img_features = img_features.contiguous().view(-1, n_channel, conv_h, conv_w)
+            img_features = img_features.contiguous().view(-1, self.mlp_hidden)
+            #print('img feat ' , img_features.size())
 
-            mask = self.encoder.get_adj_matrix_noself_expanded(topk_verb, self.mlp_hidden)
+            context_mask = self.encoder.get_adj_matrix_noself_expanded(topk_verb, self.mlp_hidden)
+            adj = self.encoder.get_adj_matrix(topk_verb)
             if self.gpu_mode >= 0:
-                mask = mask.to(torch.device('cuda'))
+                context_mask = context_mask.to(torch.device('cuda'))
+                adj = adj.to(torch.device('cuda'))
 
-            role_label_pred = self.role_labeller(img_features, role_verb_embd, mask)
+            role_label_pred = self.role_labeller(img_features, role_verb_embd, context_mask, adj)
 
             role_label_pred = role_label_pred.contiguous().view(batch_size, -1, self.vocab_size)
 
