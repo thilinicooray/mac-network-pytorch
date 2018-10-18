@@ -58,7 +58,7 @@ class WriteUnit(nn.Module):
         #self.concat = linear(dim * 2, dim)
         self.max_role = max_role
         self.dim = dim
-        self.n_concat = dim * 3
+        self.n_concat = dim * 2
         self.g = nn.Sequential(
             nn.Linear(self.n_concat, dim),
             nn.ReLU(),
@@ -80,28 +80,26 @@ class WriteUnit(nn.Module):
 
 
     def forward(self, memories, retrieved, controls):
+        prev_mem = memories[-1]
         '''prev_mem = memories[-1]
         concat = self.concat(torch.cat([retrieved, prev_mem], 1))
         next_mem = concat'''
 
         batch_size = retrieved.size(0) // self.max_role
 
-        control = controls[-1]
-        control = control.unsqueeze(1).expand(control.size(0),self.max_role,control.size(-1))
-
         rt_org = retrieved
         retrieved_ind = rt_org.unsqueeze(1).expand(rt_org.size(0),self.max_role,rt_org.size(-1))
 
         retrieved = rt_org.view(batch_size, self.max_role, -1)
-        retrieved = retrieved.unsqueeze(1).expand(retrieved.size(0),self.max_role,control.size(1),control.size(-1))
-        retrieved = retrieved.contiguous().view(-1,control.size(1),control.size(-1))
+        retrieved = retrieved.unsqueeze(1).expand(retrieved.size(0),self.max_role,retrieved.size(1),retrieved.size(-1))
+        retrieved = retrieved.contiguous().view(-1,retrieved.size(1),retrieved.size(-1))
 
-        concat_vec = torch.cat([retrieved_ind, retrieved, control], 2).view(-1, self.n_concat)
+        concat_vec = torch.cat([retrieved_ind, retrieved], 2).view(-1, self.n_concat)
         #print('no issue after cat')
         g = self.g(concat_vec)
         g = g.view(-1, self.max_role, self.dim).sum(1).squeeze()
 
-        next_mem = g
+        next_mem = torch.tanh(self.concat(torch.cat([g, prev_mem], 1)))
 
         return next_mem
 
@@ -173,7 +171,8 @@ class MACNetwork(nn.Module):
 
 
         self.classifier = nn.Sequential(linear(dim * 2, dim),
-                                        nn.ELU(),
+                                        nn.ReLU(),
+                                        nn.Dropout(),
                                         linear(dim, classes))
 
         self.max_step = max_step
@@ -265,7 +264,7 @@ class E2ENetwork(nn.Module):
         self.role_lookup = nn.Embedding(self.n_roles+1, embed_hidden, padding_idx=self.n_roles)
         self.verb_lookup = nn.Embedding(self.n_verbs, embed_hidden)
 
-        self.role_labeller = MACNetwork(mlp_hidden, self.max_role_count, max_step=4, self_attention=False, memory_gate=False,
+        self.role_labeller = MACNetwork(mlp_hidden, self.max_role_count, max_step=3, self_attention=False, memory_gate=False,
                                         classes=self.vocab_size)
 
         self.conv_hidden = self.conv.base_size()
