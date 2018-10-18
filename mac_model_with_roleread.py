@@ -71,11 +71,11 @@ class ReadUnit(nn.Module):
         detailed_q = torch.cat([mem, control[-1]],1)
         projectedq = self.fullq(detailed_q)
         know_p = know.permute(0, 2, 1)
-        attn = know_p * projectedq.unsqueeze(1)
+        attn = torch.tanh(know_p) * torch.tanh(projectedq.unsqueeze(1))
         attn = self.attn(attn).squeeze(2)
         attn = F.softmax(attn, 1).unsqueeze(1)
 
-        read = (attn * know).sum(2)
+        read = torch.tanh((attn * know).sum(2))
 
         return read
 
@@ -84,8 +84,8 @@ class WriteUnit(nn.Module):
     def __init__(self, dim, self_attention=False, memory_gate=False):
         super().__init__()
 
-        #self.concat = linear(dim * 2, dim)
-        self.rnn = nn.GRUCell(dim, dim)
+        self.concat = linear(dim * 2, dim)
+        #self.rnn = nn.GRUCell(dim, dim)
 
         if self_attention:
             self.attn = linear(dim, 1)
@@ -100,6 +100,7 @@ class WriteUnit(nn.Module):
 
     def forward(self, memories, retrieved, controls, mask):
         prev_mem = memories[-1]
+        '''prev_mem = memories[-1]
         #concat = self.concat(torch.cat([retrieved, prev_mem], 1))
 
         #join with its dependent role memories
@@ -107,7 +108,9 @@ class WriteUnit(nn.Module):
         retrieved = retrieved.view(-1,mask.size(1) ,self.dim)
         updated_retreived, att = attention(retrieved, retrieved, retrieved, mask)
         updated_retreived = updated_retreived.view(-1, self.dim)
-        next_mem = self.rnn(updated_retreived, prev_mem)
+        next_mem = self.rnn(updated_retreived, prev_mem)'''
+        concat = self.concat(torch.cat([retrieved, prev_mem], 1))
+        next_mem = concat
 
         if self.self_attention:
             controls_cat = torch.stack(controls[:-1], 2)
@@ -136,10 +139,9 @@ class MACUnit(nn.Module):
         #self.control = ControlUnit(dim, max_step)
         self.read = ReadUnit(dim)
         self.write = WriteUnit(dim, self_attention, memory_gate)
-        self.init_img = linear(dim*49, dim)
 
-        #self.mem_0 = nn.Parameter(torch.zeros(1, dim))
-        #self.control_0 = nn.Parameter(torch.zeros(1, dim))
+        self.mem_0 = nn.Parameter(torch.zeros(1, dim))
+        self.control_0 = nn.Parameter(torch.zeros(1, dim))
 
         self.dim = dim
         self.max_step = max_step
@@ -154,30 +156,29 @@ class MACUnit(nn.Module):
     def forward(self, question, knowledge, context_mask, adj):
         b_size = question.size(0)
 
-        #control = self.control_0.expand(b_size, self.dim)
-        #memory = self.mem_0.expand(b_size, self.dim)
+        control = self.control_0.expand(b_size, self.dim)
+        memory = self.mem_0.expand(b_size, self.dim)
 
-        '''if self.training:
+        if self.training:
             control_mask = self.get_mask(control, self.dropout)
             memory_mask = self.get_mask(memory, self.dropout)
             control = control * control_mask
-            memory = memory * memory_mask'''
+            memory = memory * memory_mask
 
         controls = [question]
-        memory = self.init_img(knowledge.view(b_size,-1))*question
         memories = [memory]
 
         for i in range(self.max_step):
             #control = self.control(i, question, control)
-            #control = question
-            '''if self.training:
-                control = control * control_mask'''
-            #controls.append(control)
+            control = question
+            if self.training:
+                control = control * control_mask
+            controls.append(control)
 
             read = self.read(memories, knowledge, controls, context_mask)
             memory = self.write(memories, read, controls, adj)
-            '''if self.training:
-                memory = memory * memory_mask'''
+            if self.training:
+                memory = memory * memory_mask
             memories.append(memory)
 
         return memory
