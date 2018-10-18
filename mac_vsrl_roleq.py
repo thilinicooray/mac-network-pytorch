@@ -327,8 +327,10 @@ class E2ENetwork(nn.Module):
         role_verb_embd = verb_embed_expand * role_embed_reshaped
         role_verb_embd = role_verb_embd.transpose(0,1)
         role_verb_embd = role_verb_embd.contiguous().view(-1, self.embed_hidden)'''
+        print('img features before :',img_features[1][400][2] )
         img_features = img_features.repeat(1,self.max_role_count, 1, 1)
         img_features = img_features.view(-1, n_channel, conv_h, conv_w)
+        print('img features after :',img_features[6][400][2],  img_features[8][400][2], img_features[9][400][2])
         role_q = role_q.view(-1, role_q.size(-1))
         q_len = q_len.view(-1, 1)
 

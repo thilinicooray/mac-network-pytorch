@@ -14,7 +14,7 @@ def linear(in_dim, out_dim, bias=True):
 
     return lin
 
-class ControlUnit(nn.Module):
+'''class ControlUnit(nn.Module):
     def __init__(self, dim, max_step):
         super().__init__()
 
@@ -26,7 +26,7 @@ class ControlUnit(nn.Module):
         #most simple : just pass the input
 
         next_control = question
-        return next_control
+        return next_control'''
 
 
 class ReadUnit(nn.Module):
@@ -96,7 +96,7 @@ class MACUnit(nn.Module):
                  dropout=0.15):
         super().__init__()
 
-        self.control = ControlUnit(dim, max_step)
+        #self.control = ControlUnit(dim, max_step)
         self.read = ReadUnit(dim)
         self.write = WriteUnit(dim, self_attention, memory_gate)
 
@@ -129,7 +129,8 @@ class MACUnit(nn.Module):
         memories = [memory]
 
         for i in range(self.max_step):
-            control = self.control(i, question, control)
+            #control = self.control(i, question, control)
+            control = question
             if self.training:
                 control = control * control_mask
             controls.append(control)
@@ -277,10 +278,8 @@ class E2ENetwork(nn.Module):
         role_verb_embd = verb_embed_expand * role_embed_reshaped
         role_verb_embd = role_verb_embd.transpose(0,1)
         role_verb_embd = role_verb_embd.contiguous().view(-1, self.embed_hidden)
-        img_features = img_features.unsqueeze(0)
-        img_features = img_features.expand(self.max_role_count, batch_size, n_channel, conv_h, conv_w)
-        img_features = img_features.transpose(0,1)
-        img_features = img_features.contiguous().view(-1, n_channel, conv_h, conv_w)
+        img_features = img_features.repeat(1,self.max_role_count, 1, 1)
+        img_features = img_features.view(-1, n_channel, conv_h, conv_w)
 
         role_label_pred = self.role_labeller(img_features, role_verb_embd)
 
@@ -327,10 +326,8 @@ class E2ENetwork(nn.Module):
             role_verb_embd = verb_embed_expand * role_embed_reshaped
             role_verb_embd = role_verb_embd.transpose(0,1)
             role_verb_embd = role_verb_embd.contiguous().view(-1, self.embed_hidden)
-            img_features = img_features.unsqueeze(0)
-            img_features = img_features.expand(self.max_role_count, batch_size, n_channel, conv_h, conv_w)
-            img_features = img_features.transpose(0,1)
-            img_features = img_features.contiguous().view(-1, n_channel, conv_h, conv_w)
+            img_features = img_features.repeat(1,self.max_role_count, 1, 1)
+            img_features = img_features.view(-1, n_channel, conv_h, conv_w)
 
             role_label_pred = self.role_labeller(img_features, role_verb_embd)
 

@@ -261,8 +261,8 @@ def main():
     n_epoch = 500
     n_worker = 3
 
-    dataset_folder = 'imSitu'
-    imgset_folder = 'resized_256'
+    dataset_folder = 'imsitu_data'
+    imgset_folder = 'of500_images_resized'
 
     print('model spec :, mac net v nlp role q. steps 5 with verb')
 
@@ -277,7 +277,7 @@ def main():
 
     train_set = imsitu_loader_roleq(imgset_folder, train_set, encoder, model.train_preprocess())
 
-    train_loader = torch.utils.data.DataLoader(train_set, batch_size=64, shuffle=True, num_workers=n_worker)
+    train_loader = torch.utils.data.DataLoader(train_set, batch_size=4, shuffle=True, num_workers=n_worker)
 
     dev_set = json.load(open(dataset_folder +"/dev.json"))
     dev_set = imsitu_loader_roleq(imgset_folder, dev_set, encoder, model.dev_preprocess())
