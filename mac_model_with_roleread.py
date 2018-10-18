@@ -51,7 +51,6 @@ class ReadUnit(nn.Module):
 
         self.mem = linear(dim*2, dim)
         self.fullq = linear(dim*2, dim)
-        self.concat = linear(dim * 2, dim)
         self.attn = linear(dim, 1)
 
     def forward(self, memory, know, control, mask):
@@ -71,16 +70,12 @@ class ReadUnit(nn.Module):
         #trying to model, if a=man, b=bat, what's c?
         detailed_q = torch.cat([mem, control[-1]],1)
         projectedq = self.fullq(detailed_q)
-
-        #print('know, proj q', know.size(),projectedq.size())
-        '''concat = self.concat(torch.cat([mem * know, know], 1) \
-                             .permute(0, 2, 1))'''
-        attn = know * projectedq
-        '''attn = self.attn(attn).squeeze(2)
+        know_p = know.permute(0, 2, 1)
+        attn = know_p * projectedq.unsqueeze(1)
+        attn = self.attn(attn).squeeze(2)
         attn = F.softmax(attn, 1).unsqueeze(1)
 
-        read = (attn * know).sum(2)'''
-        read = attn
+        read = (attn * know).sum(2)
 
         return read
 
@@ -213,8 +208,8 @@ class MACNetwork(nn.Module):
     def forward(self, image, question, context_mask, adj, dropout=0.15):
         b_size = question.size(0)
         transformed_q = self.q_trasform(question)
-        #img = image.view(b_size, self.dim, -1)
-        memory = self.mac(transformed_q, image, context_mask, adj)
+        img = image.view(b_size, self.dim, -1)
+        memory = self.mac(transformed_q, img, context_mask, adj)
 
         out = torch.cat([memory, transformed_q], 1)
         out = self.classifier(out)
@@ -288,12 +283,7 @@ class E2ENetwork(nn.Module):
             linear(mlp_hidden*2, self.n_verbs),
         )
 
-        self.role_img = nn.Sequential(
-            linear(mlp_hidden*8, mlp_hidden),
-            nn.BatchNorm1d(mlp_hidden),
-            nn.ReLU(),
-            nn.Dropout(0.5),
-        )
+
         #todo: init embedding
         self.role_lookup = nn.Embedding(self.n_roles+1, embed_hidden, padding_idx=self.n_roles)
         self.verb_lookup = nn.Embedding(self.n_verbs, embed_hidden)
@@ -319,7 +309,6 @@ class E2ENetwork(nn.Module):
 
         #verb pred
         verb_pred = self.verb(conv)
-        role_img = self.role_img(conv)
 
         verb_embd = self.verb_lookup(verbs)
         role_embd = self.role_lookup(roles)
@@ -330,9 +319,8 @@ class E2ENetwork(nn.Module):
         role_verb_embd = role_verb_embd.transpose(0,1)
         role_verb_embd = role_verb_embd.contiguous().view(-1, self.embed_hidden)
         #print('role img :', role_img.size())
-        img_features = role_img.expand(self.max_role_count, role_img.size(0), role_img.size(1))
-        img_features = img_features.transpose(0,1)
-        img_features = img_features.contiguous().view(-1, self.mlp_hidden)
+        img_features = img_features.repeat(1,self.max_role_count, 1, 1)
+        img_features = img_features.view(batch_size, self.max_role_count, self.mlp_hidden, -1)
         #print('img feat ' , img_features.size())
 
         context_mask = self.encoder.get_adj_matrix_noself_expanded(verbs, self.mlp_hidden)
@@ -356,7 +344,7 @@ class E2ENetwork(nn.Module):
 
         #verb pred
         verb_pred = self.verb(conv)
-        role_img = self.role_img(conv)
+        #role_img = self.role_img(conv)
 
         sorted_idx = torch.sort(verb_pred, 1, True)[1]
         #print('sorted ', sorted_idx.size())
@@ -387,9 +375,8 @@ class E2ENetwork(nn.Module):
             role_verb_embd = verb_embed_expand * role_embed_reshaped
             role_verb_embd = role_verb_embd.transpose(0,1)
             role_verb_embd = role_verb_embd.contiguous().view(-1, self.embed_hidden)
-            img_features = role_img.expand(self.max_role_count, role_img.size(0), role_img.size(1))
-            img_features = img_features.transpose(0,1)
-            img_features = img_features.contiguous().view(-1, self.mlp_hidden)
+            img_features = img_features.repeat(1,self.max_role_count, 1, 1)
+            img_features = img_features.view(batch_size, self.max_role_count, self.mlp_hidden, -1)
             #print('img feat ' , img_features.size())
 
             context_mask = self.encoder.get_adj_matrix_noself_expanded(topk_verb, self.mlp_hidden)
