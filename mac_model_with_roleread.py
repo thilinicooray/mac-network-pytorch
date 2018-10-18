@@ -57,7 +57,7 @@ class ReadUnit(nn.Module):
         #print('memsize :', memory[-1].size(), know.size())
         #concat or multiply? -> role_label
         role_label = torch.cat([control[-1],memory[-1]],1)
-        context = self.mem(role_label)
+        context = F.tanh(self.mem(role_label))
         context = context.view(-1, mask.size(1), context.size(-1))
         context_updated = context.unsqueeze(0)
         context_updated = context_updated.expand(mask.size(1), context.size(0), context.size(1), context.size(2))
@@ -136,9 +136,10 @@ class MACUnit(nn.Module):
         #self.control = ControlUnit(dim, max_step)
         self.read = ReadUnit(dim)
         self.write = WriteUnit(dim, self_attention, memory_gate)
+        self.init_img = linear(dim*49, dim)
 
-        self.mem_0 = nn.Parameter(torch.zeros(1, dim))
-        self.control_0 = nn.Parameter(torch.zeros(1, dim))
+        #self.mem_0 = nn.Parameter(torch.zeros(1, dim))
+        #self.control_0 = nn.Parameter(torch.zeros(1, dim))
 
         self.dim = dim
         self.max_step = max_step
@@ -153,29 +154,30 @@ class MACUnit(nn.Module):
     def forward(self, question, knowledge, context_mask, adj):
         b_size = question.size(0)
 
-        control = self.control_0.expand(b_size, self.dim)
-        memory = self.mem_0.expand(b_size, self.dim)
+        #control = self.control_0.expand(b_size, self.dim)
+        #memory = self.mem_0.expand(b_size, self.dim)
 
-        if self.training:
+        '''if self.training:
             control_mask = self.get_mask(control, self.dropout)
             memory_mask = self.get_mask(memory, self.dropout)
             control = control * control_mask
-            memory = memory * memory_mask
+            memory = memory * memory_mask'''
 
-        controls = [control]
+        controls = [question]
+        memory = self.init_img(knowledge.view(b_size,-1))*question
         memories = [memory]
 
         for i in range(self.max_step):
             #control = self.control(i, question, control)
-            control = question
-            if self.training:
-                control = control * control_mask
-            controls.append(control)
+            #control = question
+            '''if self.training:
+                control = control * control_mask'''
+            #controls.append(control)
 
             read = self.read(memories, knowledge, controls, context_mask)
             memory = self.write(memories, read, controls, adj)
-            if self.training:
-                memory = memory * memory_mask
+            '''if self.training:
+                memory = memory * memory_mask'''
             memories.append(memory)
 
         return memory
