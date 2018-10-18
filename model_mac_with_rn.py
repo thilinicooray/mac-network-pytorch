@@ -55,7 +55,7 @@ class WriteUnit(nn.Module):
     def __init__(self, dim, max_role, self_attention=False, memory_gate=False):
         super().__init__()
 
-        #self.concat = linear(dim * 2, dim)
+        self.concat = linear(dim * 2, dim)
         self.max_role = max_role
         self.dim = dim
         self.n_concat = dim * 2
