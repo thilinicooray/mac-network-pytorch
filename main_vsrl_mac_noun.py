@@ -137,8 +137,8 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 top1_avg = top1.get_average_results_nouns()
                 top5_avg = top5.get_average_results_nouns()
 
-                avg_score = top1_avg["verb"] + top1_avg["value"] + top1_avg["value-all"] + top5_avg["verb"] + \
-                            top5_avg["value"] + top5_avg["value-all"]
+                avg_score = top1_a["verb"] + top1_a["value"] + top1_a["value-all"] + top5_a["verb"] + \
+                            top5_a["value"] + top5_a["value-all"] + top5_a["value*"] + top5_a["value-all*"]
                 avg_score /= 8
 
                 print ('Dev {} average :{:.2f} {} {}'.format(total_steps-1, avg_score*100,
@@ -210,7 +210,7 @@ def eval(model, dev_loader, encoder, gpu_mode, write_to_file = True):
                 roles = torch.autograd.Variable(roles)
                 labels = torch.autograd.Variable(labels)
 
-            role_predict = role_predict = model(img, verb, roles)
+            role_predict = model(img, verb, roles)
             '''loss = model.calculate_eval_loss(verb_predict, verb, role_predict, labels)
             val_loss += loss.item()'''
             top1.add_point_noun(verb, role_predict, labels)

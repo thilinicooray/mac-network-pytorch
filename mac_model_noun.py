@@ -181,9 +181,9 @@ class vgg16_modified(nn.Module):
         super(vgg16_modified, self).__init__()
         vgg = tv.models.vgg16(pretrained=True)
         self.vgg_features = vgg.features
-        self.out_features = vgg.classifier[6].in_features
+        '''self.out_features = vgg.classifier[6].in_features
         features = list(vgg.classifier.children())[:-1] # Remove last layer
-        self.vgg_classifier = nn.Sequential(*features) # Replace the model classifier
+        self.vgg_classifier = nn.Sequential(*features) # Replace the model classifier'''
         #print(self.vgg_classifier)
 
     def rep_size(self):
@@ -195,9 +195,8 @@ class vgg16_modified(nn.Module):
     def forward(self,x):
         #return self.dropout2(self.relu2(self.lin2(self.dropout1(self.relu1(self.lin1(self.vgg_features(x).view(-1, 512*7*7)))))))
         features = self.vgg_features(x)
-        y =  self.vgg_classifier(features.view(-1, 512*7*7))
         #print('y size :',  y.size())
-        return features, y
+        return features
 
 
 class E2ENetwork(nn.Module):
@@ -256,7 +255,7 @@ class E2ENetwork(nn.Module):
 
     def forward(self, image, verbs, roles):
 
-        img_features, conv = self.conv(image)
+        img_features = self.conv(image)
         batch_size, n_channel, conv_h, conv_w = img_features.size()
 
         #verb pred
@@ -281,7 +280,7 @@ class E2ENetwork(nn.Module):
 
     def forward_eval5(self, image, topk = 5):
 
-        img_features_org, conv = self.conv(image)
+        img_features_org = self.conv(image)
         batch_size, n_channel, conv_h, conv_w = img_features_org.size()
         beam_role_idx = None
         top1role_label_pred = None
