@@ -198,13 +198,13 @@ class GAT(nn.Module):
         for i, attention in enumerate(self.attentions):
             self.add_module('attention_{}'.format(i), attention)
 
-        self.out_att = GraphAttentionLayer(nhid * nheads, nclass, dropout=dropout, alpha=alpha, concat=False)
+        #self.out_att = GraphAttentionLayer(nhid * nheads, nclass, dropout=dropout, alpha=alpha, concat=False)
 
     def forward(self, x, adj):
         x = F.dropout(x, self.dropout, training=self.training)
         x = torch.cat([att(x, adj) for att in self.attentions], dim=2)
         x = F.dropout(x, self.dropout, training=self.training)
-        x = F.elu(self.out_att(x, adj))
+        #x = F.elu(self.out_att(x, adj))
         return x
 
 
@@ -218,7 +218,7 @@ class MACNetwork(nn.Module):
         self.mac = MACUnit(dim, max_step,
                            self_attention, memory_gate, dropout)
 
-        self.classifier = GAT(nfeat=dim*2,
+        self.gat = GAT(nfeat=dim*2,
                     nhid=dim,
                     nclass=classes,
                     dropout=0.5,
@@ -226,7 +226,10 @@ class MACNetwork(nn.Module):
                     alpha=0.2)
 
 
-        #self.classifier = nn.Sequential(linear(dim, classes))
+        self.classifier = nn.Sequential(linear(dim*3, dim),
+                                        nn.ELU(),
+                                        nn.Dropout(0.5),
+                                        linear(dim, classes))
 
         self.max_step = max_step
         self.dim = dim
@@ -244,7 +247,8 @@ class MACNetwork(nn.Module):
         memory = self.mac(transformed_q, img)
 
         out = torch.cat([memory, transformed_q], 1).view(original_b, 6, -1)
-        out = self.classifier(out, adj)
+        out = self.gat(out, adj)
+        out = self.self.classifier(out)
         return out
 
 class vgg16_modified(nn.Module):
