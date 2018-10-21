@@ -183,6 +183,7 @@ class MACNetwork(nn.Module):
         lstm_out = lstm_out.contiguous().view(-1, self.dim*2)
         out = torch.cat([lstm_out, transformed_q], 1)
         out = self.classifier(out)
+        print('out :', out.size())
         return out
 
 class vgg16_modified(nn.Module):
