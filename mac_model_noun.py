@@ -222,11 +222,11 @@ class MACNetwork(nn.Module):
                     nhid=dim,
                     nclass=classes,
                     dropout=0.5,
-                    nheads=3,
+                    nheads=8,
                     alpha=0.2)
 
 
-        self.classifier = nn.Sequential(linear(dim*3, dim),
+        self.classifier = nn.Sequential(linear(dim*8, dim),
                                         nn.ELU(),
                                         nn.Dropout(0.5),
                                         linear(dim, classes))
