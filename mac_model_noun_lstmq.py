@@ -142,71 +142,6 @@ class MACUnit(nn.Module):
 
         return memory
 
-class GraphAttentionLayer(nn.Module):
-    """
-    Simple GAT layer, similar to https://arxiv.org/abs/1710.10903
-    """
-
-    def __init__(self, in_features, out_features, dropout, alpha, concat=True):
-        super(GraphAttentionLayer, self).__init__()
-        self.dropout = dropout
-        self.in_features = in_features
-        self.out_features = out_features
-        self.alpha = alpha
-        self.concat = concat
-
-        self.W = nn.Parameter(torch.zeros(size=(in_features, out_features)))
-        nn.init.xavier_uniform_(self.W.data, gain=1.414)
-        #self.a = nn.Parameter(torch.zeros(size=(2*out_features, 1)))
-        self.a1 = nn.Parameter(torch.zeros(size=(out_features, 1)))
-        self.a2 = nn.Parameter(torch.zeros(size=(out_features, 1)))
-        nn.init.xavier_uniform_(self.a1.data, gain=1.414)
-        nn.init.xavier_uniform_(self.a2.data, gain=1.414)
-
-        self.leakyrelu = nn.LeakyReLU(self.alpha)
-
-    def forward(self, input, adj):
-        batch_size = input.size(0)
-        #print('input size :', input.size(), adj.size(), self.W.size())
-        h = torch.bmm(input, self.W.expand(batch_size, self.in_features, self.out_features))
-
-        f_1 = torch.bmm(h, self.a1.expand(batch_size, self.out_features, 1))
-        f_2 = torch.bmm(h, self.a2.expand(batch_size, self.out_features, 1))
-        e = self.leakyrelu(f_1 + f_2.transpose(2,1))
-
-        zero_vec = -9e15*torch.ones_like(e)
-        attention = torch.where(adj > 0, e, zero_vec)
-        attention = F.softmax(attention, dim=1)
-        attention = F.dropout(attention, self.dropout, training=self.training)
-        h_prime = torch.bmm(attention, h)
-
-        if self.concat:
-            return F.elu(h_prime)
-        else:
-            return h_prime
-
-    def __repr__(self):
-        return self.__class__.__name__ + ' (' + str(self.in_features) + ' -> ' + str(self.out_features) + ')'
-
-class GAT(nn.Module):
-    def __init__(self, nfeat, nhid, nclass, dropout, alpha, nheads):
-        """Dense version of GAT."""
-        super(GAT, self).__init__()
-        self.dropout = dropout
-
-        self.attentions = [GraphAttentionLayer(nfeat, nhid, dropout=dropout, alpha=alpha, concat=True) for _ in range(nheads)]
-        for i, attention in enumerate(self.attentions):
-            self.add_module('attention_{}'.format(i), attention)
-
-        self.out_att = GraphAttentionLayer(nhid * nheads, nclass, dropout=dropout, alpha=alpha, concat=False)
-
-    def forward(self, x, adj):
-        x = F.dropout(x, self.dropout, training=self.training)
-        x = torch.cat([att(x, adj) for att in self.attentions], dim=2)
-        x = F.dropout(x, self.dropout, training=self.training)
-        x = F.elu(self.out_att(x, adj))
-        return x
-
 
 class MACNetwork(nn.Module):
     def __init__(self, dim,
@@ -214,37 +149,31 @@ class MACNetwork(nn.Module):
                  classes=28, dropout=0.15):
         super().__init__()
 
-        self.q_trasform = linear(300, dim)
+        #self.q_trasform = linear(300, dim)
         self.mac = MACUnit(dim, max_step,
                            self_attention, memory_gate, dropout)
 
-        self.classifier = GAT(nfeat=dim*2,
-                    nhid=dim,
-                    nclass=classes,
-                    dropout=0.5,
-                    nheads=3,
-                    alpha=0.2)
 
-
-        #self.classifier = nn.Sequential(linear(dim, classes))
+        self.classifier = nn.Sequential(linear(dim * 2, dim),
+                                        nn.ELU(),
+                                        linear(dim, classes))
 
         self.max_step = max_step
         self.dim = dim
 
-        #self.reset()
+        self.reset()
 
     def reset(self):
         kaiming_uniform_(self.classifier[0].weight)
 
-    def forward(self, image, question, adj, dropout=0.15):
+    def forward(self, image, question, dropout=0.15):
         b_size = question.size(0)
-        original_b = b_size//6
-        transformed_q = self.q_trasform(question)
+        #transformed_q = self.q_trasform(question)
         img = image.view(b_size, self.dim, -1)
-        memory = self.mac(transformed_q, img)
+        memory = self.mac(question, img)
 
-        out = torch.cat([memory, transformed_q], 1).view(original_b, 6, -1)
-        out = self.classifier(out, adj)
+        out = torch.cat([memory, question], 1)
+        out = self.classifier(out)
         return out
 
 class vgg16_modified(nn.Module):
@@ -310,6 +239,8 @@ class E2ENetwork(nn.Module):
         self.role_lookup = nn.Embedding(self.n_roles+1, embed_hidden, padding_idx=self.n_roles)
         self.verb_lookup = nn.Embedding(self.n_verbs, embed_hidden)
 
+        self.question_maker = nn.LSTM(embed_hidden, mlp_hidden, batch_first=True)
+
         self.role_labeller = MACNetwork(mlp_hidden, max_step=3, self_attention=False, memory_gate=False,
                                         classes=self.vocab_size)
 
@@ -335,21 +266,19 @@ class E2ENetwork(nn.Module):
         verb_embd = self.verb_lookup(verbs)
         role_embd = self.role_lookup(roles)
 
-        role_embed_reshaped = role_embd.transpose(0,1)
+        #role_embed_reshaped = role_embd.transpose(0,1)
         verb_embed_expand = verb_embd.expand(self.max_role_count, verb_embd.size(0), verb_embd.size(1))
-        role_verb_embd = verb_embed_expand * role_embed_reshaped
-        role_verb_embd = role_verb_embd.transpose(0,1)
-        role_verb_embd = role_verb_embd.contiguous().view(-1, self.embed_hidden)
+        verb_embed_expand = verb_embed_expand.transpose(0,1)
+        verb_embed_expand = verb_embed_expand.unsqueeze(2)
+        role_embd = role_embd.unsqueeze(2)
+        lstm_input = torch.cat([verb_embed_expand, role_embd], 2).view(-1, 2, self.embed_hidden)
+        lstm_out, (h, _) = self.question_maker(lstm_input)
+        h = h.permute(1, 0, 2).squeeze().contiguous().view(batch_size * self.max_role_count, -1)
         img_features = img_features.repeat(1,self.max_role_count, 1, 1)
         img_features = img_features.view(-1, n_channel, conv_h, conv_w)
+        role_label_pred = self.role_labeller(img_features, h)
 
-        context_mask = self.encoder.get_adj_matrix_noself(verbs)
-        if self.gpu_mode >= 0:
-            context_mask = context_mask.to(torch.device('cuda'))
-
-        role_label_pred = self.role_labeller(img_features, role_verb_embd, context_mask)
-
-        #role_label_pred = role_label_pred.contiguous().view(batch_size, -1, self.vocab_size)
+        role_label_pred = role_label_pred.contiguous().view(batch_size, -1, self.vocab_size)
 
         return role_label_pred
 
