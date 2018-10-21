@@ -176,7 +176,7 @@ class GraphAttentionLayer(nn.Module):
 
         zero_vec = -9e15*torch.ones_like(e)
         attention = torch.where(adj > 0, e, zero_vec)
-        attention = F.softmax(attention, dim=1)
+        attention = F.softmax(attention, dim=2)
         attention = F.dropout(attention, self.dropout, training=self.training)
         h_prime = torch.bmm(attention, h)
 
@@ -203,7 +203,7 @@ class GAT(nn.Module):
     def forward(self, x, adj):
         x = F.dropout(x, self.dropout, training=self.training)
         x = torch.cat([att(x, adj) for att in self.attentions], dim=2)
-        x = F.dropout(x, self.dropout, training=self.training)
+        x = F.elu(F.dropout(x, self.dropout, training=self.training))
         #x = F.elu(self.out_att(x, adj))
         return x
 
