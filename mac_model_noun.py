@@ -142,70 +142,6 @@ class MACUnit(nn.Module):
 
         return memory
 
-class GraphAttentionLayer(nn.Module):
-    """
-    Simple GAT layer, similar to https://arxiv.org/abs/1710.10903
-    """
-
-    def __init__(self, in_features, out_features, dropout, alpha, concat=True):
-        super(GraphAttentionLayer, self).__init__()
-        self.dropout = dropout
-        self.in_features = in_features
-        self.out_features = out_features
-        self.alpha = alpha
-        self.concat = concat
-
-        self.W = nn.Parameter(torch.zeros(size=(in_features, out_features)))
-        nn.init.xavier_uniform_(self.W.data, gain=1.414)
-        #self.a = nn.Parameter(torch.zeros(size=(2*out_features, 1)))
-        self.a1 = nn.Parameter(torch.zeros(size=(out_features, 1)))
-        self.a2 = nn.Parameter(torch.zeros(size=(out_features, 1)))
-        nn.init.xavier_uniform_(self.a1.data, gain=1.414)
-        nn.init.xavier_uniform_(self.a2.data, gain=1.414)
-
-        self.leakyrelu = nn.LeakyReLU(self.alpha)
-
-    def forward(self, input, adj):
-        batch_size = input.size(0)
-        #print('input size :', input.size(), adj.size(), self.W.size())
-        h = torch.bmm(input, self.W.expand(batch_size, self.in_features, self.out_features))
-
-        f_1 = torch.bmm(h, self.a1.expand(batch_size, self.out_features, 1))
-        f_2 = torch.bmm(h, self.a2.expand(batch_size, self.out_features, 1))
-        e = self.leakyrelu(f_1 + f_2.transpose(2,1))
-
-        zero_vec = -9e15*torch.ones_like(e)
-        attention = torch.where(adj > 0, e, zero_vec)
-        attention = F.softmax(attention, dim=2)
-        attention = F.dropout(attention, self.dropout, training=self.training)
-        h_prime = torch.bmm(attention, h)
-
-        if self.concat:
-            return F.elu(h_prime)
-        else:
-            return h_prime
-
-    def __repr__(self):
-        return self.__class__.__name__ + ' (' + str(self.in_features) + ' -> ' + str(self.out_features) + ')'
-
-class GAT(nn.Module):
-    def __init__(self, nfeat, nhid, nclass, dropout, alpha, nheads):
-        """Dense version of GAT."""
-        super(GAT, self).__init__()
-        self.dropout = dropout
-
-        self.attentions = [GraphAttentionLayer(nfeat, nhid, dropout=dropout, alpha=alpha, concat=True) for _ in range(nheads)]
-        for i, attention in enumerate(self.attentions):
-            self.add_module('attention_{}'.format(i), attention)
-
-        #self.out_att = GraphAttentionLayer(nhid * nheads, nclass, dropout=dropout, alpha=alpha, concat=False)
-
-    def forward(self, x, adj):
-        x = F.dropout(x, self.dropout, training=self.training)
-        x = torch.cat([att(x, adj) for att in self.attentions], dim=2)
-        x = F.elu(F.dropout(x, self.dropout, training=self.training))
-        #x = F.elu(self.out_att(x, adj))
-        return x
 
 
 class MACNetwork(nn.Module):
@@ -218,15 +154,10 @@ class MACNetwork(nn.Module):
         self.mac = MACUnit(dim, max_step,
                            self_attention, memory_gate, dropout)
 
-        self.gat = GAT(nfeat=dim*2,
-                    nhid=dim,
-                    nclass=classes,
-                    dropout=0.5,
-                    nheads=8,
-                    alpha=0.2)
+        self.lstm = nn.LSTM(dim, dim, batch_first=True, bidirectional=True)
 
 
-        self.classifier = nn.Sequential(linear(dim*8, dim),
+        self.classifier = nn.Sequential(linear(dim*2, dim),
                                         nn.ELU(),
                                         nn.Dropout(0.5),
                                         linear(dim, classes))
@@ -246,8 +177,11 @@ class MACNetwork(nn.Module):
         img = image.view(b_size, self.dim, -1)
         memory = self.mac(transformed_q, img)
 
-        out = torch.cat([memory, transformed_q], 1).view(original_b, 6, -1)
-        out = self.gat(out, adj)
+
+        out = memory.view(original_b, 6, -1)
+        lstm_out, (h, _) = self.lstm(out)
+        lstm_out = lstm_out.view(-1, self.dim)
+        out = torch.cat([lstm_out, transformed_q], 1)
         out = self.classifier(out)
         return out
 
