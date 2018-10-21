@@ -180,7 +180,7 @@ class MACNetwork(nn.Module):
 
         out = memory.view(original_b, 6, -1)
         lstm_out, (h, _) = self.lstm(out)
-        lstm_out = lstm_out.contiguous().view(-1, self.dim)
+        lstm_out = lstm_out.contiguous().view(-1, self.dim*2)
         out = torch.cat([lstm_out, transformed_q], 1)
         out = self.classifier(out)
         return out
