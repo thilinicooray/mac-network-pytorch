@@ -248,7 +248,7 @@ class MACNetwork(nn.Module):
 
         out = torch.cat([memory, transformed_q], 1).view(original_b, 6, -1)
         out = self.gat(out, adj)
-        out = self.self.classifier(out)
+        out = self.classifier(out)
         return out
 
 class vgg16_modified(nn.Module):
