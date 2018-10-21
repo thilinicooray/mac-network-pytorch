@@ -154,7 +154,7 @@ class MACNetwork(nn.Module):
         self.mac = MACUnit(dim, max_step,
                            self_attention, memory_gate, dropout)
 
-        self.lstm = nn.LSTM(dim, dim, batch_first=True, bidirectional=True)
+        self.lstm = nn.LSTM(dim*2, dim, batch_first=True, bidirectional=True)
 
 
         self.classifier = nn.Sequential(linear(dim*3, dim),
@@ -179,6 +179,8 @@ class MACNetwork(nn.Module):
 
 
         out = memory.view(original_b, 6, -1)
+        q = transformed_q.view(original_b, 6, -1)
+        out = torch.cat([out, q], 2)
         lstm_out, (h, _) = self.lstm(out)
         lstm_out = lstm_out.contiguous().view(-1, self.dim*2)
         #print('lstm out :',lstm_out.size() )
