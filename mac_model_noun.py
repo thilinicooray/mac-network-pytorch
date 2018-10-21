@@ -157,7 +157,7 @@ class MACNetwork(nn.Module):
         self.lstm = nn.LSTM(dim, dim, batch_first=True, bidirectional=True)
 
 
-        self.classifier = nn.Sequential(linear(dim*2, dim),
+        self.classifier = nn.Sequential(linear(dim*3, dim),
                                         nn.ELU(),
                                         nn.Dropout(0.5),
                                         linear(dim, classes))
