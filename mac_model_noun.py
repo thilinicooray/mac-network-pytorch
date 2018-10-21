@@ -181,9 +181,10 @@ class MACNetwork(nn.Module):
         out = memory.view(original_b, 6, -1)
         lstm_out, (h, _) = self.lstm(out)
         lstm_out = lstm_out.contiguous().view(-1, self.dim*2)
+        #print('lstm out :',lstm_out.size() )
         out = torch.cat([lstm_out, transformed_q], 1)
         out = self.classifier(out)
-        print('out :', out.size())
+        #print('out :', out.size())
         return out
 
 class vgg16_modified(nn.Module):
@@ -288,7 +289,7 @@ class E2ENetwork(nn.Module):
 
         role_label_pred = self.role_labeller(img_features, role_verb_embd, context_mask)
 
-        #role_label_pred = role_label_pred.contiguous().view(batch_size, -1, self.vocab_size)
+        role_label_pred = role_label_pred.contiguous().view(batch_size, -1, self.vocab_size)
 
         return role_label_pred
 
