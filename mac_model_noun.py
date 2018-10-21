@@ -347,7 +347,7 @@ class E2ENetwork(nn.Module):
         img_features = img_features.repeat(1,self.max_role_count, 1, 1)
         img_features = img_features.view(-1, n_channel, conv_h, conv_w)
 
-        context_mask = self.encoder.get_adj_matrix_noself(verbs)
+        context_mask = self.encoder.get_adj_matrix(verbs)
         if self.gpu_mode >= 0:
             context_mask = context_mask.to(torch.device('cuda'))
 
