@@ -143,50 +143,37 @@ class MACUnit(nn.Module):
         return memory
 
 
-
 class MACNetwork(nn.Module):
     def __init__(self, dim,
                  max_step=12, self_attention=False, memory_gate=False,
                  classes=28, dropout=0.15):
         super().__init__()
 
-        self.q_trasform = linear(300, dim)
+        #self.q_trasform = linear(300, dim)
         self.mac = MACUnit(dim, max_step,
                            self_attention, memory_gate, dropout)
 
-        self.lstm = nn.LSTM(dim*2, dim, batch_first=True, bidirectional=True)
 
-
-        self.classifier = nn.Sequential(linear(dim*3, dim),
+        self.classifier = nn.Sequential(linear(dim * 2, dim),
                                         nn.ELU(),
-                                        nn.Dropout(0.5),
                                         linear(dim, classes))
 
         self.max_step = max_step
         self.dim = dim
 
-        #self.reset()
+        self.reset()
 
     def reset(self):
         kaiming_uniform_(self.classifier[0].weight)
 
-    def forward(self, image, question, adj, dropout=0.15):
+    def forward(self, image, question, dropout=0.15):
         b_size = question.size(0)
-        original_b = b_size//6
-        transformed_q = self.q_trasform(question)
+        #transformed_q = self.q_trasform(question)
         img = image.view(b_size, self.dim, -1)
-        memory = self.mac(transformed_q, img)
+        memory = self.mac(question, img)
 
-
-        out = memory.view(original_b, 6, -1)
-        q = transformed_q.view(original_b, 6, -1)
-        out = torch.cat([out, q], 2)
-        lstm_out, (h, _) = self.lstm(out)
-        lstm_out = lstm_out.contiguous().view(-1, self.dim*2)
-        #print('lstm out :',lstm_out.size() )
-        out = torch.cat([lstm_out, transformed_q], 1)
+        out = torch.cat([memory, question], 1)
         out = self.classifier(out)
-        #print('out :', out.size())
         return out
 
 class vgg16_modified(nn.Module):
@@ -252,6 +239,8 @@ class E2ENetwork(nn.Module):
         self.role_lookup = nn.Embedding(self.n_roles+1, embed_hidden, padding_idx=self.n_roles)
         self.verb_lookup = nn.Embedding(self.n_verbs, embed_hidden)
 
+        self.question_maker = nn.LSTM(embed_hidden, mlp_hidden, batch_first=True)
+
         self.role_labeller = MACNetwork(mlp_hidden, max_step=3, self_attention=False, memory_gate=False,
                                         classes=self.vocab_size)
 
@@ -277,19 +266,17 @@ class E2ENetwork(nn.Module):
         verb_embd = self.verb_lookup(verbs)
         role_embd = self.role_lookup(roles)
 
-        role_embed_reshaped = role_embd.transpose(0,1)
+        #role_embed_reshaped = role_embd.transpose(0,1)
         verb_embed_expand = verb_embd.expand(self.max_role_count, verb_embd.size(0), verb_embd.size(1))
-        role_verb_embd = verb_embed_expand * role_embed_reshaped
-        role_verb_embd = role_verb_embd.transpose(0,1)
-        role_verb_embd = role_verb_embd.contiguous().view(-1, self.embed_hidden)
+        verb_embed_expand = verb_embed_expand.transpose(0,1)
+        verb_embed_expand = verb_embed_expand.unsqueeze(2)
+        role_embd = role_embd.unsqueeze(2)
+        lstm_input = torch.cat([verb_embed_expand, role_embd], 2).view(-1, 2, self.embed_hidden)
+        lstm_out, (h, _) = self.question_maker(lstm_input)
+        h = h.permute(1, 0, 2).squeeze().contiguous().view(batch_size * self.max_role_count, -1)
         img_features = img_features.repeat(1,self.max_role_count, 1, 1)
         img_features = img_features.view(-1, n_channel, conv_h, conv_w)
-
-        context_mask = self.encoder.get_adj_matrix(verbs)
-        if self.gpu_mode >= 0:
-            context_mask = context_mask.to(torch.device('cuda'))
-
-        role_label_pred = self.role_labeller(img_features, role_verb_embd, context_mask)
+        role_label_pred = self.role_labeller(img_features, h)
 
         role_label_pred = role_label_pred.contiguous().view(batch_size, -1, self.vocab_size)
 
