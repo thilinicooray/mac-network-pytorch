@@ -158,6 +158,7 @@ class imsitu_scorer():
 
         batch_size = gt_verbs.size()[0]
         for i in range(batch_size):
+            imgid = img_id[i]
             gt_verb = gt_verbs[i]
             label_pred = labels_predict[i]
             gt_label = gt_labels[i]
@@ -229,10 +230,10 @@ class imsitu_scorer():
             if all_found:
                 score_card["value-all*"] += 1
                 if self.write_to_file:
-                    self.vall_all_correct[img_id] = pred_situ
+                    self.vall_all_correct[imgid] = pred_situ
             else:
                 if self.write_to_file:
-                    self.value_all_dict[img_id] = pred_situ
+                    self.value_all_dict[imgid] = pred_situ
 
             self.score_cards.append(new_card)
 
