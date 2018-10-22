@@ -350,11 +350,11 @@ def main():
     if args.evaluate:
         top1, top5, val_loss = eval(model, dev_loader, encoder, args.gpuid, write_to_file = True)
 
-        top1_avg = top1.get_average_results()
-        top5_avg = top5.get_average_results()
+        top1_avg = top1.get_average_results_nouns()
+        top5_avg = top5.get_average_results_nouns()
 
         avg_score = top1_avg["verb"] + top1_avg["value"] + top1_avg["value-all"] + top5_avg["verb"] + \
-                    top5_avg["value"] + top5_avg["value-all"]
+                    top5_avg["value"] + top5_avg["value-all"] + top5_avg["value*"] + top5_avg["value-all*"]
         avg_score /= 8
 
         print ('Dev average :{:.2f} {} {}'.format( avg_score*100,
@@ -380,11 +380,11 @@ def main():
     elif args.test:
         top1, top5, val_loss = eval(model, test_loader, encoder, args.gpuid, write_to_file = True)
 
-        top1_avg = top1.get_average_results()
-        top5_avg = top5.get_average_results()
+        top1_avg = top1.get_average_results_nouns()
+        top5_avg = top5.get_average_results_nouns()
 
         avg_score = top1_avg["verb"] + top1_avg["value"] + top1_avg["value-all"] + top5_avg["verb"] + \
-                    top5_avg["value"] + top5_avg["value-all"]
+                    top5_avg["value"] + top5_avg["value-all"] + top5_avg["value*"] + top5_avg["value-all*"]
         avg_score /= 8
 
         print ('Test average :{:.2f} {} {}'.format( avg_score*100,
