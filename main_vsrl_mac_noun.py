@@ -180,7 +180,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
         scheduler.step()
         #break
 
-def eval(model, dev_loader, encoder, gpu_mode, write_to_file = False):
+def eval(model, dev_loader, encoder, gpu_mode, write_to_file = True):
     model.eval()
     val_loss = 0
 
