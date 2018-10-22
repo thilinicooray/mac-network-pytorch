@@ -197,7 +197,7 @@ class imsitu_scorer():
                     gt_label_id = gt_label[r][k]
 
                     #################################
-                    if self.write_to_file and verb_found:
+                    if self.write_to_file:
                         role = gt_role_list[k]
                         gt_label_name = self.encoder.label_list[gt_label_id]
                         pred_label_name = self.encoder.label_list[label_id]
@@ -228,9 +228,11 @@ class imsitu_scorer():
             #all values found
             if all_found:
                 score_card["value-all*"] += 1
-                self.vall_all_correct[img_id] = pred_situ
+                if self.write_to_file:
+                    self.vall_all_correct[img_id] = pred_situ
             else:
-                self.value_all_dict[img_id] = pred_situ
+                if self.write_to_file:
+                    self.value_all_dict[img_id] = pred_situ
 
             self.score_cards.append(new_card)
 
