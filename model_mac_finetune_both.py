@@ -178,7 +178,7 @@ class MACNetwork(nn.Module):
 
 class vgg16_modified_verb(nn.Module):
     def __init__(self):
-        super(vgg16_modified, self).__init__()
+        super(vgg16_modified_verb, self).__init__()
         vgg = tv.models.vgg16(pretrained=True)
         self.vgg_features = vgg.features
         self.out_features = vgg.classifier[6].in_features
