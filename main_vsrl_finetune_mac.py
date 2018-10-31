@@ -326,8 +326,8 @@ def main():
         args.train_all = True
         if len(args.verb_module) == 0 or len(args.noun_module) == 0:
             raise Exception('[pretrained verb or noun module] not specified')
-        utils.load_net(args.verb_module, [model.verb_conv, model.verb], ['conv', 'verb'])
-        utils.load_net(args.noun_module, [model.noun_conv, model.role_lookup, model.verb_lookup, model.role_labeller],
+        utils.load_net(args.verb_module, [model.conv_verb, model.verb], ['conv', 'verb'])
+        utils.load_net(args.noun_module, [model.conv_noun, model.role_lookup, model.verb_lookup, model.role_labeller],
                        ['conv', 'role_lookup', 'verb_lookup', 'role_labeller'])
         optimizer_select = 4
         model_name = 'finetune_both'
