@@ -125,22 +125,22 @@ def likelihood(pred, target, ignore_index=None):
 
 def group_features(net_):
 
-    cnn_features = list(net_.conv.parameters())
-    cnn_feature_len = len(list(net_.conv.parameters()))
-    cnn_noun_features = list(net_.conv_nouns.parameters())
-    cnn_noun_feature_len = len(list(net_.conv_nouns.parameters()))
+    cnn_verb_features = list(net_.conv_verb.parameters())
+    cnn_verb_feature_len = len(list(net_.conv_verb.parameters()))
+    cnn_noun_features = list(net_.conv_noun.parameters())
+    cnn_noun_feature_len = len(list(net_.conv_noun.parameters()))
     verb_features = list(net_.verb.parameters())
     verb_feature_len = len(list(net_.verb.parameters()))
-    role_features = list(net_.parameters())[(cnn_feature_len + cnn_noun_feature_len + verb_feature_len):]
+    role_features = list(net_.parameters())[(cnn_verb_feature_len + cnn_noun_feature_len + verb_feature_len):]
 
     print('Network details :')
-    print('\tcnn features :', cnn_feature_len)
+    print('\tcnn verb features :', cnn_verb_feature_len)
     print('\tcnn noun features :', cnn_noun_feature_len)
     print('\tverb features :', verb_feature_len)
     print('\trole features :', len(role_features))
 
 
-    return cnn_features, cnn_noun_features, verb_features, role_features
+    return cnn_verb_features, cnn_noun_features, verb_features, role_features
 
 def group_features_single(net_):
 
@@ -183,7 +183,8 @@ def get_optimizer(lr, decay, mode, cnn_features,cnn_noun_features,  verb_feature
     mode 0: training from scratch
     mode 1: cnn fix, verb fix, role training
     mode 2: cnn fix, verb fine tune, role training
-    mode 3: cnn finetune, verb finetune, role training"""
+    mode 3: cnn finetune, verb finetune, role training
+    mode 4: cnn fix, verb finetune, role finetune"""
     if mode == 0:
         set_trainable_param(cnn_features, True)
         set_trainable_param(cnn_noun_features, True)
@@ -221,6 +222,13 @@ def get_optimizer(lr, decay, mode, cnn_features,cnn_noun_features,  verb_feature
             {'params': verb_features},
             {'params': role_features}
         ], lr=lr, weight_decay=decay)
+
+    elif mode == 4:
+        set_trainable_param(verb_features, True)
+        set_trainable_param(role_features, True)
+        optimizer = torch.optim.Adam([
+            {'params': verb_features, 'lr': 5e-5},
+            {'params': role_features, 'lr': 5e-5}])
 
     return optimizer
 
