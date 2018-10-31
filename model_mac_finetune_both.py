@@ -274,7 +274,7 @@ class E2ENetwork(nn.Module):
         self.role_labeller = MACNetwork(mlp_hidden, max_step=4, self_attention=False, memory_gate=False,
                                         classes=self.vocab_size)
 
-        self.conv_hidden = self.conv.base_size()
+        self.conv_hidden = self.conv_verb.base_size()
         self.mlp_hidden = mlp_hidden
         self.embed_hidden = embed_hidden
 
