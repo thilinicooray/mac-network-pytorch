@@ -243,10 +243,10 @@ def get_optimizer_single(lr, decay, mode, cnn_features,  verb_features, role_fea
         set_trainable_param(verb_features, True)
         set_trainable_param(role_features, True)
         optimizer = torch.optim.Adam([
-            {'params': cnn_features},
+            {'params': cnn_features, 'lr': 5e-5},
             {'params': verb_features},
             {'params': role_features}
-        ], lr=lr, weight_decay=decay)
+        ], lr=1e-3)
 
     elif mode == 1:
         set_trainable_param(role_features, True)

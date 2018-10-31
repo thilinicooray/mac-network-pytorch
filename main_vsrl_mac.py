@@ -150,7 +150,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 max_score = max(dev_score_list)
 
                 if max_score == dev_score_list[-1]:
-                    torch.save(model.state_dict(), model_dir + "/{}_macnet4layer_gtv_imgresolv.model".format( model_name))
+                    torch.save(model.state_dict(), model_dir + "/{}_macnet4layer_gtv_optupdated.model".format( model_name))
                     print ('New best model saved! {0}'.format(max_score))
 
                 #eval on the trainset
@@ -334,10 +334,10 @@ def main():
         #print('GPU enabled')
         model.cuda()
 
-    optimizer = torch.optim.Adam([{'params': model.conv.parameters(), 'lr': 5e-5},
+    '''optimizer = torch.optim.Adam([{'params': model.conv.parameters(), 'lr': 5e-5},
                                   {'params': model.verb.parameters()},
                                   {'params': model.role_labeller.parameters()}],
-                                 lr=1e-3)
+                                 lr=1e-3)'''
 
     #optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     #scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=lr_step, gamma=lr_gamma)
