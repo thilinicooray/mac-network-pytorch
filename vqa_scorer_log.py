@@ -26,11 +26,14 @@ class vqa_scorer():
 
             gtAcc= []
             for gtAnsDatum in all_answers:
-                otherGTAns = [item for item in all_answers if item!=gtAnsDatum]
-                matchingAns = [item for item in otherGTAns if item==pred_ans]
-                acc = min(1, float(len(matchingAns))/3)
-                gtAcc.append(acc)
-            avgGTAcc = float(sum(gtAcc))/len(gtAcc)
+                try:
+                    otherGTAns = [item for item in all_answers if item!=gtAnsDatum]
+                    matchingAns = [item for item in otherGTAns if item==pred_ans]
+                    acc = min(1, float(len(matchingAns))/3)
+                    gtAcc.append(acc)
+                except:
+                    print('error :',all_answers, gtAnsDatum )
+            avgGTAcc = float(100*sum(gtAcc))/len(gtAcc)
 
             new_card['acc'] = avgGTAcc
             self.score_cards.append(new_card)
