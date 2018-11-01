@@ -158,6 +158,18 @@ def group_features_single(net_):
 
     return cnn_features, verb_features, role_features
 
+def group_features_vqa(net_):
+
+    cnn_features = list(net_.conv.parameters())
+    cnn_feature_len = len(list(net_.conv.parameters()))
+    mac_features = list(net_.parameters())[cnn_feature_len:]
+
+    print('Network details :')
+    print('\tcnn features :', cnn_feature_len)
+    print('\tmac features :', len(mac_features))
+
+    return cnn_features, mac_features
+
 def group_features_noun(net_):
 
     cnn_features = list(net_.conv.parameters())
@@ -200,15 +212,15 @@ def get_optimizer(lr, decay, mode, cnn_features,cnn_noun_features,  verb_feature
     elif mode == 1:
         set_trainable_param(role_features, True)
         optimizer = torch.optim.Adam([
-                {'params': role_features}
-            ], lr=lr, weight_decay=decay)
+            {'params': role_features}
+        ], lr=lr, weight_decay=decay)
 
     elif mode == 2:
         set_trainable_param(verb_features, True)
         set_trainable_param(role_features, True)
         optimizer = torch.optim.Adam([
-                {'params': verb_features, 'lr': 5e-5},
-                {'params': role_features}],
+            {'params': verb_features, 'lr': 5e-5},
+            {'params': role_features}],
             lr=1e-3)
 
     elif mode == 3:
@@ -271,6 +283,22 @@ def get_optimizer_single(lr, decay, mode, cnn_features,  verb_features, role_fea
             {'params': verb_features},
             {'params': role_features}
         ], lr=lr, weight_decay=decay)
+
+    return optimizer
+
+def get_optimizer_vqa(mode, cnn_features,  mac_features):
+    """ To get the optimizer
+    mode 0: training from scratch
+    mode 1: cnn fix, v training
+    mode 2: cnn fix, verb fine tune, role training
+    mode 3: cnn finetune, verb finetune, role training"""
+    if mode == 0:
+        set_trainable_param(cnn_features, True)
+        set_trainable_param(mac_features, True)
+        optimizer = torch.optim.Adam([
+            {'params': cnn_features, 'lr': 5e-5},
+            {'params': mac_features},
+        ], lr=1e-3)
 
     return optimizer
 
@@ -357,8 +385,8 @@ class NoamOpt:
         if step is None:
             step = self._step
         rate = self.factor * \
-              (self.model_size ** (-0.5) *
-               min(step ** (-0.5), step * self.warmup ** (-1.5)))
+               (self.model_size ** (-0.5) *
+                min(step ** (-0.5), step * self.warmup ** (-1.5)))
         return rate
 class CosineAnnealingWR:
     "Optim wrapper that implements rate."
