@@ -236,7 +236,7 @@ def main():
     clip_norm = 50
     weight_decay = 1e-4
     n_epoch = 500
-    n_worker = 3
+    n_worker = 1
 
     dataset_folder = 'vqa_data'
     imgset_folder = args.imgset_folder
