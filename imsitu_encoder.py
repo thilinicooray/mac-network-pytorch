@@ -39,7 +39,7 @@ class imsitu_encoder():
                         else:
                             label_frequency[label] += 1
                         #only labels occur at least 20 times are considered
-                        if label_frequency[label] == 20:
+                        if label_frequency[label] == 5:
                             self.label_list.append(label)
 
         print('train set stats: \n\t verb count:', len(self.verb_list), '\n\t role count:',len(self.role_list),
