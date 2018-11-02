@@ -197,7 +197,7 @@ def eval(model, dev_loader, encoder, gpu_mode, write_to_file = True):
                 all_answers = torch.autograd.Variable(all_answers)
 
             ans_predict = model(image, question, q_len)
-            print('ans val:', ans_predict.size(), all_answers.size())
+            #print('ans val:', ans_predict.size(), all_answers.size())
             top1.add_point(ans_predict, all_answers)
 
             #del verb_predict, role_predict, img, verb, roles, labels

@@ -41,7 +41,8 @@ def collate_data(batch):
         questions[i, :length] = question
         lengths.append(length)
         mc_answers.append(mc)
-        tot_answers.append(torch.tensor(answers))
+        print(' answers :', answers)
+        tot_answers.append(torch.LongTensor(answers))
 
     return torch.stack(images), torch.from_numpy(questions), \
            lengths, torch.LongTensor(mc_answers), torch.stack(tot_answers,0)
