@@ -24,7 +24,7 @@ class vqa_scorer():
             pred = ans_predict[i]
             pred_ans = torch.max(pred,0)[1]
 
-            print('current item pred :', pred_ans)
+            print('current item pred :', pred_ans.size())
             print('gt all :', all_answers)
 
             gtAcc= []

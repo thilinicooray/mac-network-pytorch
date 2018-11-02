@@ -12,7 +12,7 @@ import random
 #from graphviz import Digraph
 
 
-def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler, max_epoch, model_dir, encoder, gpu_mode, clip_norm, lr_max, model_name, args,eval_frequency=100):
+def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler, max_epoch, model_dir, encoder, gpu_mode, clip_norm, lr_max, model_name, args,eval_frequency=5):
     model.train()
     train_loss = 0
     total_steps = 0
@@ -77,6 +77,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
             print(labels)'''
 
             ans_predict = pmodel(image, question, q_len)
+            print('ans train :', ans_predict.size(), all_answers.size())
             #verb_predict, rol1pred, role_predict = pmodel.forward_eval5(img)
             #print ("forward time = {}".format(time.time() - t1))
             t1 = time.time()
@@ -196,6 +197,7 @@ def eval(model, dev_loader, encoder, gpu_mode, write_to_file = True):
                 all_answers = torch.autograd.Variable(all_answers)
 
             ans_predict = model(image, question, q_len)
+            print('ans val:', ans_predict.size(), all_answers.size())
             top1.add_point(ans_predict, all_answers)
 
             #del verb_predict, role_predict, img, verb, roles, labels
