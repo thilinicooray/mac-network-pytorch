@@ -29,9 +29,9 @@ class vqa_loader(data.Dataset):
 def collate_data(batch):
     images, lengths, mc_answers, tot_answers = [], [], [], []
     batch_size = len(batch)
-    print('came to collate :', batch_size)
+    #print('came to collate :', batch_size)
     max_len = max(map(lambda x: len(x[1]), batch))
-    print('max len :', max_len)
+    #print('max len :', max_len)
     questions = np.zeros((batch_size, max_len), dtype=np.int64)
     sort_by_len = sorted(batch, key=lambda x: len(x[1]), reverse=True)
 
@@ -39,7 +39,7 @@ def collate_data(batch):
         image, question, length, mc, answers = b
         images.append(image)
         length = len(question)
-        print('q len :', length)
+        #print('q len :', length)
         questions[i, :length] = question
         lengths.append(length)
         mc_answers.append(mc)

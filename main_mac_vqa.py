@@ -253,11 +253,13 @@ def main():
 
     train_set = vqa_loader(imgset_folder + '/train2014', train_set, encoder, model.train_preprocess())
 
-    train_loader = torch.utils.data.DataLoader(train_set, batch_size=64, shuffle=True, num_workers=n_worker)
+    train_loader = torch.utils.data.DataLoader(train_set, batch_size=64, shuffle=True, num_workers=n_worker,
+                                               collate_fn=collate_data)
 
     dev_set = json.load(open(dataset_folder + "/vqa_openended_val.json"))
     dev_set = vqa_loader(imgset_folder + '/val2014', dev_set, encoder, model.dev_preprocess())
-    dev_loader = torch.utils.data.DataLoader(dev_set, batch_size=64, shuffle=True, num_workers=n_worker)
+    dev_loader = torch.utils.data.DataLoader(dev_set, batch_size=64, shuffle=True, num_workers=n_worker,
+                                             collate_fn=collate_data)
 
     '''test_set = json.load(open(dataset_folder +"/test.json"))
     test_set = imsitu_loader_roleq(imgset_folder, test_set, encoder, model.dev_preprocess())

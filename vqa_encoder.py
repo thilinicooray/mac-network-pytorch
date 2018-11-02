@@ -68,12 +68,12 @@ class vqa_encoder():
             else:
                 question_token.append(self.question_words['#UNK#'])
 
-        padding_words = self.max_q_word_count - len(question_token)
+        '''padding_words = self.max_q_word_count - len(question_token)
 
         for w in range(padding_words):
-            question_token.append(0)
+            question_token.append(0)'''
 
-        return torch.tensor(question_token)
+        return question_token
 
     def get_mc_ans(self, answer):
         if answer in self.label_list:

@@ -198,11 +198,11 @@ class MACNetwork(nn.Module):
         img = image.view(b_size, self.dim, -1)
         #print('question :', question)
         embed = self.embed(question)
-        '''embed = nn.utils.rnn.pack_padded_sequence(embed, question_len,
-                                                  batch_first=True)'''
+        embed = nn.utils.rnn.pack_padded_sequence(embed, question_len,
+                                                  batch_first=True)
         lstm_out, (h, _) = self.lstm(embed)
-        '''lstm_out, _ = nn.utils.rnn.pad_packed_sequence(lstm_out,
-                                                       batch_first=True)'''
+        lstm_out, _ = nn.utils.rnn.pad_packed_sequence(lstm_out,
+                                                       batch_first=True)
         lstm_out = self.lstm_proj(lstm_out)
         h = h.permute(1, 0, 2).contiguous().view(b_size, -1)
 
