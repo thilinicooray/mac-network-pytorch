@@ -163,10 +163,11 @@ class MACNetwork(nn.Module):
                  classes=28, dropout=0.15):
         super().__init__()
 
-        self.embed = nn.Embedding(n_vocab, embed_hidden)
+        #print('embed vocab size :', n_vocab)
+        self.embed = nn.Embedding(n_vocab +1, embed_hidden)
         self.lstm = nn.LSTM(embed_hidden, dim,
                             batch_first=True, bidirectional=True)
-        self.lstm_proj = nn.Linear(dim * 2, dim)
+        self.lstm_proj = linear(dim * 2, dim)
 
         self.mac = MACUnit(dim, max_step,
                            self_attention, memory_gate, dropout)
@@ -195,7 +196,7 @@ class MACNetwork(nn.Module):
         b_size = question.size(0)
 
         img = image.view(b_size, self.dim, -1)
-
+        #print('question :', question)
         embed = self.embed(question)
         '''embed = nn.utils.rnn.pack_padded_sequence(embed, question_len,
                                                   batch_first=True)'''

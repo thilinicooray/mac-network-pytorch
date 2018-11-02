@@ -32,8 +32,6 @@ class vqa_encoder():
                 if word not in self.question_words:
                     self.question_words[word] = len(self.question_words) + 1
 
-            self.question_words['#UNK#'] = len(self.question_words) + 1
-
             given_ans = info['answers']
 
             for ans_item in given_ans:
@@ -46,7 +44,8 @@ class vqa_encoder():
                     #only labels occur at least 20 times are considered
                     if label_frequency[ans] == 5:
                         self.label_list.append(ans)
-
+        self.question_words['#UNK#'] = len(self.question_words) + 1
+        #print('len ' ,  len(self.question_words) + 1)
         print('train set stats:'
               '\n\t label count:', len(self.label_list) ,
               '\n\t max q word count:', self.max_q_word_count)
