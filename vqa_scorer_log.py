@@ -23,8 +23,8 @@ class vqa_scorer():
             new_card = {"acc":0.0}
             all_answers = tot_answers[i]
             pred = ans_predict[i]
-            if self.flag:
-                print('pred :', pred)
+            '''if self.flag:
+                print('pred :', pred)'''
             pred_ans = torch.max(pred,0)[1]
 
             #print('current item pred :', pred_ans.size())

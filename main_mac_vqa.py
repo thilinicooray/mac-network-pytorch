@@ -77,7 +77,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
             print(labels)'''
 
             ans_predict = pmodel(image, question, q_len)
-            print('ans train :', ans_predict.size(), all_answers.size())
+            #print('ans train :', ans_predict.size(), all_answers.size())
             #verb_predict, rol1pred, role_predict = pmodel.forward_eval5(img)
             #print ("forward time = {}".format(time.time() - t1))
             t1 = time.time()
@@ -236,7 +236,7 @@ def main():
     clip_norm = 50
     weight_decay = 1e-4
     n_epoch = 500
-    n_worker = 1
+    n_worker = 3
 
     dataset_folder = 'vqa_data'
     imgset_folder = args.imgset_folder

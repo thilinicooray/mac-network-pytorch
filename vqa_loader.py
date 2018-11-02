@@ -17,7 +17,7 @@ class vqa_loader(data.Dataset):
         _id = self.ids[index]
         ann = self.annotations[_id]
         img = Image.open(os.path.join(self.img_dir, ann['image_filename'])).convert('RGB')
-        print('file name :', ann['image_filename'])
+        #print('file name :', ann['image_filename'])
         #transform must be None in order to give it as a tensor
         if self.transform is not None: img = self.transform(img)
         q, mc_ans, answers = self.encoder.encode(ann)
