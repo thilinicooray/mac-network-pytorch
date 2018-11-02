@@ -1,12 +1,13 @@
 import torch
 
 class vqa_scorer():
-    def __init__(self, encoder,topk, nref, write_to_file=False):
+    def __init__(self, encoder,topk, nref, write_to_file=False, flag=False):
         self.score_cards = []
         self.topk = topk
         self.nref = nref
         self.encoder = encoder
         self.write_to_file = write_to_file
+        self.flag = flag
         if self.write_to_file:
             self.role_dict = {}
             self.value_all_dict = {}
@@ -22,6 +23,8 @@ class vqa_scorer():
             new_card = {"acc":0.0}
             all_answers = tot_answers[i]
             pred = ans_predict[i]
+            if self.flag:
+                print('pred :', pred)
             pred_ans = torch.max(pred,0)[1]
 
             #print('current item pred :', pred_ans.size())
@@ -29,13 +32,19 @@ class vqa_scorer():
 
             gtAcc= []
             for gtAnsDatum in all_answers:
-                try:
-                    otherGTAns = [item for item in all_answers if item!=gtAnsDatum]
-                    matchingAns = [item for item in otherGTAns if item==pred_ans]
-                    acc = min(1, float(len(matchingAns))/3)
-                    gtAcc.append(acc)
-                except:
-                    print('error :',all_answers, gtAnsDatum )
+                
+                print('datum :', gtAnsDatum)
+                #otherGTAns = [item for item in all_answers if item!=gtAnsDatum]
+                otherGTAns = []
+                for item in all_answers:
+                    print('item :', item)
+                    if item!=gtAnsDatum:
+                        otherGTAns.append(item)
+
+                matchingAns = [item for item in otherGTAns if item==pred_ans]
+                acc = min(1, float(len(matchingAns))/3)
+                gtAcc.append(acc)
+
             avgGTAcc = float(100*sum(gtAcc))/len(gtAcc)
 
             new_card['acc'] = avgGTAcc

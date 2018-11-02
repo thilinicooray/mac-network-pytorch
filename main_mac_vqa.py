@@ -178,7 +178,7 @@ def eval(model, dev_loader, encoder, gpu_mode, write_to_file = True):
     val_loss = 0
 
     print ('evaluating model...')
-    top1 = vqa_scorer(encoder, 1, 10, write_to_file)
+    top1 = vqa_scorer(encoder, 1, 10, write_to_file, flag=True)
     with torch.no_grad():
         mx = len(dev_loader)
         for i, (image, question, q_len, mc_answer, all_answers) in enumerate(dev_loader):
