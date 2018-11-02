@@ -17,6 +17,7 @@ class vqa_loader(data.Dataset):
         _id = self.ids[index]
         ann = self.annotations[_id]
         img = Image.open(os.path.join(self.img_dir, ann['image_filename'])).convert('RGB')
+        print('file name :', ann['image_filename'])
         #transform must be None in order to give it as a tensor
         if self.transform is not None: img = self.transform(img)
         q, mc_ans, answers = self.encoder.encode(ann)
@@ -30,7 +31,7 @@ def collate_data(batch):
     batch_size = len(batch)
 
     max_len = max(map(lambda x: len(x[1]), batch))
-
+    print('max len :', max_len)
     questions = np.zeros((batch_size, max_len), dtype=np.int64)
     sort_by_len = sorted(batch, key=lambda x: len(x[1]), reverse=True)
 
@@ -38,10 +39,11 @@ def collate_data(batch):
         image, question, length, mc, answers = b
         images.append(image)
         length = len(question)
+        print('q len :', length)
         questions[i, :length] = question
         lengths.append(length)
         mc_answers.append(mc)
-        print(' answers :', answers)
+        #print(' answers :', answers)
         tot_answers.append(torch.LongTensor(answers))
 
     return torch.stack(images), torch.from_numpy(questions), \

@@ -32,12 +32,12 @@ class vqa_scorer():
 
             gtAcc= []
             for gtAnsDatum in all_answers:
-                
-                print('datum :', gtAnsDatum)
+
+                #print('datum :', gtAnsDatum)
                 #otherGTAns = [item for item in all_answers if item!=gtAnsDatum]
                 otherGTAns = []
                 for item in all_answers:
-                    print('item :', item)
+                    #print('item :', item)
                     if item!=gtAnsDatum:
                         otherGTAns.append(item)
 
