@@ -24,6 +24,9 @@ class vqa_scorer():
             pred = ans_predict[i]
             pred_ans = torch.max(pred,0)[1]
 
+            print('current item pred :', pred_ans)
+            print('gt all :', all_answers)
+
             gtAcc= []
             for gtAnsDatum in all_answers:
                 try:
