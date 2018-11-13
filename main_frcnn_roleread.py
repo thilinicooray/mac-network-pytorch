@@ -277,7 +277,7 @@ def main():
 
     train_set = imsitu_loader_frcnn(imgset_folder, img_feat_dir,train_set, encoder, model.train_preprocess())
 
-    train_loader = torch.utils.data.DataLoader(train_set, batch_size=48, shuffle=True, num_workers=n_worker)
+    train_loader = torch.utils.data.DataLoader(train_set, batch_size=56, shuffle=True, num_workers=n_worker)
 
     dev_set = json.load(open(dataset_folder +"/dev.json"))
     dev_set = imsitu_loader_frcnn(imgset_folder, img_feat_dir,dev_set, encoder, model.dev_preprocess())
@@ -285,7 +285,7 @@ def main():
 
     test_set = json.load(open(dataset_folder +"/test.json"))
     test_set = imsitu_loader_frcnn(imgset_folder, img_feat_dir,test_set, encoder, model.dev_preprocess())
-    test_loader = torch.utils.data.DataLoader(test_set, batch_size=56, shuffle=True, num_workers=n_worker)
+    test_loader = torch.utils.data.DataLoader(test_set, batch_size=64, shuffle=True, num_workers=n_worker)
 
     traindev_set = json.load(open(dataset_folder +"/dev.json"))
     traindev_set = imsitu_loader_frcnn(imgset_folder, img_feat_dir, traindev_set, encoder, model.dev_preprocess())
