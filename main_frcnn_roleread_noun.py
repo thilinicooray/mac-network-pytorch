@@ -12,7 +12,7 @@ import random
 #from graphviz import Digraph
 
 
-def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler, max_epoch, model_dir, encoder, gpu_mode, clip_norm, lr_max, model_name, args,eval_frequency=4000):
+def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler, max_epoch, model_dir, encoder, gpu_mode, clip_norm, lr_max, model_name, args,eval_frequency=2000):
     model.train()
     train_loss = 0
     total_steps = 0
@@ -124,8 +124,8 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
 
 
             if total_steps % print_freq == 0:
-                top1_a = top1.get_average_results()
-                top5_a = top5.get_average_results()
+                top1_a = top1.get_average_results_nouns()
+                top5_a = top5.get_average_results_nouns()
                 print ("{},{},{}, {} , {}, loss = {:.2f}, avg loss = {:.2f}"
                        .format(total_steps-1,epoch,i, utils.format_dict(top1_a, "{:.2f}", "1-"),
                                utils.format_dict(top5_a,"{:.2f}","5-"), loss.item(),
