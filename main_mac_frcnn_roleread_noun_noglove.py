@@ -12,11 +12,11 @@ import random
 #from graphviz import Digraph
 
 
-def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler, max_epoch, model_dir, encoder, gpu_mode, clip_norm, lr_max, model_name, args,eval_frequency=2000):
+def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler, max_epoch, model_dir, encoder, gpu_mode, clip_norm, lr_max, model_name, args,eval_frequency=1000):
     model.train()
     train_loss = 0
     total_steps = 0
-    print_freq = 100
+    print_freq = 50
     dev_score_list = []
     time_all = time.time()
 
@@ -288,11 +288,11 @@ def main():
 
     train_set = imsitu_loader_frcnn(imgset_folder, img_feat_dir,train_set, encoder, model.train_preprocess())
 
-    train_loader = torch.utils.data.DataLoader(train_set, batch_size=512, shuffle=True, num_workers=n_worker)
+    train_loader = torch.utils.data.DataLoader(train_set, batch_size=1024, shuffle=True, num_workers=n_worker)
 
     dev_set = json.load(open(dataset_folder +"/dev.json"))
     dev_set = imsitu_loader_frcnn(imgset_folder, img_feat_dir,dev_set, encoder, model.dev_preprocess())
-    dev_loader = torch.utils.data.DataLoader(dev_set, batch_size=512, shuffle=True, num_workers=n_worker)
+    dev_loader = torch.utils.data.DataLoader(dev_set, batch_size=1024, shuffle=True, num_workers=n_worker)
 
     test_set = json.load(open(dataset_folder +"/test.json"))
     test_set = imsitu_loader_frcnn(imgset_folder, img_feat_dir,test_set, encoder, model.dev_preprocess())
