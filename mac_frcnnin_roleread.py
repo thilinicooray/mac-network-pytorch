@@ -51,9 +51,9 @@ class ReadUnit(nn.Module):
         super().__init__()
 
         self.mem = linear(dim*2, dim)
-        self.v_att = Attention(dim*4, dim, dim)
+        self.reduce = linear(dim*4, dim)
         self.fullq = linear(dim*2, dim)
-        #self.attn = linear(dim, 1)'''
+        self.attn = linear(dim, 1)
 
     def forward(self, memory, know, control, mask):
         #print('memsize :', memory[-1].size(), know.size())
@@ -73,20 +73,12 @@ class ReadUnit(nn.Module):
         detailed_q = torch.cat([mem, control[-1]],1)
 
         projectedq = self.fullq(detailed_q)
-        att = self.v_att(know, projectedq)
-        #print('att ', att.size(), know.size())
-        read = (att * know).sum(1)
-
-
-
-
-        '''projectedq = self.fullq(detailed_q)
-        know_p = know.permute(0, 2, 1)
-        attn = torch.tanh(know_p) * torch.tanh(projectedq.unsqueeze(1))
+        low_know = self.reduce(know)
+        attn = torch.tanh(low_know) * torch.tanh(projectedq.unsqueeze(1))
         attn = self.attn(attn).squeeze(2)
-        attn = F.softmax(attn, 1).unsqueeze(1)
-
-        read = torch.tanh((attn * know).sum(2))'''
+        attn = F.softmax(attn, 1).unsqueeze(2)
+        #print('attn :', attn.size(), low_know.size())
+        read = torch.tanh((attn * low_know).sum(1))
 
         return read
 
@@ -94,8 +86,8 @@ class ReadUnit(nn.Module):
 class WriteUnit(nn.Module):
     def __init__(self, dim, self_attention=False, memory_gate=False):
         super().__init__()
-
-        self.concat = linear(dim * 5, dim)
+        #self.red = linear(dim * 4, dim)
+        self.concat = linear(dim * 2, dim)
         #self.rnn = nn.GRUCell(dim, dim)
 
         if self_attention:
@@ -111,6 +103,7 @@ class WriteUnit(nn.Module):
 
     def forward(self, memories, retrieved, controls, mask):
         prev_mem = memories[-1]
+        #read_lowdim = self.red(retrieved)
         '''prev_mem = memories[-1]
         #concat = self.concat(torch.cat([retrieved, prev_mem], 1))
 
