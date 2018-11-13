@@ -338,6 +338,39 @@ def get_optimizer_noun(lr, decay, mode, cnn_features, role_features):
 
     return optimizer
 
+def get_optimizer_frcnn_noun(lr, decay, mode, role_features):
+    """ To get the optimizer
+    mode 0: training from scratch
+    mode 1: cnn fix, verb fix, role training
+    mode 2: cnn fix, verb fine tune, role training
+    mode 3: cnn finetune, verb finetune, role training"""
+    if mode == 0:
+        #set_trainable_param(cnn_features, True)
+        set_trainable_param(role_features, True)
+        optimizer = torch.optim.Adam([
+            {'params': role_features}
+        ], lr=1e-3)
+
+    elif mode == 1:
+        set_trainable_param(role_features, True)
+        optimizer = torch.optim.Adam([
+            {'params': role_features}
+        ], lr=lr, weight_decay=decay)
+
+    elif mode == 2:
+        set_trainable_param(role_features, True)
+        optimizer = torch.optim.Adam([
+            {'params': role_features}],
+            lr=1e-3)
+
+    elif mode == 3:
+        set_trainable_param(role_features, True)
+        optimizer = torch.optim.Adam([
+            {'params': role_features}
+        ], lr=lr, weight_decay=decay)
+
+    return optimizer
+
 def load_net(fname, net_list, prefix_list = None):
     need_modification = False
     if prefix_list is not None and len(prefix_list) > 0:
