@@ -4,6 +4,7 @@ from PIL import Image
 import os
 import numpy as np
 import torch
+import random
 
 class imsitu_loader(data.Dataset):
     def __init__(self, img_dir, annotation_file, encoder, transform=None):
@@ -72,3 +73,17 @@ class imsitu_loader_frcnn(data.Dataset):
 
     def __len__(self):
         return len(self.annotations)
+
+def shuffle_minibatch(batch):
+    random.shuffle(batch)
+    ids, imgs, verbs, role_set, label_set = [],[],[],[],[]
+
+    for i, b in enumerate(batch):
+        _id, img, verb, roles, labels = b
+        ids.append(_id)
+        imgs.append(img)
+        verbs.append(verb)
+        role_set.append(roles)
+        label_set.append(labels)
+
+    return ids, torch.stack(imgs), torch.LongTensor(verbs), torch.stack(role_set), torch.stack(label_set)
