@@ -27,6 +27,7 @@ class ImsituSampler(Sampler):
         has_more = True
 
         while has_more:
+            random.shuffle(shuffled_verbs)
             for verb in shuffled_verbs:
                 if verb_info[verb]['remaining'] >= self.samples_per_verb:
                     start_idx = verb_info[verb]['tot'] - verb_info[verb]['remaining']
