@@ -149,7 +149,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 max_score = max(dev_score_list)
 
                 if max_score == dev_score_list[-1]:
-                    torch.save(model.state_dict(), model_dir + "/{}_mac_roleread_optupdated_sampling4.model".format( model_name))
+                    torch.save(model.state_dict(), model_dir + "/{}_mac_roleread_optupdated_sampling1.model".format( model_name))
                     print ('New best model saved! {0}'.format(max_score))
 
                 #eval on the trainset
@@ -270,7 +270,7 @@ def main():
 
     train_set = imsitu_loader(imgset_folder, train_set, encoder, model.train_preprocess())
 
-    sampler = data_sampler.ImsituSampler(train_set, encoder.verb_list, encoder.verb_wise_items, samples_per_verb=4)
+    sampler = data_sampler.ImsituSampler(train_set, encoder.verb_list, encoder.verb_wise_items, samples_per_verb=1)
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=64, sampler=sampler, shuffle=False,
                                                num_workers=n_worker, collate_fn=shuffle_minibatch)
 
