@@ -17,7 +17,7 @@ class imsitu_encoder():
         self.label_list = ['#UNK#']
         label_frequency = {}
         self.max_role_count = 0
-        self.verb_wise_items = {}
+        #self.verb_wise_items = {}
 
         for img_id in train_set:
             img = train_set[img_id]
@@ -26,10 +26,10 @@ class imsitu_encoder():
                 self.verb_list.append(current_verb)
                 self.verb2_role_dict[current_verb] = []
 
-            if current_verb not in self.verb_wise_items:
+            '''if current_verb not in self.verb_wise_items:
                 self.verb_wise_items[current_verb] = [img_id]
             else :
-                self.verb_wise_items[current_verb].append(img_id)
+                self.verb_wise_items[current_verb].append(img_id)'''
 
             for frame in img['frames']:
                 for role,label in frame.items():
