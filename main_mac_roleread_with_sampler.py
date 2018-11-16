@@ -8,6 +8,7 @@ import os
 import utils
 import time
 import random
+from torch.utils.data.sampler import RandomSampler
 import data_sampler
 #from torchviz import make_dot
 #from graphviz import Digraph
@@ -271,11 +272,12 @@ def main():
     train_set = imsitu_loader(imgset_folder, train_set, encoder, model.train_preprocess())
 
     #sampler = data_sampler.ImsituSampler(train_set, encoder.verb_list, encoder.verb_wise_items, samples_per_verb=1)
+    sampler = RandomSampler(train_set)
     '''train_loader = torch.utils.data.DataLoader(train_set, batch_size=64, sampler=sampler, shuffle=False,
                                                num_workers=n_worker, collate_fn=shuffle_minibatch)'''
-    '''train_loader = torch.utils.data.DataLoader(train_set, batch_size=64, sampler=sampler, shuffle=False,
-                                               num_workers=n_worker)'''
-    train_loader = torch.utils.data.DataLoader(train_set, batch_size=64, shuffle=True, num_workers=n_worker)
+    train_loader = torch.utils.data.DataLoader(train_set, batch_size=64, sampler=sampler, shuffle=False,
+                                               num_workers=n_worker)
+    #train_loader = torch.utils.data.DataLoader(train_set, batch_size=64, shuffle=True, num_workers=n_worker)
 
     dev_set = json.load(open(dataset_folder +"/dev.json"))
     dev_set = imsitu_loader(imgset_folder, dev_set, encoder, model.dev_preprocess())
