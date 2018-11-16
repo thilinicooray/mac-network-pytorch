@@ -237,11 +237,11 @@ class E2ENetwork(nn.Module):
 
         self.conv = vgg16_modified()
         self.act_embedding = nn.Embedding(1, embed_hidden)
-        self.act_embedding.weight.data.copy_(torch.from_numpy(np.load('imsitu_data/action_embd.npy')))
+        #self.act_embedding.weight.data.copy_(torch.from_numpy(np.load('imsitu_data/action_embd.npy')))
 
 
 
-        self.action_labeller = MACNetwork(mlp_hidden, max_step=1, self_attention=False, memory_gate=False,
+        self.action_labeller = MACNetwork(mlp_hidden, max_step=2, self_attention=False, memory_gate=False,
                                         classes=self.n_verbs)
 
         self.conv_hidden = self.conv.base_size()
