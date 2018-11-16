@@ -241,7 +241,7 @@ class E2ENetwork(nn.Module):
 
 
 
-        self.action_labeller = MACNetwork(mlp_hidden, max_step=3, self_attention=False, memory_gate=False,
+        self.action_labeller = MACNetwork(mlp_hidden, max_step=1, self_attention=False, memory_gate=False,
                                         classes=self.n_verbs)
 
         self.conv_hidden = self.conv.base_size()
