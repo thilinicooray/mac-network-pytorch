@@ -5,11 +5,20 @@ original https://raw.githubusercontent.com/hengyuan-hu/bottom-up-attention-vqa/m
 from __future__ import print_function
 import torch.nn as nn
 from torch.nn.utils.weight_norm import weight_norm
+from torch.nn.init import kaiming_uniform_, xavier_uniform_, normal
 
 
 class FCNet(nn.Module):
     """Simple class for non-linear fully connect network
     """
+    def linear(self, in_dim, out_dim, bias=True):
+        lin = nn.Linear(in_dim, out_dim, bias=bias)
+        xavier_uniform_(lin.weight)
+        if bias:
+            lin.bias.data.zero_()
+
+        return lin
+
     def __init__(self, dims):
         super(FCNet, self).__init__()
 
@@ -17,9 +26,9 @@ class FCNet(nn.Module):
         for i in range(len(dims)-2):
             in_dim = dims[i]
             out_dim = dims[i+1]
-            layers.append(weight_norm(nn.Linear(in_dim, out_dim), dim=None))
+            layers.append(weight_norm(self.linear(in_dim, out_dim), dim=None))
             layers.append(nn.ReLU())
-        layers.append(weight_norm(nn.Linear(dims[-2], dims[-1]), dim=None))
+        layers.append(weight_norm(self.linear(dims[-2], dims[-1]), dim=None))
         layers.append(nn.ReLU())
 
         self.main = nn.Sequential(*layers)

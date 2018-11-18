@@ -54,7 +54,8 @@ class ReadUnit(nn.Module):
 
         self.mem = FCNet([dim*2, dim])
         self.fullq = FCNet([dim*2, dim])
-        self.attn = weight_norm(nn.Linear(dim, 1), dim=None)
+        self.attn = weight_norm(linear(dim, 1), dim=None)
+        self.relu = nn.ReLU()
 
     def forward(self, memory, know, control, mask):
         #print('memsize :', memory[-1].size(), know.size())
@@ -78,7 +79,7 @@ class ReadUnit(nn.Module):
         attn = self.attn(attn).squeeze(2)
         attn = F.softmax(attn, 1).unsqueeze(1)
 
-        read = (attn * know).sum(2)
+        read = self.relu((attn * know).sum(2))
 
         return read
 
