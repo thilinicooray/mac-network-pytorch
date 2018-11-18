@@ -54,10 +54,10 @@ class ReadUnit(nn.Module):
 
         self.mem = FCNet([dim*2, dim])
         self.fullq = FCNet([dim*2, dim])
-        self.attn = weight_norm(linear(dim, 1), dim=None)
-        self.relu = nn.ReLU()
+        self.attn_grid = weight_norm(linear(dim, 1), dim=None)
+        self.attn_frcnn = weight_norm(linear(dim, 1), dim=None)
 
-    def forward(self, memory, know, control, mask):
+    def forward(self, memory, img_grid, img_frcnn, control, mask):
         #print('memsize :', memory[-1].size(), know.size())
         #concat or multiply? -> role_label
         role_label = torch.cat([control[-1],memory[-1]],1)
@@ -74,12 +74,18 @@ class ReadUnit(nn.Module):
         #trying to model, if a=man, b=bat, what's c?
         detailed_q = torch.cat([mem, control[-1]],1)
         projectedq = self.fullq(detailed_q)
-        know_p = know.permute(0, 2, 1)
-        attn = know_p * projectedq.unsqueeze(1)
-        attn = self.attn(attn).squeeze(2)
-        attn = F.softmax(attn, 1).unsqueeze(1)
+        grid_p = img_grid.permute(0, 2, 1)
+        attn_grid = grid_p * projectedq.unsqueeze(1)
+        attn_grid = self.attn_grid(attn_grid).squeeze(2)
+        attn_grid = F.softmax(attn_grid, 1).unsqueeze(1)
+        read_grid = (attn_grid * img_grid).sum(2)
 
-        read = self.relu((attn * know).sum(2))
+        attn_frcnn = img_frcnn * projectedq.unsqueeze(1)
+        attn_frcnn = self.attn_frcnn(attn_frcnn).squeeze(2)
+        attn_frcnn = F.softmax(attn_frcnn, 1).unsqueeze(2)
+        read_frcnn = (attn_frcnn * img_frcnn).sum(1)
+
+        read = read_grid * read_frcnn
 
         return read
 
@@ -157,7 +163,7 @@ class MACUnit(nn.Module):
 
         return mask
 
-    def forward(self, question, knowledge, context_mask, adj):
+    def forward(self, question, img_grid, img_frcnn, context_mask, adj):
         b_size = question.size(0)
 
         control = self.control_0.expand(b_size, self.dim)
@@ -179,7 +185,7 @@ class MACUnit(nn.Module):
                 control = control * control_mask
             controls.append(control)
 
-            read = self.read(memories, knowledge, controls, context_mask)
+            read = self.read(memories, img_grid, img_frcnn, controls, context_mask)
             memory = self.write(memories, read, controls, adj)
             if self.training:
                 memory = memory * memory_mask
@@ -214,11 +220,11 @@ class MACNetwork(nn.Module):
     def reset(self):
         kaiming_uniform_(self.classifier[0].weight)
 
-    def forward(self, image, question, context_mask, adj, dropout=0.15):
-        b_size = question.size(0)
+    def forward(self, image_grid, img_frcnn, question, context_mask, adj, dropout=0.15):
+        #b_size = question.size(0)
         transformed_q = self.q_trasform(question)
-        img = image.view(b_size, self.dim, -1)
-        memory = self.mac(transformed_q, img, context_mask, adj)
+        #img_grid = image_grid.view(b_size, self.dim, -1)
+        memory = self.mac(transformed_q, image_grid, img_frcnn , context_mask, adj)
 
         q_repr = self.q_trasform(question)
         v_repr = self.v_trasform(memory)
@@ -294,7 +300,7 @@ class E2ENetwork(nn.Module):
             linear(mlp_hidden*2, self.n_verbs),
         )
 
-
+        self.frcnn_lower = FCNet([mlp_hidden*4, mlp_hidden])
         #todo: init embedding
         self.role_lookup = nn.Embedding(self.n_roles+1, embed_hidden, padding_idx=self.n_roles)
         self.verb_lookup = nn.Embedding(self.n_verbs, embed_hidden)
@@ -313,10 +319,11 @@ class E2ENetwork(nn.Module):
     def dev_preprocess(self):
         return self.dev_transform
 
-    def forward(self, image, verbs, roles):
+    def forward(self, image, frcnn_feat, verbs, roles):
 
         img_features, conv = self.conv(image)
         batch_size, n_channel, conv_h, conv_w = img_features.size()
+        reduced_feat = self.frcnn_lower(frcnn_feat)
 
         #verb pred
         verb_pred = self.verb(conv)
@@ -330,9 +337,13 @@ class E2ENetwork(nn.Module):
         role_verb_embd = role_verb_embd.transpose(0,1)
         role_verb_embd = role_verb_embd.contiguous().view(-1, self.embed_hidden)
         #print('role img :', role_img.size())
-        img_features = img_features.repeat(1,self.max_role_count, 1, 1)
-        img_features = img_features.view(batch_size, self.max_role_count, self.mlp_hidden, -1)
+        img_features_grid = img_features.repeat(1,self.max_role_count, 1, 1)
+        img_features_grid = img_features_grid.view(batch_size * self.max_role_count, self.mlp_hidden, -1)
         #print('img feat ' , img_features.size())
+
+        img_features_frcnn = reduced_feat.expand(self.max_role_count,reduced_feat.size(0), reduced_feat.size(1), reduced_feat.size(2))
+        img_features_frcnn = img_features_frcnn.transpose(0,1)
+        img_features_frcnn = img_features_frcnn.contiguous().view(batch_size* self.max_role_count, -1, self.mlp_hidden)
 
         context_mask = self.encoder.get_adj_matrix_noself_expanded(verbs, self.mlp_hidden)
         adj = self.encoder.get_adj_matrix(verbs)
@@ -340,16 +351,17 @@ class E2ENetwork(nn.Module):
             context_mask = context_mask.to(torch.device('cuda'))
             adj = adj.to(torch.device('cuda'))
 
-        role_label_pred = self.role_labeller(img_features, role_verb_embd, context_mask, adj)
+        role_label_pred = self.role_labeller(img_features_grid, img_features_frcnn, role_verb_embd, context_mask, adj)
 
         role_label_pred = role_label_pred.contiguous().view(batch_size, -1, self.vocab_size)
 
         return verb_pred, role_label_pred
 
-    def forward_eval5(self, image, topk = 5):
+    def forward_eval5(self, image, frcnn_feat, topk = 5):
 
         img_features_org, conv = self.conv(image)
         batch_size, n_channel, conv_h, conv_w = img_features_org.size()
+        reduced_feat_org = self.frcnn_lower(frcnn_feat)
         beam_role_idx = None
         top1role_label_pred = None
 
@@ -366,6 +378,7 @@ class E2ENetwork(nn.Module):
         #print('verbs :', verbs.size(), verbs)
         for k in range(0,topk):
             img_features = img_features_org
+            reduced_feat = reduced_feat_org
             #print('k :', k)
             topk_verb = verbs[:,k]
             #print('ver size :', topk_verb.size())
@@ -386,9 +399,15 @@ class E2ENetwork(nn.Module):
             role_verb_embd = verb_embed_expand * role_embed_reshaped
             role_verb_embd = role_verb_embd.transpose(0,1)
             role_verb_embd = role_verb_embd.contiguous().view(-1, self.embed_hidden)
-            img_features = img_features.repeat(1,self.max_role_count, 1, 1)
-            img_features = img_features.view(batch_size, self.max_role_count, self.mlp_hidden, -1)
+            img_features_grid = img_features.repeat(1,self.max_role_count, 1, 1)
+            img_features_grid = img_features_grid.view(batch_size* self.max_role_count, self.mlp_hidden, -1)
             #print('img feat ' , img_features.size())
+
+            img_features_frcnn = reduced_feat.expand(self.max_role_count,reduced_feat.size(0),
+                                                     reduced_feat.size(1), reduced_feat.size(2))
+            img_features_frcnn = img_features_frcnn.transpose(0,1)
+            img_features_frcnn = img_features_frcnn.contiguous().view(batch_size* self.max_role_count, -1,
+                                                                      self.mlp_hidden)
 
             context_mask = self.encoder.get_adj_matrix_noself_expanded(topk_verb, self.mlp_hidden)
             adj = self.encoder.get_adj_matrix(topk_verb)
@@ -396,7 +415,7 @@ class E2ENetwork(nn.Module):
                 context_mask = context_mask.to(torch.device('cuda'))
                 adj = adj.to(torch.device('cuda'))
 
-            role_label_pred = self.role_labeller(img_features, role_verb_embd, context_mask, adj)
+            role_label_pred = self.role_labeller(img_features_grid, img_features_frcnn, role_verb_embd, context_mask, adj)
 
             role_label_pred = role_label_pred.contiguous().view(batch_size, -1, self.vocab_size)
 

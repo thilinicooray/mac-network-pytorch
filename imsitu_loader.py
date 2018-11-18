@@ -57,8 +57,12 @@ class imsitu_loader_frcnn(data.Dataset):
         self.transform = transform
 
     def __getitem__(self, index):
+        #print('current idx :' , index)
         _id = self.ids[index]
-        #_id = 'pitching_187.jpg'
+        '''if index % 2 == 0:
+            _id = 'pitching_187.jpg'
+        else:
+            _id = 'shouting_260.jpg'''
         ann = self.annotations[_id]
         img = Image.open(os.path.join(self.img_dir, _id)).convert('RGB')
         #transform must be None in order to give it as a tensor
