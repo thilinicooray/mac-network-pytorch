@@ -53,6 +53,7 @@ class TopDownWithContext(nn.Module):
         self.context = FCNet([mlp_hidden*2, mlp_hidden])
         self.role_weight = RoleWeightAttention(mlp_hidden, mlp_hidden, mlp_hidden)
         self.detailedq = FCNet([mlp_hidden*2, mlp_hidden])
+        self.concat = FCNet([mlp_hidden*2, mlp_hidden])
         self.q_net = FCNet([mlp_hidden, mlp_hidden])
         self.v_net = FCNet([mlp_hidden, mlp_hidden])
         self.classifier = SimpleClassifier(
@@ -88,7 +89,9 @@ class TopDownWithContext(nn.Module):
             att = self.v_att(img_feat, projectedq)
             v_emb = (att * img_feat).sum(1)
 
+            v_emb = self.concat(torch.cat([v_emb, current_results[-1]], 1))
             #todo:gating and dense connections
+
 
             current_results.append(v_emb)
 
