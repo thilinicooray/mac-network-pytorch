@@ -51,7 +51,7 @@ class TopDownWithContext(nn.Module):
         self.lstm_proj = nn.Linear(mlp_hidden * 2, mlp_hidden)
         self.v_att = Attention(mlp_hidden, mlp_hidden, mlp_hidden)
         self.context = FCNet([mlp_hidden*2, mlp_hidden])
-        self.role_weight = RoleWeightAttention(mlp_hidden, mlp_hidden, mlp_hidden)
+        #self.role_weight = RoleWeightAttention(mlp_hidden, mlp_hidden, mlp_hidden)
         self.detailedq = FCNet([mlp_hidden*2, mlp_hidden])
         self.concat = FCNet([mlp_hidden*2, mlp_hidden])
         self.q_net = FCNet([mlp_hidden, mlp_hidden])
@@ -81,8 +81,9 @@ class TopDownWithContext(nn.Module):
             context_updated = context_updated.expand(mask.size(1), context.size(0), context.size(1), context.size(2))
             context = context_updated.transpose(0,1)
             masked_context = mask * context
-            role_weights = self.role_weight(masked_context, q_emb)
-            final_context = (role_weights * masked_context).sum(2) #get weighted sum
+            #role_weights = self.role_weight(masked_context, q_emb)
+            #final_context = (role_weights * masked_context).sum(2) #get weighted sum
+            final_context = masked_context.sum(2)
             final_context = final_context.view(-1, final_context.size(-1))
             detailed_q = torch.cat([final_context, q_emb],1)
             projectedq = self.detailedq(detailed_q)
