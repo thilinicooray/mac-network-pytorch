@@ -350,3 +350,28 @@ class imsitu_encoder():
             encoding_list.append(encoding)
 
         return torch.stack(encoding_list).type(torch.FloatTensor)
+
+    def get_adj_matrix_noself_expanded(self, verb_ids, dim):
+        adj_matrix_list = []
+
+        for id in verb_ids:
+            #print('ids :', id)
+            encoding = self.verb2role_encoding[id]
+            encoding_tensor = torch.unsqueeze(torch.tensor(encoding),0)
+            role_count = self.get_role_count(id)
+            #print('role count :', role_count)
+            pad_count = self.max_role_count - role_count
+            expanded = encoding_tensor.expand(self.max_role_count, encoding_tensor.size(1))
+            transpose = torch.t(expanded)
+            adj = expanded*transpose
+            for idx1 in range(0,role_count):
+                adj[idx1][idx1] = 0
+            for idx in range(0,pad_count):
+                cur_idx = role_count + idx
+                adj[cur_idx][cur_idx] = 1
+            adj = adj.unsqueeze(-1)
+            adj = adj.expand(adj.size(0), adj.size(1), dim)
+            adj_matrix_list.append(adj)
+
+
+        return torch.stack(adj_matrix_list, 0).type(torch.FloatTensor)
