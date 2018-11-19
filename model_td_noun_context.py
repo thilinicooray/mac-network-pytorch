@@ -36,7 +36,7 @@ class TopDownWithContext(nn.Module):
     def __init__(self, encoder,
                  embed_hidden=300,
                  mlp_hidden=512,
-                 time_steps=4):
+                 time_steps=3):
         super(TopDownWithContext, self).__init__()
 
         self.encoder = encoder
