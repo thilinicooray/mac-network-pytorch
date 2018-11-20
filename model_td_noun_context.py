@@ -50,6 +50,7 @@ class TopDownWithContext(nn.Module):
                              batch_first=True, bidirectional=True)
         self.lstm_proj = nn.Linear(mlp_hidden * 2, mlp_hidden)
         self.v_att = Attention(mlp_hidden, mlp_hidden, mlp_hidden)
+        self.ctx_att = Attention(mlp_hidden, mlp_hidden, mlp_hidden)
         self.context = FCNet([mlp_hidden*2, mlp_hidden])
         #self.role_weight = RoleWeightAttention(mlp_hidden, mlp_hidden, mlp_hidden)
         self.detailedq = FCNet([mlp_hidden*2, mlp_hidden])
@@ -85,10 +86,13 @@ class TopDownWithContext(nn.Module):
             #final_context = (role_weights * masked_context).sum(2) #get weighted sum
             final_context = masked_context.sum(2)
             final_context = final_context.view(-1, final_context.size(-1))
-            detailed_q = torch.cat([final_context, q_emb],1)
-            projectedq = self.detailedq(detailed_q)
-            att = self.v_att(img_feat, projectedq)
-            v_emb = (att * img_feat).sum(1)
+            #gets context relavant features
+            att = self.ctx_att(img_feat, final_context)
+            v_new = att * img_feat
+            #detailed_q = torch.cat([final_context, q_emb],1)
+            #projectedq = self.detailedq(detailed_q)
+            att = self.v_att(v_new, q_emb)
+            v_emb = (att * v_new).sum(1)
 
             v_emb = self.concat(torch.cat([v_emb, current_results[-1]], 1))
             #todo:gating and dense connections
