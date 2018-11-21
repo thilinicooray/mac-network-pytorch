@@ -77,7 +77,6 @@ class BaseModel(nn.Module):
         self.rel_mod = nn.Sequential(
             FCNet([mlp_hidden*3, mlp_hidden]),
             FCNet([mlp_hidden, mlp_hidden]),
-            FCNet([mlp_hidden, mlp_hidden])
         )
 
         self.img_flt = nn.Sequential(
@@ -137,7 +136,6 @@ class BaseModel(nn.Module):
 
         q_repr = self.q_net(q_emb)
         #v_repr = self.v_net(v_emb)
-        v_emb = q_repr * v_emb
 
         mask = self.encoder.get_adj_matrix_noself_expanded(verb, self.mlp_hidden)
         if self.gpu_mode >= 0:
@@ -165,7 +163,8 @@ class BaseModel(nn.Module):
         concat = torch.cat([org_ans, compared_with, img_cnd], 1)
         #print('concat size :', concat.size())
         related_ans = self.rel_mod(concat)
-        v_repr = related_ans.view(-1, self.max_role_count, self.mlp_hidden).sum(1).squeeze()
+        v_repr = related_ans.view(-1, self.max_role_count, self.max_role_count, self.mlp_hidden).sum(2).squeeze()
+        v_repr = v_repr.contiguous().view(-1, self.mlp_hidden)
 
         joint_repr = q_repr * v_repr
         #joint_repr = v_repr
