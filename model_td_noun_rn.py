@@ -137,6 +137,7 @@ class BaseModel(nn.Module):
 
         q_repr = self.q_net(q_emb)
         #v_repr = self.v_net(v_emb)
+        v_emb = q_repr * v_emb
 
         mask = self.encoder.get_adj_matrix_noself_expanded(verb, self.mlp_hidden)
         if self.gpu_mode >= 0:
@@ -166,7 +167,8 @@ class BaseModel(nn.Module):
         related_ans = self.rel_mod(concat)
         v_repr = related_ans.view(-1, self.max_role_count, self.mlp_hidden).sum(1).squeeze()
 
-        joint_repr = q_repr * v_repr
+        #joint_repr = q_repr * v_repr
+        joint_repr = v_repr
         logits = self.classifier(joint_repr)
 
         role_label_pred = logits.contiguous().view(batch_size, -1, self.vocab_size)

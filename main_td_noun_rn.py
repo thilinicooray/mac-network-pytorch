@@ -154,7 +154,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 max_score = max(dev_score_list)
 
                 if max_score == dev_score_list[-1]:
-                    torch.save(model.state_dict(), model_dir + "/{}_topdown_noun_roleq_rn_postqfuse.model".format( model_name))
+                    torch.save(model.state_dict(), model_dir + "/{}_topdown_noun_roleq_rn_preqfuse.model".format( model_name))
                     print ('New best model saved! {0}'.format(max_score))
 
                 #eval on the trainset
@@ -273,7 +273,7 @@ def main():
     dataset_folder = args.dataset_folder
     imgset_folder = args.imgset_dir
 
-    print('model spec :, top down att with role q RN with post q fuse ')
+    print('model spec :, top down att with role q RN with pre q fuse ')
 
     train_set = json.load(open(dataset_folder + "/train.json"))
     imsitu_roleq = json.load(open("imsitu_data/imsitu_questions.json"))
