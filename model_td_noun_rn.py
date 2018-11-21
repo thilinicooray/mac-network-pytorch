@@ -77,6 +77,7 @@ class BaseModel(nn.Module):
         self.rel_mod = nn.Sequential(
             FCNet([mlp_hidden*3, mlp_hidden]),
             FCNet([mlp_hidden, mlp_hidden]),
+            FCNet([mlp_hidden, mlp_hidden])
         )
 
         self.img_flt = nn.Sequential(
@@ -137,14 +138,14 @@ class BaseModel(nn.Module):
         q_repr = self.q_net(q_emb)
         #v_repr = self.v_net(v_emb)
 
-        mask = self.encoder.get_adj_matrix_noself_expanded(verb, self.mlp_hidden)
+        '''mask = self.encoder.get_adj_matrix_noself_expanded(verb, self.mlp_hidden)
         if self.gpu_mode >= 0:
-            mask = mask.to(torch.device('cuda'))
+            mask = mask.to(torch.device('cuda'))'''
 
         compared_with = v_emb.view(-1, self.max_role_count, v_emb.size(-1))
         compared_with = compared_with.expand(self.max_role_count, compared_with.size(0), compared_with.size(1), compared_with.size(2))
         compared_with = compared_with.transpose(0,1)
-        compared_with = mask * compared_with
+        #compared_with = mask * compared_with
         compared_with = compared_with.view(-1, compared_with.size(-1))
         #print('compared with :', compared_with.size(), compared_with[:2,:3], compared_with[6:8,:3])
 
@@ -163,8 +164,7 @@ class BaseModel(nn.Module):
         concat = torch.cat([org_ans, compared_with, img_cnd], 1)
         #print('concat size :', concat.size())
         related_ans = self.rel_mod(concat)
-        v_repr = related_ans.view(-1, self.max_role_count, self.max_role_count, self.mlp_hidden).sum(2).squeeze()
-        v_repr = v_repr.contiguous().view(-1, self.mlp_hidden)
+        v_repr = related_ans.view(-1, self.max_role_count, self.mlp_hidden).sum(1).squeeze()
 
         joint_repr = q_repr * v_repr
         #joint_repr = v_repr
