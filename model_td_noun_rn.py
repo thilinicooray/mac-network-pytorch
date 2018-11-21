@@ -146,7 +146,7 @@ class BaseModel(nn.Module):
         compared_with = compared_with.expand(self.max_role_count, compared_with.size(0), compared_with.size(1), compared_with.size(2))
         compared_with = compared_with.transpose(0,1)
         #compared_with = mask * compared_with
-        compared_with = compared_with.view(-1, compared_with.size(-1))
+        compared_with = compared_with.contiguous().view(batch_size* self.max_role_count*self.max_role_count, self.mlp_hidden)
         #print('compared with :', compared_with.size(), compared_with[:2,:3], compared_with[6:8,:3])
 
         org_ans = v_emb.expand(self.max_role_count,v_emb.size(0), v_emb.size(1))
