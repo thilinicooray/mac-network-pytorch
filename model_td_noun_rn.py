@@ -75,14 +75,14 @@ class BaseModel(nn.Module):
         #self.v_net = FCNet([mlp_hidden, mlp_hidden])
 
         self.rel_mod = nn.Sequential(
-            FCNet([mlp_hidden*3, mlp_hidden]),
+            FCNet([mlp_hidden*2, mlp_hidden]),
             FCNet([mlp_hidden, mlp_hidden]),
             FCNet([mlp_hidden, mlp_hidden])
         )
 
-        self.img_flt = nn.Sequential(
+        '''self.img_flt = nn.Sequential(
             FCNet([mlp_hidden*7*7, mlp_hidden])
-        )
+        )'''
 
         self.classifier = SimpleClassifier(
             mlp_hidden, 2 * mlp_hidden, self.vocab_size, 0.5)
@@ -155,13 +155,13 @@ class BaseModel(nn.Module):
         #print('compared to :', org_ans.size(), org_ans[:2,:3], org_ans[6:8,:3])
 
         #flatten the image
-        img_cnd = self.img_flt(img.view(batch_size* self.max_role_count, -1))
+        '''img_cnd = self.img_flt(img.view(batch_size* self.max_role_count, -1))
         img_cnd = img_cnd.expand(self.max_role_count,img_cnd.size(0), img_cnd.size(1))
         img_cnd = img_cnd.transpose(0,1)
-        img_cnd = img_cnd.contiguous().view(-1, self.mlp_hidden)
+        img_cnd = img_cnd.contiguous().view(-1, self.mlp_hidden)'''
         #print('img is the condition :', img_cnd.size(),  img_cnd[:2,:3], img_cnd[6:8,:3])
 
-        concat = torch.cat([org_ans, compared_with, img_cnd], 1)
+        concat = torch.cat([org_ans, compared_with], 1)
         #print('concat size :', concat.size())
         related_ans = self.rel_mod(concat)
         v_repr = related_ans.view(-1, self.max_role_count, self.mlp_hidden).sum(1).squeeze()
