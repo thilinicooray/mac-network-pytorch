@@ -167,8 +167,8 @@ class BaseModel(nn.Module):
         related_ans = self.rel_mod(concat)
         v_repr = related_ans.view(-1, self.max_role_count, self.mlp_hidden).sum(1).squeeze()
 
-        #joint_repr = q_repr * v_repr
-        joint_repr = v_repr
+        joint_repr = q_repr * v_repr
+        #joint_repr = v_repr
         logits = self.classifier(joint_repr)
 
         role_label_pred = logits.contiguous().view(batch_size, -1, self.vocab_size)
