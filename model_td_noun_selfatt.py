@@ -37,7 +37,7 @@ class MultiHeadedAttention(nn.Module):
         # We assume d_v always equals d_k
         self.d_k = d_model // h
         self.h = h
-        self.linears = clones(nn.Linear(d_model, d_model), 4)
+        self.linears = clones(FCNet([d_model, d_model]), 4)
         self.attn = None
         self.dropout = nn.Dropout(p=dropout)
 
@@ -124,7 +124,7 @@ class BaseModel(nn.Module):
                              batch_first=True, bidirectional=True)
         self.lstm_proj = nn.Linear(mlp_hidden * 2, mlp_hidden)
         self.v_att = Attention(mlp_hidden, mlp_hidden, mlp_hidden)
-        self.multihead_att = MultiHeadedAttention(h=4, d_model=mlp_hidden)
+        self.multihead_att = MultiHeadedAttention(h=2, d_model=mlp_hidden)
         self.q_net = FCNet([mlp_hidden, mlp_hidden])
         self.v_net = FCNet([mlp_hidden, mlp_hidden])
         self.classifier = SimpleClassifier(
