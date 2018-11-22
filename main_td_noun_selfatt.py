@@ -273,7 +273,7 @@ def main():
     dataset_folder = args.dataset_folder
     imgset_folder = args.imgset_dir
 
-    print('model spec :, top down att with role q with self att ')
+    print('model spec :, top down att with role q with self att head 2 ')
 
     train_set = json.load(open(dataset_folder + "/train.json"))
     imsitu_roleq = json.load(open("imsitu_data/imsitu_questions.json"))
