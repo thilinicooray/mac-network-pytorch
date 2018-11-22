@@ -37,7 +37,13 @@ class MultiHeadedAttention(nn.Module):
         # We assume d_v always equals d_k
         self.d_k = d_model // h
         self.h = h
-        self.linears = clones(FCNet([d_model, d_model]), 4)
+        #self.linears = clones(FCNet([d_model, d_model]), 4)
+        self.linears = nn.Sequential(
+            FCNet([d_model, d_model]),
+            FCNet([d_model, d_model]),
+            FCNet([d_model, d_model]),
+            FCNet([d_model, d_model])
+        )
         self.attn = None
         self.dropout = nn.Dropout(p=dropout)
 
