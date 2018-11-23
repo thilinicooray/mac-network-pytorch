@@ -178,6 +178,8 @@ class BaseModel(nn.Module):
         img = img.contiguous().view(batch_size* self.max_role_count, -1, self.mlp_hidden)
 
         init_gate_hidden = torch.zeros(batch_size* self.max_role_count, self.mlp_hidden)
+        if self.gpu_mode >= 0:
+            init_gate_hidden = init_gate_hidden.to(torch.device('cuda'))
         ans = [init_gate_hidden]
 
         mask = self.encoder.get_adj_matrix(verb)
