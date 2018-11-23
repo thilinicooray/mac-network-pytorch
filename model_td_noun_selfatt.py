@@ -124,7 +124,7 @@ class BaseModel(nn.Module):
                              batch_first=True, bidirectional=True)
         self.lstm_proj = nn.Linear(mlp_hidden * 2, mlp_hidden)
         self.v_att = Attention(mlp_hidden, mlp_hidden, mlp_hidden)
-        self.multihead_att = MultiHeadedAttention(h=4, d_model=mlp_hidden)
+        self.multihead_att = MultiHeadedAttention(h=8, d_model=mlp_hidden)
         self.q_net = FCNet([mlp_hidden, mlp_hidden])
         self.v_net = FCNet([mlp_hidden, mlp_hidden])
         self.classifier = SimpleClassifier(
