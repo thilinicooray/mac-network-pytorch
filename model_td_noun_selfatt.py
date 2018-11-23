@@ -60,7 +60,7 @@ class MultiHeadedAttention(nn.Module):
         # 3) "Concat" using a view and apply a final linear.
         x = x.transpose(1, 2).contiguous() \
             .view(nbatches, -1, self.h * self.d_k)
-        return self.linears[-1](x)
+        return F.relu(self.linears[-1](x))
 
 class vgg16_modified(nn.Module):
     def __init__(self):
