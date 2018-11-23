@@ -124,7 +124,7 @@ class BaseModel(nn.Module):
                              batch_first=True, bidirectional=True)
         self.lstm_proj = nn.Linear(mlp_hidden * 2, mlp_hidden)
         self.v_att = Attention(mlp_hidden, mlp_hidden, mlp_hidden)
-        self.multihead_att = MultiHeadedAttention(h=2, d_model=mlp_hidden)
+        #self.multihead_att = MultiHeadedAttention(h=2, d_model=mlp_hidden)
         self.q_net = FCNet([mlp_hidden, mlp_hidden])
         self.v_net = FCNet([mlp_hidden, mlp_hidden])
         self.classifier = SimpleClassifier(
@@ -183,7 +183,7 @@ class BaseModel(nn.Module):
             mask = mask.to(torch.device('cuda'))
 
         v_emb = v_emb.view(batch_size, self.max_role_count, -1)
-        v_emb =  self.multihead_att(v_emb, v_emb, v_emb, mask)
+        v_emb, _ =  attention(v_emb, v_emb, v_emb, mask)
 
         v_emb = v_emb.view(batch_size*self.max_role_count, -1)
 
