@@ -37,9 +37,10 @@ class MultiHeadedAttention(nn.Module):
         # We assume d_v always equals d_k
         self.d_k = d_model // h
         self.h = h
-        self.linears = clones(nn.Linear(d_model, d_model), 4)
+        self.linears = clones(nn.Linear(d_model, d_model), 3)
         self.attn = None
         self.dropout = nn.Dropout(p=dropout)
+        self.rep = FCNet([d_model, d_model])
 
     def forward(self, query, key, value, mask=None):
         "Implements Figure 2"
@@ -60,7 +61,7 @@ class MultiHeadedAttention(nn.Module):
         # 3) "Concat" using a view and apply a final linear.
         x = x.transpose(1, 2).contiguous() \
             .view(nbatches, -1, self.h * self.d_k)
-        return F.relu(self.linears[-1](x))
+        return self.rep(x)
 
 class vgg16_modified(nn.Module):
     def __init__(self):
@@ -124,9 +125,9 @@ class BaseModel(nn.Module):
                              batch_first=True, bidirectional=True)
         self.lstm_proj = nn.Linear(mlp_hidden * 2, mlp_hidden)
         self.v_att = Attention(mlp_hidden, mlp_hidden, mlp_hidden)
-        self.multihead_att = MultiHeadedAttention(h=8, d_model=mlp_hidden)
+        self.multihead_att = MultiHeadedAttention(h=4, d_model=mlp_hidden)
         self.q_net = FCNet([mlp_hidden, mlp_hidden])
-        self.v_net = FCNet([mlp_hidden, mlp_hidden])
+        #self.v_net = FCNet([mlp_hidden, mlp_hidden])
         self.classifier = SimpleClassifier(
             mlp_hidden, 2 * mlp_hidden, self.vocab_size, 0.5)
 
@@ -187,9 +188,9 @@ class BaseModel(nn.Module):
 
         v_emb = v_emb.view(batch_size*self.max_role_count, -1)
 
-
+        v_repr = v_emb
         q_repr = self.q_net(q_emb)
-        v_repr = self.v_net(v_emb)
+        #v_repr = self.v_net(v_emb)
         joint_repr = q_repr * v_repr
         logits = self.classifier(joint_repr)
 
