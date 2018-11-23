@@ -126,6 +126,7 @@ class BaseModel(nn.Module):
         self.lstm_proj = nn.Linear(mlp_hidden * 2, mlp_hidden)
         self.v_att = Attention(mlp_hidden, mlp_hidden, mlp_hidden)
         self.multihead_att = MultiHeadedAttention(h=4, d_model=mlp_hidden)
+        self.gate = nn.GRUCell(mlp_hidden, mlp_hidden)
         self.q_net = FCNet([mlp_hidden, mlp_hidden])
         #self.v_net = FCNet([mlp_hidden, mlp_hidden])
         self.classifier = SimpleClassifier(
@@ -176,19 +177,23 @@ class BaseModel(nn.Module):
         img = img.transpose(0,1)
         img = img.contiguous().view(batch_size* self.max_role_count, -1, self.mlp_hidden)
 
-        att = self.v_att(img, q_emb)
-        v_emb = (att * img).sum(1) # [batch, v_dim]
+        init_gate_hidden = torch.zeros(batch_size* self.max_role_count, self.mlp_hidden)
+        ans = [init_gate_hidden]
 
         mask = self.encoder.get_adj_matrix(verb)
         if self.gpu_mode >= 0:
             mask = mask.to(torch.device('cuda'))
 
-        v_emb = v_emb.view(batch_size, self.max_role_count, -1)
-        v_emb =  self.multihead_att(v_emb, v_emb, v_emb, mask)
+        for j in range(3):
+            att = self.v_att(img, q_emb)
+            v_emb = (att * img).sum(1) # [batch, v_dim]
+            v_emb = v_emb.view(batch_size, self.max_role_count, -1)
+            v_emb =  self.multihead_att(v_emb, v_emb, v_emb, mask)
+            v_emb = v_emb.view(batch_size*self.max_role_count, -1)
+            gated_ans = self.gate(v_emb, ans[-1])
+            ans.append(gated_ans)
 
-        v_emb = v_emb.view(batch_size*self.max_role_count, -1)
-
-        v_repr = v_emb
+        v_repr = ans[-1]
         q_repr = self.q_net(q_emb)
         #v_repr = self.v_net(v_emb)
         joint_repr = q_repr * v_repr
