@@ -120,15 +120,17 @@ class BaseModel(nn.Module):
 
         self.conv = vgg16_modified()
 
+        self.verb_lookup = nn.Embedding(self.n_verbs, embed_hidden)
         self.w_emb = nn.Embedding(self.n_role_q_vocab + 1, embed_hidden, padding_idx=self.n_role_q_vocab)
         self.q_emb = nn.LSTM(embed_hidden, mlp_hidden,
                              batch_first=True, bidirectional=True)
         self.lstm_proj = nn.Linear(mlp_hidden * 2, mlp_hidden)
+        self.verb_transform = nn.Linear(embed_hidden, mlp_hidden)
         self.v_att = Attention(mlp_hidden, mlp_hidden, mlp_hidden)
         self.multihead_att = MultiHeadedAttention(h=4, d_model=mlp_hidden)
         self.gate = nn.GRUCell(mlp_hidden, mlp_hidden)
         self.q_net = FCNet([mlp_hidden, mlp_hidden])
-        #self.v_net = FCNet([mlp_hidden, mlp_hidden])
+        self.v_net = FCNet([mlp_hidden, mlp_hidden])
         self.classifier = SimpleClassifier(
             mlp_hidden, 2 * mlp_hidden, self.vocab_size, 0.5)
 
@@ -171,6 +173,11 @@ class BaseModel(nn.Module):
         #q_emb = self.lstm_proj(lstm_out)
         q_emb = h.permute(1, 0, 2).contiguous().view(batch_size*self.max_role_count, -1)
         q_emb = self.lstm_proj(q_emb)
+        verb_embd = self.verb_transform(self.verb_lookup(verb))
+        verb_embed_expand = verb_embd.expand(self.max_role_count, verb_embd.size(0), verb_embd.size(1))
+        verb_embed_expand = verb_embed_expand.transpose(0,1)
+        verb_embed_expand = verb_embed_expand.contiguous().view(-1, self.mlp_hidden)
+        q_emb = F.relu(q_emb * verb_embed_expand)
         #q_emb = self.q_emb(w_emb) # [batch, q_dim]
 
         img = img.expand(self.max_role_count,img.size(0), img.size(1), img.size(2))
@@ -186,18 +193,18 @@ class BaseModel(nn.Module):
         if self.gpu_mode >= 0:
             mask = mask.to(torch.device('cuda'))
 
-        for j in range(3):
+        for j in range(4):
             att = self.v_att(img, q_emb)
             v_emb = (att * img).sum(1) # [batch, v_dim]
             v_emb = v_emb.view(batch_size, self.max_role_count, -1)
-            v_emb =  self.multihead_att(v_emb, v_emb, v_emb, mask)
+            v_emb = self.multihead_att(v_emb, v_emb, v_emb, mask)
             v_emb = v_emb.view(batch_size*self.max_role_count, -1)
             gated_ans = self.gate(v_emb, ans[-1])
             ans.append(gated_ans)
 
         v_repr = ans[-1]
         q_repr = self.q_net(q_emb)
-        #v_repr = self.v_net(v_emb)
+        v_repr = self.v_net(v_repr)
         joint_repr = q_repr * v_repr
         logits = self.classifier(joint_repr)
 
