@@ -348,12 +348,12 @@ def main():
     if not os.path.exists(args.output_dir):
         os.mkdir(args.output_dir)
 
-    #torch.manual_seed(1234)
+    torch.manual_seed(1234)
     if args.gpuid >= 0:
         #print('GPU enabled')
         model.cuda()
-        #torch.cuda.manual_seed(1234)
-        #torch.backends.cudnn.deterministic = True
+        torch.cuda.manual_seed(1234)
+        torch.backends.cudnn.deterministic = True
 
     optimizer = torch.optim.Adamax([{'params': cnn_features, 'lr': 5e-5},
                                     {'params': role_features}],
