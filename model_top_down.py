@@ -65,7 +65,7 @@ class BaseModel(nn.Module):
         self.n_role_q_vocab = len(self.encoder.question_words)
 
         self.conv = vgg16_modified()
-
+        self.verb_lookup = nn.Embedding(self.n_verbs, embed_hidden)
         self.w_emb = nn.Embedding(self.n_role_q_vocab + 1, embed_hidden, padding_idx=self.n_role_q_vocab)
         self.q_emb = nn.LSTM(embed_hidden, mlp_hidden,
                             batch_first=True, bidirectional=True)
@@ -116,6 +116,11 @@ class BaseModel(nn.Module):
         q_emb = h.permute(1, 0, 2).contiguous().view(batch_size*self.max_role_count, -1)
         q_emb = self.lstm_proj(q_emb)
         #q_emb = self.q_emb(w_emb) # [batch, q_dim]
+        verb_embd = self.verb_transform(self.verb_lookup(verb))
+        verb_embed_expand = verb_embd.expand(self.max_role_count, verb_embd.size(0), verb_embd.size(1))
+        verb_embed_expand = verb_embed_expand.transpose(0,1)
+        verb_embed_expand = verb_embed_expand.contiguous().view(-1, self.mlp_hidden)
+        q_emb = F.relu(q_emb * verb_embed_expand)
 
         img = img.expand(self.max_role_count,img.size(0), img.size(1), img.size(2))
         img = img.transpose(0,1)
