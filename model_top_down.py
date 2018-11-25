@@ -66,6 +66,7 @@ class BaseModel(nn.Module):
 
         self.conv = vgg16_modified()
         self.verb_lookup = nn.Embedding(self.n_verbs, embed_hidden)
+        self.v_verb_att = Attention(mlp_hidden, embed_hidden, mlp_hidden)
         self.w_emb = nn.Embedding(self.n_role_q_vocab + 1, embed_hidden, padding_idx=self.n_role_q_vocab)
         self.q_emb = nn.LSTM(embed_hidden, mlp_hidden,
                             batch_first=True, bidirectional=True)
@@ -108,9 +109,7 @@ class BaseModel(nn.Module):
         verb_embd = self.verb_lookup(verb)
         verb_embed_expand = verb_embd.expand(self.max_role_count, verb_embd.size(0), verb_embd.size(1))
         verb_embed_expand = verb_embed_expand.transpose(0,1)
-        verb_embed_expand = verb_embed_expand.contiguous().view(-1, verb_embd.size(1)).unsqueeze(1)
-        w_emb = torch.cat((verb_embed_expand, w_emb),1)
-
+        verb_embed_expand = verb_embed_expand.contiguous().view(-1, verb_embd.size(-1))
 
         #print('size of wemb : ', w_emb.size())
 
@@ -131,6 +130,9 @@ class BaseModel(nn.Module):
         img = img.expand(self.max_role_count,img.size(0), img.size(1), img.size(2))
         img = img.transpose(0,1)
         img = img.contiguous().view(batch_size* self.max_role_count, -1, self.mlp_hidden)
+
+        verb_att = self.v_verb_att(img, verb_embed_expand)
+        img = (verb_att * img)
 
         att = self.v_att(img, q_emb)
         v_emb = (att * img).sum(1) # [batch, v_dim]
