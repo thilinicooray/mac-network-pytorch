@@ -105,6 +105,15 @@ class BaseModel(nn.Module):
         img = img.permute(0, 2, 1)
         w_emb = self.w_emb(role_q)
 
+        verb_embd = self.verb_lookup(verb)
+        verb_embed_expand = verb_embd.expand(self.max_role_count, verb_embd.size(0), verb_embd.size(1))
+        verb_embed_expand = verb_embed_expand.transpose(0,1)
+        verb_embed_expand = verb_embed_expand.contiguous().view(-1, verb_embd.size(1)).unsqueeze(1)
+        w_emb = torch.cat((verb_embed_expand, w_emb),1)
+
+
+        #print('size of wemb : ', w_emb.size())
+
         #do this so lstm ignored pads. i can't order by seq length as all roles of image should be together.
         #hence removing, so padded time steps are also included in the prediction
         '''embed = nn.utils.rnn.pack_padded_sequence(embed, question_length,
@@ -117,11 +126,7 @@ class BaseModel(nn.Module):
         q_emb = h.permute(1, 0, 2).contiguous().view(batch_size*self.max_role_count, -1)
         q_emb = self.lstm_proj(q_emb)
         #q_emb = self.q_emb(w_emb) # [batch, q_dim]
-        verb_embd = self.verb_transform(self.verb_lookup(verb))
-        verb_embed_expand = verb_embd.expand(self.max_role_count, verb_embd.size(0), verb_embd.size(1))
-        verb_embed_expand = verb_embed_expand.transpose(0,1)
-        verb_embed_expand = verb_embed_expand.contiguous().view(-1, self.mlp_hidden)
-        q_emb = F.relu(q_emb * verb_embed_expand)
+        #q_emb = F.relu(q_emb * verb_embed_expand)
 
         img = img.expand(self.max_role_count,img.size(0), img.size(1), img.size(2))
         img = img.transpose(0,1)
