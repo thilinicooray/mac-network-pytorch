@@ -196,8 +196,10 @@ class BaseModel(nn.Module):
         for j in range(4):
             att = self.v_att(img, q_emb)
             v_emb = (att * img).sum(1) # [batch, v_dim]
+            v_emb_key = v_emb * q_emb
+            v_emb_key = v_emb_key.view(batch_size, self.max_role_count, -1)
             v_emb = v_emb.view(batch_size, self.max_role_count, -1)
-            v_emb = self.multihead_att(v_emb, v_emb, v_emb, mask)
+            v_emb = self.multihead_att(v_emb_key, v_emb_key, v_emb, mask)
             v_emb = v_emb.view(batch_size*self.max_role_count, -1)
             gated_ans = self.gate(v_emb, ans[-1])
             ans.append(gated_ans)
