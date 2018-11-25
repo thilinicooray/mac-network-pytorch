@@ -127,6 +127,7 @@ class BaseModel(nn.Module):
         self.lstm_proj = nn.Linear(mlp_hidden * 2, mlp_hidden)
         #self.verb_transform = nn.Linear(embed_hidden, mlp_hidden)
         self.v_att = Attention(mlp_hidden, mlp_hidden, mlp_hidden)
+        self.query_prep = FCNet([mlp_hidden*2, mlp_hidden])
         self.multihead_att = MultiHeadedAttention(h=4, d_model=mlp_hidden)
         self.gate = nn.GRUCell(mlp_hidden, mlp_hidden)
         self.q_net = FCNet([mlp_hidden, mlp_hidden])
@@ -196,7 +197,8 @@ class BaseModel(nn.Module):
         for j in range(4):
             att = self.v_att(img, q_emb)
             v_emb = (att * img).sum(1) # [batch, v_dim]
-            v_emb_key = v_emb * q_emb
+            v_emb_key = torch.cat((v_emb, q_emb), 1)
+            v_emb_key = self.query_prep(v_emb_key)
             v_emb_key = v_emb_key.view(batch_size, self.max_role_count, -1)
             v_emb = v_emb.view(batch_size, self.max_role_count, -1)
             v_emb = self.multihead_att(v_emb_key, v_emb_key, v_emb, mask)
