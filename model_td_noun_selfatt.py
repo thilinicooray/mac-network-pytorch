@@ -141,9 +141,9 @@ class BaseModel(nn.Module):
         #self.verb_transform = nn.Linear(embed_hidden, mlp_hidden)
         self.v_att = Attention(mlp_hidden, mlp_hidden, mlp_hidden)
         self.query_prep = FCNet([mlp_hidden*2, mlp_hidden])
-        self.lnorm = LayerNorm(mlp_hidden)
+        #self.lnorm = LayerNorm(mlp_hidden)
         self.multihead_att = MultiHeadedAttention(h=4, d_model=mlp_hidden)
-        self.dropout = nn.Dropout(0.1)
+        #self.dropout = nn.Dropout(0.1)
         #self.gate = nn.GRUCell(mlp_hidden, mlp_hidden)
         self.q_net = FCNet([mlp_hidden, mlp_hidden])
         self.v_net = FCNet([mlp_hidden, mlp_hidden])
@@ -212,14 +212,14 @@ class BaseModel(nn.Module):
         att = self.v_att(img, q_emb)
         v_emb_org = (att * img).sum(1)
         ans = [v_emb_org]
-        for j in range(3):
+        for j in range(2):
              # [batch, v_dim]
             #v_emb = self.lnorm(v_emb_org)
-            v_emb = self.lnorm(ans[-1])
+            v_emb = ans[-1]
             v_emb = v_emb.view(batch_size, self.max_role_count, -1)
             v_emb = self.multihead_att(v_emb, v_emb, v_emb, mask)
             v_emb = v_emb.view(batch_size*self.max_role_count, -1)
-            calc_ans = ans[-1] + self.dropout(v_emb)
+            calc_ans = ans[-1]
             #gated_ans = self.gate(v_emb, ans[-1])
             ans.append(calc_ans)
 
