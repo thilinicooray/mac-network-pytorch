@@ -216,7 +216,7 @@ class BaseModel(nn.Module):
             v_emb = v_emb.view(batch_size, self.max_role_count, -1)
             v_emb = self.multihead_att(v_emb, v_emb, v_emb, mask)
             v_emb = v_emb.view(batch_size*self.max_role_count, -1)
-            calc_ans = v_emb_org + self.dropout(v_emb)
+            calc_ans = v_emb_org + v_emb
             #gated_ans = self.gate(v_emb, ans[-1])
             ans.append(calc_ans)
 
