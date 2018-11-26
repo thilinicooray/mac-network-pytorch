@@ -29,6 +29,19 @@ def clones(module, N):
     "Produce N identical layers."
     return nn.ModuleList([copy.deepcopy(module) for _ in range(N)])
 
+class LayerNorm(nn.Module):
+    "Construct a layernorm module (See citation for details)."
+    def __init__(self, features, eps=1e-6):
+        super(LayerNorm, self).__init__()
+        self.a_2 = nn.Parameter(torch.ones(features))
+        self.b_2 = nn.Parameter(torch.zeros(features))
+        self.eps = eps
+
+    def forward(self, x):
+        mean = x.mean(-1, keepdim=True)
+        std = x.std(-1, keepdim=True)
+        return self.a_2 * (x - mean) / (std + self.eps) + self.b_2
+
 class MultiHeadedAttention(nn.Module):
     def __init__(self, h, d_model, dropout=0.1):
         "Take in model size and number of heads."
@@ -128,8 +141,10 @@ class BaseModel(nn.Module):
         #self.verb_transform = nn.Linear(embed_hidden, mlp_hidden)
         self.v_att = Attention(mlp_hidden, mlp_hidden, mlp_hidden)
         self.query_prep = FCNet([mlp_hidden*2, mlp_hidden])
+        self.lnorm = LayerNorm(mlp_hidden)
         self.multihead_att = MultiHeadedAttention(h=4, d_model=mlp_hidden)
-        self.gate = nn.GRUCell(mlp_hidden, mlp_hidden)
+        self.dropout = nn.Dropout(0.1)
+        #self.gate = nn.GRUCell(mlp_hidden, mlp_hidden)
         self.q_net = FCNet([mlp_hidden, mlp_hidden])
         self.v_net = FCNet([mlp_hidden, mlp_hidden])
         self.classifier = SimpleClassifier(
@@ -194,17 +209,16 @@ class BaseModel(nn.Module):
         if self.gpu_mode >= 0:
             mask = mask.to(torch.device('cuda'))
 
-        for j in range(4):
+        for j in range(1):
             att = self.v_att(img, q_emb)
-            v_emb = (att * img).sum(1) # [batch, v_dim]
-            v_emb_key = torch.cat((v_emb, q_emb), 1)
-            v_emb_key = self.query_prep(v_emb_key)
-            v_emb_key = v_emb_key.view(batch_size, self.max_role_count, -1)
+            v_emb_org = (att * img).sum(1) # [batch, v_dim]
+            v_emb = self.lnorm(v_emb_org)
             v_emb = v_emb.view(batch_size, self.max_role_count, -1)
-            v_emb = self.multihead_att(v_emb_key, v_emb_key, v_emb, mask)
+            v_emb = self.multihead_att(v_emb, v_emb, v_emb, mask)
             v_emb = v_emb.view(batch_size*self.max_role_count, -1)
-            gated_ans = self.gate(v_emb, ans[-1])
-            ans.append(gated_ans)
+            calc_ans = v_emb_org + self.dropout(v_emb)
+            #gated_ans = self.gate(v_emb, ans[-1])
+            ans.append(calc_ans)
 
         v_repr = ans[-1]
         q_repr = self.q_net(q_emb)
