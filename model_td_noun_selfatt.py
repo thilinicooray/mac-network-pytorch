@@ -212,7 +212,7 @@ class BaseModel(nn.Module):
         att = self.v_att(img, q_emb)
         v_emb_org = (att * img).sum(1)
         ans = [v_emb_org]
-        for j in range(2):
+        '''for j in range(2):
              # [batch, v_dim]
             #v_emb = self.lnorm(v_emb_org)
             v_emb = ans[-1]
@@ -221,7 +221,7 @@ class BaseModel(nn.Module):
             v_emb = v_emb.view(batch_size*self.max_role_count, -1)
             calc_ans = v_emb
             #gated_ans = self.gate(v_emb, ans[-1])
-            ans.append(calc_ans)
+            ans.append(calc_ans)'''
 
         v_repr = ans[-1]
         q_repr = self.q_net(q_emb)
