@@ -65,7 +65,7 @@ class BaseModel(nn.Module):
         self.n_role_q_vocab = len(self.encoder.question_words)
 
         #self.conv = vgg16_modified()
-        self.down = nn.Linear(mlp_hidden*4, mlp_hidden)
+        self.down = nn.Linear(mlp_hidden*2, mlp_hidden)
         self.verb_lookup = nn.Embedding(self.n_verbs, embed_hidden)
         self.w_emb = nn.Embedding(self.n_role_q_vocab + 1, embed_hidden, padding_idx=self.n_role_q_vocab)
         self.q_emb = nn.LSTM(embed_hidden, mlp_hidden,
