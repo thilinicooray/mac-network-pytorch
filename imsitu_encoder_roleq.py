@@ -85,6 +85,7 @@ class imsitu_encoder():
 
         self.verb2role_list = torch.stack(verb2role_list)
         self.verb2role_encoding = self.get_verb2role_encoding()
+        self.verb2role_oh_encoding = self.get_verb2role_oh_encoding()
         '''print('verb to role list :', self.verb2role_list.size())
 
         print('unit test verb and roles: \n')
@@ -128,6 +129,29 @@ class imsitu_encoder():
             verb2role_embedding_list.append(torch.tensor(role_embedding_verb))
 
         return verb2role_embedding_list
+
+    def get_verb2role_oh_encoding(self):
+        verb2role_oh_embedding_list = []
+
+        role_oh = torch.eye(len(self.role_list)+1)
+
+        for verb_id in range(len(self.verb_list)):
+            current_role_list = self.verb2_role_dict[self.verb_list[verb_id]]
+
+            role_embedding_verb = []
+
+            for role in current_role_list:
+                role_embedding_verb.append(role_oh[self.role_list.index(role)])
+
+
+            padding_count = self.max_role_count - len(role_embedding_verb)
+
+            for i in range(padding_count):
+                role_embedding_verb.append(role_oh[-1])
+
+            verb2role_oh_embedding_list.append(torch.stack(role_embedding_verb, 0))
+
+        return verb2role_oh_embedding_list
 
     def save_encoder(self):
         return None
@@ -399,3 +423,12 @@ class imsitu_encoder():
 
 
         return torch.stack(adj_matrix_list, 0).type(torch.FloatTensor)
+
+    def get_role_encoding(self, verb_ids):
+        verb_role_oh_list = []
+
+        for id in verb_ids:
+            verb_role_oh_list.append(self.verb2role_oh_encoding[id])
+
+        return torch.stack(verb_role_oh_list).type(torch.FloatTensor)
+
