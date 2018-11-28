@@ -72,7 +72,7 @@ class BaseModel(nn.Module):
         self.q_prep = FCNet([mlp_hidden, mlp_hidden])
         self.lstm_proj = nn.Linear(mlp_hidden * 2, mlp_hidden)
         self.verb_transform = nn.Linear(embed_hidden, mlp_hidden)
-        self.v_att = Attention(mlp_hidden, mlp_hidden, mlp_hidden)
+        #self.v_att = Attention(mlp_hidden, mlp_hidden, mlp_hidden)
         self.q_net = FCNet([mlp_hidden, mlp_hidden])
         self.v_net = FCNet([mlp_hidden, mlp_hidden])
         self.classifier = SimpleClassifier(
@@ -128,8 +128,8 @@ class BaseModel(nn.Module):
         img = img.transpose(0,1)
         img = img.contiguous().view(batch_size* self.max_role_count, -1, self.mlp_hidden)
 
-        att = self.v_att(img, q_emb)
-        v_emb = (att * img).sum(1) # [batch, v_dim]
+        #att = self.v_att(img, q_emb)
+        v_emb = (img).sum(1) # [batch, v_dim]
 
         q_repr = self.q_net(q_emb)
         v_repr = self.v_net(v_emb)
