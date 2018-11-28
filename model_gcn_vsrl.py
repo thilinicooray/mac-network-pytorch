@@ -133,6 +133,8 @@ class BaseModel(nn.Module):
                              batch_first=True, bidirectional=True)
         self.q_prep = FCNet([mlp_hidden, mlp_hidden])
         self.lstm_proj = nn.Linear(mlp_hidden * 2, mlp_hidden)
+        self.verb_transform = nn.Linear(embed_hidden, mlp_hidden)
+        self.v_att = Attention(mlp_hidden, mlp_hidden, mlp_hidden)
         self.q_net = FCNet([mlp_hidden, mlp_hidden])
         self.v_net = FCNet([mlp_hidden, mlp_hidden])
 
@@ -156,7 +158,6 @@ class BaseModel(nn.Module):
         return: logits, not probs
         """
         #print('role size ', role_q.size())
-        role_oh = self.encoder.get_role_encoding(verb)
 
         img_features = self.conv(img)
         batch_size, n_channel, conv_h, conv_w = img_features.size()
@@ -170,39 +171,25 @@ class BaseModel(nn.Module):
         q_emb = self.lstm_proj(q_emb)
 
 
-        '''verb_embd = self.verb_transform(self.verb_lookup(verb))
-        verb_embed_expand = verb_embd.expand(self.max_role_count, verb_embd.size(0), verb_embd.size(1))
+        verb_embd = self.verb_transform(self.verb_lookup(verb))
+        verb_embed_expand = verb_embd.expand(conv_h*conv_w, verb_embd.size(0), verb_embd.size(1))
         verb_embed_expand = verb_embed_expand.transpose(0,1)
-        verb_embed_expand = verb_embed_expand.contiguous().view(-1, self.mlp_hidden)'''
 
         adj = torch.ones([batch_size, conv_h*conv_w, conv_h*conv_w], dtype=torch.float)
         if self.gpu_mode >= 0:
             adj = adj.to(torch.device('cuda'))
-            role_oh = role_oh.to(torch.device('cuda'))
 
-        updated_nodes = self.role_gcn(img, adj)
-
-        role_weights = self.role_classifier(updated_nodes)
+        updated_nodes = self.role_gcn(img*verb_embed_expand, adj)
 
         expanded_node_rep = updated_nodes.expand(self.max_role_count,updated_nodes.size(0), updated_nodes.size(1),
                                                  updated_nodes.size(2))
         expanded_node_rep = expanded_node_rep.transpose(0,1)
-        expanded_role_weights = role_weights.expand(self.max_role_count,role_weights.size(0), role_weights.size(1),
-                                                    role_weights.size(2))
-        expanded_role_weights = expanded_role_weights.transpose(0,1)
-        expanded_role_oh = role_oh.expand(conv_h*conv_w,role_oh.size(0), role_oh.size(1),
-                                          role_oh.size(2))
-        expanded_role_oh = expanded_role_oh.permute(1,2, 0, 3)
-        single_role_weight = expanded_role_weights * expanded_role_oh
-        single_role_weight = torch.sum(single_role_weight, -1).unsqueeze(-1)
-
-        weight_node_rep = expanded_node_rep * single_role_weight
-        final_role_rep = torch.sum(weight_node_rep, -2)
-
-        final_role_rep = final_role_rep.view(batch_size*self.max_role_count, -1)
+        img = expanded_node_rep.contiguous().view(batch_size* self.max_role_count, -1, self.mlp_hidden)
+        att = self.v_att(img, q_emb)
+        v_emb = (att * img).sum(1)
 
         q_repr = self.q_net(q_emb)
-        v_repr = self.v_net(final_role_rep)
+        v_repr = self.v_net(v_emb)
         joint_repr = q_repr * v_repr
 
         logits = self.classifier(joint_repr)
