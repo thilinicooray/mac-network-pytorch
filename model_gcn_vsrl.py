@@ -178,6 +178,7 @@ class BaseModel(nn.Module):
         adj = torch.ones([batch_size, conv_h*conv_w, conv_h*conv_w], dtype=torch.float)
         if self.gpu_mode >= 0:
             adj = adj.to(torch.device('cuda'))
+            role_oh = role_oh.to(torch.device('cuda'))
 
         updated_nodes = self.role_gcn(img, adj)
 
