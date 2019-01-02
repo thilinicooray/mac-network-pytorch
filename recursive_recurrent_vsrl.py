@@ -73,7 +73,7 @@ class TopDown(nn.Module):
         return logits
 
 class RecurrentModel(nn.Module):
-    def __init__(self, encoder, role_lookup, ans_lookup, embeddings, vocab_size, n_verbs,
+    def __init__(self, encoder, role_lookup, ans_lookup, embeddings, vocab_size, n_verbs, gpu_mode
                  ):
         super(RecurrentModel, self).__init__()
 
@@ -83,6 +83,7 @@ class RecurrentModel(nn.Module):
         self.embeddings = embeddings
         self.vocab_size = vocab_size
         self.n_verbs = n_verbs
+        self.gpu_mode = gpu_mode
         self.qa_model = TopDown(self.vocab_size, self.n_verbs)
 
     def forward(self, img, verbq, verb, ans):
@@ -98,6 +99,11 @@ class RecurrentModel(nn.Module):
         if self.training:
             role_qs = self.encoder.get_role_questions_batch(verb)
             roles = self.encoder.get_role_ids_batch(verb)
+
+            if self.gpu_mode >= 0:
+                role_qs = role_qs.to(torch.device('cuda'))
+                roles = roles.to(torch.device('cuda'))
+
             for i in range(max_steps):
                 if context is None :
                     ans_dist = self.qa_model(img, self.embeddings(role_qs[:,i]))
@@ -121,6 +127,10 @@ class RecurrentModel(nn.Module):
             verb_ids = sorted_idx[:,0]
             role_qs = self.encoder.get_role_questions_batch(verb_ids)
             roles = self.encoder.get_role_ids_batch(verb_ids)
+
+            if self.gpu_mode >= 0:
+                role_qs = role_qs.to(torch.device('cuda'))
+                roles = roles.to(torch.device('cuda'))
 
             for i in range(max_steps):
                 if context is None :
@@ -183,7 +193,7 @@ class RecurrentModel(nn.Module):
         return verb_ids, beam_role_idx'''
 
 class RecursiveModel(nn.Module):
-    def __init__(self, encoder, role_lookup, ans_lookup, embeddings, vocab_size, n_verbs,
+    def __init__(self, encoder, role_lookup, ans_lookup, embeddings, vocab_size, n_verbs, gpu_mode,
                  n_iter
                  ):
         super(RecursiveModel, self).__init__()
@@ -195,9 +205,11 @@ class RecursiveModel(nn.Module):
         self.n_iter = n_iter
         self.vocab_size = vocab_size
         self.n_verbs = n_verbs
+        self.gpu_mode = gpu_mode
         self.recurrent_model = RecurrentModel(self.encoder, self.role_lookup, self.ans_lookup, self.embeddings,
                                               self.vocab_size,
-                                              self.n_verbs)
+                                              self.n_verbs,
+                                              self.gpu_mode)
 
     def forward(self, img, verbq, verb, ans):
         if self.training:
@@ -257,8 +269,10 @@ class BaseModel(nn.Module):
         self.ans_lookup = nn.Embedding(self.vocab_size + 1, embed_hidden, padding_idx=self.vocab_size)
         self.w_emb = nn.Embedding(self.n_role_q_vocab + 1, embed_hidden, padding_idx=self.n_role_q_vocab)
 
-        self.vsrl_model = RecursiveModel(self.encoder, self.role_lookup, self.ans_lookup, self.w_emb, self.vocab_size, self.n_verbs,
-                                         n_iter=2)
+        self.vsrl_model = RecursiveModel(self.encoder, self.role_lookup, self.ans_lookup, self.w_emb, self.vocab_size,
+                                         self.n_verbs,
+                                         self.gpu_mode,
+                                         n_iter=3)
 
 
         self.conv_hidden = self.conv.base_size()
