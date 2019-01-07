@@ -331,15 +331,17 @@ class BaseModel(nn.Module):
         if args.train_all:
             loss = 0
             for i in range(batch_size):
+                verb_loss = utils.cross_entropy_loss(verb_pred[i], gt_verbs[i])
                 for index in range(gt_labels.size()[1]):
                     frame_loss = 0
-                    verb_loss = utils.cross_entropy_loss(verb_pred[i], gt_verbs[i])
+
                     #frame_loss = criterion(role_label_pred[i], gt_labels[i,index])
                     for j in range(0, self.max_role_count):
                         frame_loss += utils.cross_entropy_loss(role_label_pred[i][j], gt_labels[i,index,j] ,self.vocab_size)
-                    frame_loss = verb_loss + frame_loss/len(self.encoder.verb2_role_dict[self.encoder.verb_list[gt_verbs[i]]])
+                    frame_loss = frame_loss/len(self.encoder.verb2_role_dict[self.encoder.verb_list[gt_verbs[i]]])
                     #print('frame loss', frame_loss, 'verb loss', verb_loss)
                     loss += frame_loss
+                loss += verb_loss
         else:
             #verb from pre-trained
             loss = 0
