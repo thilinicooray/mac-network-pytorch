@@ -272,7 +272,7 @@ class BaseModel(nn.Module):
         self.vsrl_model = RecursiveModel(self.encoder, self.role_lookup, self.ans_lookup, self.w_emb, self.vocab_size,
                                          self.n_verbs,
                                          self.gpu_mode,
-                                         n_iter=2)
+                                         n_iter=1)
 
 
         self.conv_hidden = self.conv.base_size()
