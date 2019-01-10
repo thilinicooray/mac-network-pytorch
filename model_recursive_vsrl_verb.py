@@ -7,6 +7,7 @@ from fc import FCNet
 import torch.nn.functional as F
 import torchvision as tv
 import utils
+import numpy as np
 
 class vgg16_modified(nn.Module):
     def __init__(self):
@@ -77,14 +78,20 @@ class VerbNode(nn.Module):
             mlp_hidden, 2 * mlp_hidden, self.num_verbs, 0.5)
         self.sftmax = nn.Softmax()
 
-    def forward(self, img, verbq):
-        ans_rep = self.vqa_model(img, self.q_word_embeddings(verbq))
+    def forward(self, img, verbq, roles=None, labels=None):
+
+        embedded_verb_q = self.q_word_embeddings(verbq)
+        if roles is not None and labels is not None:
+            roles_labels = torch.cat((roles, labels),1)
+            embedded_verb_q = torch.cat((embedded_verb_q.clone(), roles_labels),1)
+
+        ans_rep = self.vqa_model(img, embedded_verb_q)
         logits = self.verb_classifier(ans_rep)
         weights = self.sftmax(logits)
         weighted_verbs = torch.mm(weights, self.verb_lookup.weight)
         converted = weighted_verbs
 
-        return logits, converted
+        return logits, converted, ans_rep
 
 class RoleNode(nn.Module):
     def __init__(self,
@@ -103,6 +110,7 @@ class RoleNode(nn.Module):
         self.embd_hidden = embd_hidden
         self.vqa_model = vqa_model
         self.v_att = Attention(mlp_hidden, mlp_hidden, mlp_hidden)
+        self.context_maker = nn.Linear(self.embd_hidden*6, self.embd_hidden)
         self.contextual_verb = nn.Linear(self.embd_hidden*2 ,self.mlp_hidden)
         self.role_classifier = SimpleClassifier(
             mlp_hidden, 2 * mlp_hidden, self.num_roles + 1, 0.5)
@@ -110,7 +118,7 @@ class RoleNode(nn.Module):
             mlp_hidden, 2 * mlp_hidden, self.num_labels + 1, 0.5)
         self.sftmax = nn.Softmax()
 
-    def forward(self, img, verb, context):
+    def init_forward(self, img, verb, context):
         context_verb = self.contextual_verb(torch.cat((context, verb), 1))
         att = self.v_att(img, context_verb)
         v_emb = (att * img)
@@ -124,7 +132,29 @@ class RoleNode(nn.Module):
         weighted_labels = torch.mm(label_weights, self.ans_lookup.weight)
         converted = weighted_labels
 
-        return label_logits, converted
+        return label_logits, converted, role_ans_soft
+
+    def forward(self, img, verb, prev_roles, prev_labels):
+        batch_size, max_role, rep_size = prev_roles.size()
+        context = self.context_maker(prev_labels.view(batch_size, -1))
+        context_verb = self.contextual_verb(torch.cat((context, verb), 1))
+        att = self.v_att(img, context_verb)
+        v_emb = (att * img)
+        v_emb_vec = v_emb.sum(1)
+        role_weights = self.sftmax(self.role_classifier(v_emb_vec))
+        role_ans_soft = torch.mm(role_weights, self.role_lookup.weight)
+
+        roles_labels = torch.cat((prev_roles, prev_labels),1)
+
+        role_q = torch.cat((roles_labels, verb.unsqueeze(1), role_ans_soft.unsqueeze(1)),1)
+
+        label_rep = self.vqa_model(v_emb, role_q)
+        label_logits = self.label_classifier(label_rep)
+        label_weights = self.sftmax(label_logits)
+        weighted_labels = torch.mm(label_weights, self.ans_lookup.weight)
+        converted = weighted_labels
+
+        return label_logits, converted, role_ans_soft
 
 
 class RecursiveGraph(nn.Module):
@@ -156,26 +186,93 @@ class RecursiveGraph(nn.Module):
                                   self.emd_hidden, self.vqa_model)
 
     def forward(self, img, verbq):
-        verb_pred, verb_soft_ans = self.verb_node(img, verbq)
-        label_pred = None
+
+        verbs = []
+        roles = []
+        labels = []
 
         batch_size = img.size(0)
-        context = torch.ones([batch_size, self.emd_hidden])
 
-        if self.gpu_mode >= 0:
-            context = context.to(torch.device('cuda'))
+        for iter in range(2):
+            label_pred = None
+            role_rep = None
+            label_rep = None
+            if iter == 0:
+                verb_pred, verb_soft_ans, verb_ans_rep = self.verb_node(img, verbq)
+                verbs.append(verb_ans_rep)
+                context = torch.ones([batch_size, self.emd_hidden])
 
-        for i in range(self.max_roles):
-            label_logits, label_soft_ans = self.role_node(img, verb_soft_ans, context)
-            context *= label_soft_ans
+                if self.gpu_mode >= 0:
+                    context = context.to(torch.device('cuda'))
 
-            if i == 0:
-                label_pred = label_logits.unsqueeze(1)
+                for i in range(self.max_roles):
+                    label_logits, label_soft_ans, role_ans = self.role_node.init_forward(img, verb_soft_ans, context)
+                    context *= label_soft_ans
+
+                    if i == 0:
+                        label_pred = label_logits.unsqueeze(1)
+                        label_rep = label_soft_ans.unsqueeze(1)
+                        role_rep = role_ans.unsqueeze(1)
+                    else:
+                        label_pred = torch.cat((label_pred.clone(), label_logits.unsqueeze(1)), 1)
+                        label_rep = torch.cat((label_rep.clone(), label_soft_ans.unsqueeze(1)), 1)
+                        role_rep = torch.cat((role_rep.clone(), role_ans.unsqueeze(1)), 1)
+
+                roles.append(role_rep)
+                labels.append(label_rep)
+
             else:
-                label_pred = torch.cat((label_pred.clone(), label_logits.unsqueeze(1)), 1)
+                verb_pred, verb_soft_ans, verb_ans_rep = self.verb_node(img, verbq, roles[-1], labels[-1])
+                verbs.append(verb_ans_rep)
+
+                mask = self.get_mask(batch_size, self.max_roles, self.emd_hidden)
+                if self.gpu_mode >= 0:
+                    mask = mask.to(torch.device('cuda'))
+
+                role_prev = roles[-1]
+                role_prev = role_prev.expand(mask.size(1), role_prev.size(0), role_prev.size(1), role_prev.size(2))
+                role_prev = role_prev.transpose(0,1)
+
+                label_prev = labels[-1]
+                label_prev = label_prev.expand(mask.size(1), label_prev.size(0), label_prev.size(1), label_prev.size(2))
+                label_prev = label_prev.transpose(0,1)
+
+                role_prev_masked = mask * role_prev
+                label_prev_masked = mask * label_prev
+
+                #print('masked role :', role_prev_masked[0][1])
+
+                for i in range(self.max_roles):
+                    label_logits, label_soft_ans, role_ans = self.role_node(img, verb_soft_ans,
+                                                                            role_prev_masked[:,i,:,:],
+                                                                            label_prev_masked[:,i,:,:])
+                    if i == 0:
+                        label_pred = label_logits.unsqueeze(1)
+                        label_rep = label_soft_ans.unsqueeze(1)
+                        role_rep = role_ans.unsqueeze(1)
+                    else:
+                        label_pred = torch.cat((label_pred.clone(), label_logits.unsqueeze(1)), 1)
+                        label_rep = torch.cat((label_rep.clone(), label_soft_ans.unsqueeze(1)), 1)
+                        role_rep = torch.cat((role_rep.clone(), role_ans.unsqueeze(1)), 1)
+
+                roles.append(role_rep)
+                labels.append(label_rep)
+
 
         return verb_pred, label_pred
 
+    def get_mask(self, batch_size, max_role_count, dim):
+        id_mtx = torch.ones([max_role_count, max_role_count])
+        np_tensor = id_mtx.numpy()
+        np.fill_diagonal(np_tensor, 0)
+        id_mtx = torch.from_numpy(np_tensor)
+        id_mtx = (id_mtx.unsqueeze(-1)).unsqueeze(0)
+        id_mtx = id_mtx.expand(batch_size, id_mtx.size(1), id_mtx.size(2), dim)
+
+        #print('idx size :', id_mtx.size(), id_mtx[0][0], id_mtx[1][1])
+        #check whether its correct
+
+        return id_mtx
 
 class BaseModel(nn.Module):
     def __init__(self, encoder,
