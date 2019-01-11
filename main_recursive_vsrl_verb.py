@@ -1,6 +1,6 @@
 import torch
-from imsitu_encoder_verb_roleq import imsitu_encoder
-from imsitu_loader import imsitu_loader_verb_roleq
+from imsitu_encoder_verbq_rolephraseq import imsitu_encoder
+from imsitu_loader import imsitu_loader_verb_roleq_phrase
 from imsitu_scorer_log import imsitu_scorer
 import json
 import model_recursive_vsrl_verb
@@ -46,7 +46,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
         #print('current sample : ', i, img.size(), verb.size(), roles.size(), labels.size())
         #sizes batch_size*3*height*width, batch*504*1, batch*6*190*1, batch*3*6*lebale_count*1
         mx = len(train_loader)
-        for i, (_, img, verb, verbq, ans) in enumerate(train_loader):
+        for i, (_, img, verb, verbq, roleq, ans) in enumerate(train_loader):
             #print("epoch{}-{}/{} batches\r".format(epoch,i+1,mx)) ,
             t0 = time.time()
             t1 = time.time()
@@ -56,11 +56,13 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 img = torch.autograd.Variable(img.cuda())
                 verb = torch.autograd.Variable(verb.cuda())
                 verbq = torch.autograd.Variable(verbq.cuda())
+                roleq = torch.autograd.Variable(roleq.cuda())
                 ans = torch.autograd.Variable(ans.cuda())
             else:
                 img = torch.autograd.Variable(img)
                 verb = torch.autograd.Variable(verb)
                 verbq = torch.autograd.Variable(verbq)
+                roleq = torch.autograd.Variable(roleq)
                 ans = torch.autograd.Variable(ans)
 
 
@@ -74,7 +76,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
             print('=========================================================================')
             print(labels)'''
 
-            verb_predict, role_predict = pmodel(img, verbq, verb, ans)
+            verb_predict, role_predict = pmodel(img, verbq, roleq, verb, ans)
             #verb_predict, rol1pred, role_predict = pmodel.forward_eval5(img)
             #print ("forward time = {}".format(time.time() - t1))
             t1 = time.time()
@@ -175,7 +177,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 top1 = imsitu_scorer(encoder, 1, 3)
                 top5 = imsitu_scorer(encoder, 5, 3)
 
-            del verb_predict, role_predict, loss, img, verbq, verb, ans
+            del verb_predict, role_predict, loss, img, verbq, roleq, verb, ans
             #break
         print('Epoch ', epoch, ' completed!')
         scheduler.step()
@@ -190,7 +192,7 @@ def eval(model, dev_loader, encoder, gpu_mode, write_to_file = False):
     #top5 = imsitu_scorer(encoder, 5, 3)
     with torch.no_grad():
         mx = len(dev_loader)
-        for i, (img_id, img, verb, verbq, ans) in enumerate(dev_loader):
+        for i, (img_id, img, verb, verbq, roleq, ans) in enumerate(dev_loader):
             #print("{}/{} batches\r".format(i+1,mx)) ,
             '''im_data = torch.squeeze(im_data,0)
             im_info = torch.squeeze(im_info,0)
@@ -204,14 +206,16 @@ def eval(model, dev_loader, encoder, gpu_mode, write_to_file = False):
                 img = torch.autograd.Variable(img.cuda())
                 verb = torch.autograd.Variable(verb.cuda())
                 verbq = torch.autograd.Variable(verbq.cuda())
+                roleq = torch.autograd.Variable(roleq.cuda())
                 ans = torch.autograd.Variable(ans.cuda())
             else:
                 img = torch.autograd.Variable(img)
                 verb = torch.autograd.Variable(verb)
                 verbq = torch.autograd.Variable(verbq)
+                roleq = torch.autograd.Variable(roleq)
                 ans = torch.autograd.Variable(ans)
 
-            verb_predict, role_predict = model(img, verbq, None, None)
+            verb_predict, role_predict = model(img, verbq, roleq, None, None)
             '''loss = model.calculate_eval_loss(verb_predict, verb, role_predict, labels)
             val_loss += loss.item()'''
             if write_to_file:
@@ -221,7 +225,7 @@ def eval(model, dev_loader, encoder, gpu_mode, write_to_file = False):
                 top1.add_point_eval5_log(img_id, verb_predict, verb, role_predict, ans)
                 #top5.add_point_noun(verb, role_predict, labels)
 
-            del verb_predict, role_predict, img, verbq, verb, ans
+            del verb_predict, role_predict, img, verbq, roleq, verb, ans
             #break
 
     #return top1, top5, val_loss/mx
@@ -278,20 +282,20 @@ def main():
     #all verb and role feat are under role as it's a single unit
     cnn_features, role_features = utils.group_features_noun(model)
 
-    train_set = imsitu_loader_verb_roleq(imgset_folder, train_set, encoder, model.train_preprocess())
+    train_set = imsitu_loader_verb_roleq_phrase(imgset_folder, train_set, encoder, model.train_preprocess())
 
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=64, shuffle=True, num_workers=n_worker)
 
     dev_set = json.load(open(dataset_folder +"/dev.json"))
-    dev_set = imsitu_loader_verb_roleq(imgset_folder, dev_set, encoder, model.dev_preprocess())
+    dev_set = imsitu_loader_verb_roleq_phrase(imgset_folder, dev_set, encoder, model.dev_preprocess())
     dev_loader = torch.utils.data.DataLoader(dev_set, batch_size=64, shuffle=True, num_workers=n_worker)
 
     test_set = json.load(open(dataset_folder +"/test.json"))
-    test_set = imsitu_loader_verb_roleq(imgset_folder, test_set, encoder, model.dev_preprocess())
+    test_set = imsitu_loader_verb_roleq_phrase(imgset_folder, test_set, encoder, model.dev_preprocess())
     test_loader = torch.utils.data.DataLoader(test_set, batch_size=64, shuffle=True, num_workers=n_worker)
 
     traindev_set = json.load(open(dataset_folder +"/dev.json"))
-    traindev_set = imsitu_loader_verb_roleq(imgset_folder, traindev_set, encoder, model.dev_preprocess())
+    traindev_set = imsitu_loader_verb_roleq_phrase(imgset_folder, traindev_set, encoder, model.dev_preprocess())
     traindev_loader = torch.utils.data.DataLoader(traindev_set, batch_size=8, shuffle=True, num_workers=n_worker)
 
     utils.set_trainable(model, False)
