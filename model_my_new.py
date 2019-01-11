@@ -89,7 +89,7 @@ class WriteUnit(nn.Module):
 class RoleQHandler(nn.Module):
     def __init__(self,
                  dim=512,
-                 max_step=4):
+                 max_step=6):
         super(RoleQHandler, self).__init__()
 
         self.control = ControlUnit(dim, max_step)
