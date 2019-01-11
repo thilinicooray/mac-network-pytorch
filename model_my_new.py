@@ -113,19 +113,19 @@ class RoleQHandler(nn.Module):
         control = self.control_0.expand(b_size, self.dim)
         memory = self.mem_0.expand(b_size, self.dim)
 
-        controls = [control]
-        memories = [memory]
+        #controls = [control]
+        #memories = [memory]
 
         for i in range(self.max_step):
             control = self.control(i, q_words, q, control)
 
-            controls.append(control)
+            #controls.append(control)
 
-            curr_ans = self.vqa_model(img, controls[-1])
-            memory = self.write(memories[-1], curr_ans)
-            memories.append(memory)
+            curr_ans = self.vqa_model(img, control)
+            memory = self.write(memory, curr_ans)
+            #memories.append(memory)
 
-        return memories[-1]
+        return memory
 
 
 class ImSituationHandler(nn.Module):
@@ -159,18 +159,21 @@ class ImSituationHandler(nn.Module):
             self.mlp_hidden, 2 * self.mlp_hidden, self.vocab_size, 0.5)
 
 
-    def forward(self, img, verb):
+    def forward(self, img, verb, labels):
 
         batch_size = img.size(0)
         role_qs, _ = self.encoder.get_role_questions_batch(verb)
-        #roles = self.encoder.get_role_ids_batch(verb)
+        roles = self.encoder.get_role_ids_batch(verb)
 
         if self.gpu_mode >= 0:
             role_qs = role_qs.to(torch.device('cuda'))
-            #roles = roles.to(torch.device('cuda'))
+            roles = roles.to(torch.device('cuda'))
         role_qs = role_qs.view(-1, role_qs.size(-1))
 
-        w_emb = self.qword_embeddings(role_qs)
+        role_qs = self.get_context_q(verb.size(0), roles, role_qs, labels)
+
+        #w_emb = self.qword_embeddings(role_qs)
+        w_emb = role_qs
         lstm_out, (h, _) = self.q_emb(w_emb)
         q_emb = h.permute(1, 0, 2).contiguous().view(batch_size, -1)
 
@@ -186,11 +189,16 @@ class ImSituationHandler(nn.Module):
         return logits
 
     def get_context_q(self, batch_size, roles, role_qs, labels):
+
         #get context
-        mask = self.get_mask(batch_size, self.max_roles, self.emd_hidden)
+        mask = self.get_mask(batch_size, 6, 300)
         if self.gpu_mode >= 0:
             mask = mask.to(torch.device('cuda'))
 
+        #just get first label for this out of 3
+        labels = labels[:,0,:]
+
+        #print('label size :', labels.size(), mask.size())
         role_prev = self.role_lookup(roles)
         role_prev = role_prev.expand(mask.size(1), role_prev.size(0), role_prev.size(1), role_prev.size(2))
         role_prev = role_prev.transpose(0,1)
@@ -202,12 +210,13 @@ class ImSituationHandler(nn.Module):
         role_prev_masked = mask * role_prev
         label_prev_masked = mask * label_prev
 
-        print('role ctx size :', role_prev_masked.size(), role_qs.size())
-
-        roles_labels = torch.cat((role_prev_masked, label_prev_masked),1)
+        roles_labels = torch.cat((role_prev_masked, label_prev_masked),2)
+        roles_labels = roles_labels.view(roles_labels.size(0)*roles_labels.size(1), roles_labels.size(2), -1)
+        #print('role ctx size :', roles_labels.size(), role_qs.size())
         updated_role_qs = torch.cat((roles_labels, self.qword_embeddings(role_qs)),1)
+        #print('updated q :', updated_role_qs.size())
 
-        q_emb, v_emb = self.role_handler(img, updated_role_qs)
+        return updated_role_qs
 
     def get_mask(self, batch_size, max_role_count, dim):
         id_mtx = torch.ones([max_role_count, max_role_count])
@@ -274,7 +283,7 @@ class BaseModel(nn.Module):
     def dev_preprocess(self):
         return self.dev_transform
 
-    def forward(self, img, verb):
+    def forward(self, img, verb, labels):
 
         img_features = self.conv(img)
         batch_size, n_channel, conv_h, conv_w = img_features.size()
@@ -285,7 +294,7 @@ class BaseModel(nn.Module):
         img = img.transpose(0,1)
         img = img.contiguous().view(batch_size* self.max_role_count, -1, self.mlp_hidden)
 
-        role_pred = self.vsrl_model(img, verb)
+        role_pred = self.vsrl_model(img, verb, labels)
         role_pred = role_pred.contiguous().view(batch_size, -1, self.vocab_size)
 
         #print('ans sizes :', verb_pred.size(), role_pred.size())
