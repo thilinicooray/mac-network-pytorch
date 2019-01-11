@@ -33,62 +33,135 @@ class TopDown(nn.Module):
                  mlp_hidden=512):
         super(TopDown, self).__init__()
 
-        self.q_emb = nn.LSTM(embed_hidden, mlp_hidden,
-                             batch_first=True, bidirectional=True)
-        self.q_prep = FCNet([mlp_hidden, mlp_hidden])
-        self.lstm_proj = nn.Linear(mlp_hidden * 2, mlp_hidden)
         self.verb_transform = nn.Linear(embed_hidden, mlp_hidden)
         self.v_att = Attention(mlp_hidden, mlp_hidden, mlp_hidden)
 
 
-    def forward(self, img, q):
-        batch_size = q.size(0)
-        w_emb = q
-        lstm_out, (h, _) = self.q_emb(w_emb)
-        q_emb = h.permute(1, 0, 2).contiguous().view(batch_size, -1)
-        q_emb = self.lstm_proj(q_emb)
+    def forward(self, img, q_emb):
+        #batch_size = q.size(0)
 
         att = self.v_att(img, q_emb)
         v_emb = (att * img).sum(1) # [batch, v_dim]
 
-        return q_emb, v_emb
+        return v_emb
+
+class ControlUnit(nn.Module):
+    def __init__(self, dim, max_step):
+        super().__init__()
+
+        self.position_aware = nn.ModuleList()
+        for i in range(max_step):
+            self.position_aware.append(nn.Linear(dim * 2, dim))
+
+        self.control_question = nn.Linear(dim * 2, dim)
+        self.attn = nn.Linear(dim, 1)
+
+        self.dim = dim
+
+    def forward(self, step, context, question, control):
+        position_aware = self.position_aware[step](question)
+
+        control_question = torch.cat([control, position_aware], 1)
+        control_question = self.control_question(control_question)
+        control_question = control_question.unsqueeze(1)
+
+        context_prod = control_question * context
+        attn_weight = self.attn(context_prod)
+
+        attn = F.softmax(attn_weight, 1)
+
+        next_control = (attn * context).sum(1)
+
+        return next_control
+
+class WriteUnit(nn.Module):
+    def __init__(self, dim=512):
+        super().__init__()
+
+        self.concat = nn.Linear(dim * 2, dim)
+
+    def forward(self, prev_mem, retrieved):
+        concat = self.concat(torch.cat([retrieved, prev_mem], 1))
+        next_mem = concat
+
+        return next_mem
 
 class RoleQHandler(nn.Module):
-    def __init__(self):
+    def __init__(self,
+                 dim=512,
+                 max_step=4):
         super(RoleQHandler, self).__init__()
 
+        self.control = ControlUnit(dim, max_step)
         self.vqa_model = TopDown()
+        self.write = WriteUnit(dim)
+
+        self.mem_0 = nn.Parameter(torch.zeros(1, dim))
+        self.control_0 = nn.Parameter(torch.zeros(1, dim))
+
+        self.dim = dim
+        self.max_step = max_step
 
 
-
-    def forward(self, img, q):
+    def init_forward(self, img, q):
         q_emb , v_emb = self.vqa_model(img, q)
         return q_emb , v_emb
+
+    def forward(self, img, q_words, q):
+        b_size = img.size(0)
+
+        control = self.control_0.expand(b_size, self.dim)
+        memory = self.mem_0.expand(b_size, self.dim)
+
+        controls = [control]
+        memories = [memory]
+
+        for i in range(self.max_step):
+            control = self.control(i, q_words, q, control)
+
+            controls.append(control)
+
+            curr_ans = self.vqa_model(img, controls[-1])
+            memory = self.write(memories[-1], curr_ans)
+            memories.append(memory)
+
+        return memories[-1]
 
 
 class ImSituationHandler(nn.Module):
     def __init__(self,
                  encoder,
+                 role_lookup,
+                 label_lookup,
                  qword_embeddings,
                  vocab_size,
                  gpu_mode,
-                 mlp_hidden=512):
+                 mlp_hidden=512,
+                 emd_hidden=300):
         super(ImSituationHandler, self).__init__()
 
 
         self.encoder = encoder
+        self.role_lookup = role_lookup
+        self.label_lookup = label_lookup
         self.qword_embeddings = qword_embeddings
         self.vocab_size = vocab_size
         self.gpu_mode = gpu_mode
+        self.mlp_hidden = mlp_hidden
+        self.emd_hidden = emd_hidden
+        self.q_emb = nn.LSTM(self.emd_hidden, self.mlp_hidden,
+                             batch_first=True, bidirectional=True)
+        self.lstm_word_proj = nn.Linear(self.mlp_hidden * 2, self.mlp_hidden)
         self.role_handler = RoleQHandler()
-        self.q_net = FCNet([mlp_hidden, mlp_hidden])
-        self.v_net = FCNet([mlp_hidden, mlp_hidden])
+        self.q_net = FCNet([self.mlp_hidden*2, self.mlp_hidden])
+        self.v_net = FCNet([self.mlp_hidden, self.mlp_hidden])
         self.classifier = SimpleClassifier(
-            mlp_hidden, 2 * mlp_hidden, self.vocab_size, 0.5)
+            self.mlp_hidden, 2 * self.mlp_hidden, self.vocab_size, 0.5)
 
 
     def forward(self, img, verb):
 
+        batch_size = img.size(0)
         role_qs, _ = self.encoder.get_role_questions_batch(verb)
         #roles = self.encoder.get_role_ids_batch(verb)
 
@@ -97,7 +170,13 @@ class ImSituationHandler(nn.Module):
             #roles = roles.to(torch.device('cuda'))
         role_qs = role_qs.view(-1, role_qs.size(-1))
 
-        q_emb, v_emb = self.role_handler(img, self.qword_embeddings(role_qs))
+        w_emb = self.qword_embeddings(role_qs)
+        lstm_out, (h, _) = self.q_emb(w_emb)
+        q_emb = h.permute(1, 0, 2).contiguous().view(batch_size, -1)
+
+        lstm_out = self.lstm_word_proj(lstm_out)
+
+        v_emb = self.role_handler(img, lstm_out, q_emb)
 
         q_repr = self.q_net(q_emb)
         v_repr = self.v_net(v_emb)
@@ -105,6 +184,43 @@ class ImSituationHandler(nn.Module):
         logits = self.classifier(joint_repr)
 
         return logits
+
+    def get_context_q(self, batch_size, roles, role_qs, labels):
+        #get context
+        mask = self.get_mask(batch_size, self.max_roles, self.emd_hidden)
+        if self.gpu_mode >= 0:
+            mask = mask.to(torch.device('cuda'))
+
+        role_prev = self.role_lookup(roles)
+        role_prev = role_prev.expand(mask.size(1), role_prev.size(0), role_prev.size(1), role_prev.size(2))
+        role_prev = role_prev.transpose(0,1)
+
+        label_prev = self.label_lookup(labels)
+        label_prev = label_prev.expand(mask.size(1), label_prev.size(0), label_prev.size(1), label_prev.size(2))
+        label_prev = label_prev.transpose(0,1)
+
+        role_prev_masked = mask * role_prev
+        label_prev_masked = mask * label_prev
+
+        print('role ctx size :', role_prev_masked.size(), role_qs.size())
+
+        roles_labels = torch.cat((role_prev_masked, label_prev_masked),1)
+        updated_role_qs = torch.cat((roles_labels, self.qword_embeddings(role_qs)),1)
+
+        q_emb, v_emb = self.role_handler(img, updated_role_qs)
+
+    def get_mask(self, batch_size, max_role_count, dim):
+        id_mtx = torch.ones([max_role_count, max_role_count])
+        np_tensor = id_mtx.numpy()
+        np.fill_diagonal(np_tensor, 0)
+        id_mtx = torch.from_numpy(np_tensor)
+        id_mtx = (id_mtx.unsqueeze(-1)).unsqueeze(0)
+        id_mtx = id_mtx.expand(batch_size, id_mtx.size(1), id_mtx.size(2), dim)
+
+        #print('idx size :', id_mtx.size(), id_mtx[0][0], id_mtx[1][1])
+        #check whether its correct
+
+        return id_mtx
 
 
 class BaseModel(nn.Module):
@@ -140,11 +256,12 @@ class BaseModel(nn.Module):
         self.n_role_q_vocab = len(self.encoder.question_words)
 
         self.conv = vgg16_modified()
-        self.role_lookup = nn.Embedding(self.n_roles +1, embed_hidden, padding_idx=self.n_roles)
+        self.role_lookup = nn.Embedding(self.n_roles + 1, embed_hidden, padding_idx=self.n_roles)
         self.ans_lookup = nn.Embedding(self.vocab_size + 1, embed_hidden, padding_idx=self.vocab_size)
         self.w_emb = nn.Embedding(self.n_role_q_vocab + 1, embed_hidden, padding_idx=self.n_role_q_vocab)
 
-        self.vsrl_model = ImSituationHandler(self.encoder, self.w_emb, self.vocab_size,
+        self.vsrl_model = ImSituationHandler(self.encoder, self.role_lookup, self.ans_lookup,
+                                             self.w_emb, self.vocab_size,
                                          self.gpu_mode)
 
         self.conv_hidden = self.conv.base_size()
