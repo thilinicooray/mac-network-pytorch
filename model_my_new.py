@@ -132,7 +132,6 @@ class ImSituationHandler(nn.Module):
     def __init__(self,
                  encoder,
                  role_lookup,
-                 label_lookup,
                  qword_embeddings,
                  vocab_size,
                  gpu_mode,
@@ -143,7 +142,6 @@ class ImSituationHandler(nn.Module):
 
         self.encoder = encoder
         self.role_lookup = role_lookup
-        self.label_lookup = label_lookup
         self.qword_embeddings = qword_embeddings
         self.vocab_size = vocab_size
         self.gpu_mode = gpu_mode
@@ -153,6 +151,7 @@ class ImSituationHandler(nn.Module):
                              batch_first=True, bidirectional=True)
         self.lstm_word_proj = nn.Linear(self.mlp_hidden * 2, self.mlp_hidden)
         self.role_handler = RoleQHandler()
+        self.ans_convert = nn.Linear(self.mlp_hidden, self.emd_hidden)
         self.q_net = FCNet([self.mlp_hidden*2, self.mlp_hidden])
         self.v_net = FCNet([self.mlp_hidden, self.mlp_hidden])
         self.classifier = SimpleClassifier(
@@ -170,9 +169,22 @@ class ImSituationHandler(nn.Module):
             roles = roles.to(torch.device('cuda'))
         role_qs = role_qs.view(-1, role_qs.size(-1))
 
-        role_qs = self.get_context_q(verb.size(0), roles, role_qs, labels)
+        #i=0 the init stage, only raw qs
+        w_emb = self.qword_embeddings(role_qs)
+        lstm_out, (h, _) = self.q_emb(w_emb)
+        q_emb = h.permute(1, 0, 2).contiguous().view(batch_size, -1)
 
-        #w_emb = self.qword_embeddings(role_qs)
+        lstm_out = self.lstm_word_proj(lstm_out)
+
+        v_emb = self.role_handler(img, lstm_out, q_emb)
+
+        ans_rep = self.ans_convert(v_emb)
+        ans_rep = ans_rep.contiguous().view(verb.size(0), -1, self.emd_hidden)
+
+        #i=1, get prev ans as label
+
+        role_qs = self.get_context_q(verb.size(0), roles, role_qs, ans_rep)
+
         w_emb = role_qs
         lstm_out, (h, _) = self.q_emb(w_emb)
         q_emb = h.permute(1, 0, 2).contiguous().view(batch_size, -1)
@@ -181,7 +193,7 @@ class ImSituationHandler(nn.Module):
 
         v_emb = self.role_handler(img, lstm_out, q_emb)
 
-        q_repr = self.q_net(q_emb)
+        q_repr = self.q_net(q_emb)#use q with context, not the original
         v_repr = self.v_net(v_emb)
         joint_repr = q_repr * v_repr
         logits = self.classifier(joint_repr)
@@ -196,14 +208,14 @@ class ImSituationHandler(nn.Module):
             mask = mask.to(torch.device('cuda'))
 
         #just get first label for this out of 3
-        labels = labels[:,0,:]
+        #labels = labels[:,0,:]
 
         #print('label size :', labels.size(), mask.size())
         role_prev = self.role_lookup(roles)
         role_prev = role_prev.expand(mask.size(1), role_prev.size(0), role_prev.size(1), role_prev.size(2))
         role_prev = role_prev.transpose(0,1)
 
-        label_prev = self.label_lookup(labels)
+        label_prev = labels
         label_prev = label_prev.expand(mask.size(1), label_prev.size(0), label_prev.size(1), label_prev.size(2))
         label_prev = label_prev.transpose(0,1)
 
@@ -266,10 +278,10 @@ class BaseModel(nn.Module):
 
         self.conv = vgg16_modified()
         self.role_lookup = nn.Embedding(self.n_roles + 1, embed_hidden, padding_idx=self.n_roles)
-        self.ans_lookup = nn.Embedding(self.vocab_size + 1, embed_hidden, padding_idx=self.vocab_size)
+        #self.ans_lookup = nn.Embedding(self.vocab_size + 1, embed_hidden, padding_idx=self.vocab_size)
         self.w_emb = nn.Embedding(self.n_role_q_vocab + 1, embed_hidden, padding_idx=self.n_role_q_vocab)
 
-        self.vsrl_model = ImSituationHandler(self.encoder, self.role_lookup, self.ans_lookup,
+        self.vsrl_model = ImSituationHandler(self.encoder, self.role_lookup,
                                              self.w_emb, self.vocab_size,
                                          self.gpu_mode)
 
