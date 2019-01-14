@@ -152,6 +152,7 @@ class ImSituationHandler(nn.Module):
         self.lstm_word_proj = nn.Linear(self.mlp_hidden * 2, self.mlp_hidden)
         self.role_handler = RoleQHandler()
         self.ans_convert = nn.Linear(self.mlp_hidden, self.emd_hidden)
+        self.vembd_cat = nn.Linear(self.mlp_hidden * 2, self.mlp_hidden)
         self.q_net = FCNet([self.mlp_hidden*2, self.mlp_hidden])
         self.v_net = FCNet([self.mlp_hidden, self.mlp_hidden])
         self.classifier = SimpleClassifier(
@@ -177,6 +178,7 @@ class ImSituationHandler(nn.Module):
         lstm_out = self.lstm_word_proj(lstm_out)
 
         v_emb = self.role_handler(img, lstm_out, q_emb)
+        v_embd_prev = v_emb
 
         ans_rep = self.ans_convert(v_emb)
         ans_rep = ans_rep.contiguous().view(verb.size(0), -1, self.emd_hidden)
@@ -192,6 +194,7 @@ class ImSituationHandler(nn.Module):
         lstm_out = self.lstm_word_proj(lstm_out)
 
         v_emb = self.role_handler(img, lstm_out, q_emb)
+        v_emb = self.vembd_cat(torch.cat([v_emb, v_embd_prev],1))
 
         q_repr = self.q_net(q_emb)#use q with context, not the original
         v_repr = self.v_net(v_emb)
