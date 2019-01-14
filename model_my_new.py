@@ -89,7 +89,7 @@ class WriteUnit(nn.Module):
 class RoleQHandler(nn.Module):
     def __init__(self,
                  dim=512,
-                 max_step=8):
+                 max_step=6):
         super(RoleQHandler, self).__init__()
 
         self.control = ControlUnit(dim, max_step)
@@ -131,6 +131,7 @@ class RoleQHandler(nn.Module):
 class ImSituationHandler(nn.Module):
     def __init__(self,
                  encoder,
+                 verb_lookup,
                  role_lookup,
                  qword_embeddings,
                  vocab_size,
@@ -141,6 +142,7 @@ class ImSituationHandler(nn.Module):
 
 
         self.encoder = encoder
+        self.verb_lookup = verb_lookup
         self.role_lookup = role_lookup
         self.qword_embeddings = qword_embeddings
         self.vocab_size = vocab_size
@@ -152,6 +154,7 @@ class ImSituationHandler(nn.Module):
         self.lstm_word_proj = nn.Linear(self.mlp_hidden * 2, self.mlp_hidden)
         self.role_handler = RoleQHandler()
         self.ans_convert = nn.Linear(self.mlp_hidden, self.emd_hidden)
+        self.verb_convert = nn.Linear(self.emd_hidden, self.mlp_hidden)
         self.q_net = FCNet([self.mlp_hidden*2, self.mlp_hidden])
         self.v_net = FCNet([self.mlp_hidden, self.mlp_hidden])
         self.classifier = SimpleClassifier(
@@ -195,7 +198,11 @@ class ImSituationHandler(nn.Module):
 
         q_repr = self.q_net(q_emb)#use q with context, not the original
         v_repr = self.v_net(v_emb)
-        joint_repr = q_repr * v_repr
+        verb_rep = self.verb_convert(self.verb_lookup(verb))
+        verb_embed_expand = verb_rep.expand(self.encoder.max_role_count, verb_rep.size(0), verb_rep.size(1))
+        verb_embed_expand = verb_embed_expand.transpose(0,1)
+        verb_embed_expand = verb_embed_expand.contiguous().view(-1, self.mlp_hidden)
+        joint_repr = verb_embed_expand * q_repr * v_repr
         logits = self.classifier(joint_repr)
 
         return logits
@@ -277,11 +284,12 @@ class BaseModel(nn.Module):
         self.n_role_q_vocab = len(self.encoder.question_words)
 
         self.conv = vgg16_modified()
+        self.verb_lookup = nn.Embedding(self.n_verbs, embed_hidden)
         self.role_lookup = nn.Embedding(self.n_roles + 1, embed_hidden, padding_idx=self.n_roles)
         #self.ans_lookup = nn.Embedding(self.vocab_size + 1, embed_hidden, padding_idx=self.vocab_size)
         self.w_emb = nn.Embedding(self.n_role_q_vocab + 1, embed_hidden, padding_idx=self.n_role_q_vocab)
 
-        self.vsrl_model = ImSituationHandler(self.encoder, self.role_lookup,
+        self.vsrl_model = ImSituationHandler(self.encoder, self.verb_lookup, self.role_lookup,
                                              self.w_emb, self.vocab_size,
                                          self.gpu_mode)
 
