@@ -37,10 +37,10 @@ class TopDown(nn.Module):
         self.v_att = Attention(mlp_hidden, mlp_hidden, mlp_hidden)
 
 
-    def forward(self, img, q_emb):
+    def forward(self, img, q_emb, verb):
         #batch_size = q.size(0)
 
-        att = self.v_att(img, q_emb)
+        att = self.v_att(img, q_emb*verb)
         v_emb = (att * img).sum(1) # [batch, v_dim]
 
         return v_emb
@@ -107,7 +107,7 @@ class RoleQHandler(nn.Module):
         q_emb , v_emb = self.vqa_model(img, q)
         return q_emb , v_emb
 
-    def forward(self, img, q_words, q):
+    def forward(self, img, q_words, q, verb):
         b_size = img.size(0)
 
         control = self.control_0.expand(b_size, self.dim)
@@ -121,7 +121,7 @@ class RoleQHandler(nn.Module):
 
             #controls.append(control)
 
-            curr_ans = self.vqa_model(img, control)
+            curr_ans = self.vqa_model(img, control, verb)
             memory = self.write(memory, curr_ans)
             #memories.append(memory)
 
@@ -163,6 +163,11 @@ class ImSituationHandler(nn.Module):
 
     def forward(self, img, verb, labels):
 
+        verb_rep = self.verb_convert(self.verb_lookup(verb))
+        verb_embed_expand = verb_rep.expand(self.encoder.max_role_count, verb_rep.size(0), verb_rep.size(1))
+        verb_embed_expand = verb_embed_expand.transpose(0,1)
+        verb_embed_expand = verb_embed_expand.contiguous().view(-1, self.mlp_hidden)
+
         batch_size = img.size(0)
         role_qs, _ = self.encoder.get_role_questions_batch(verb)
         roles = self.encoder.get_role_ids_batch(verb)
@@ -179,7 +184,7 @@ class ImSituationHandler(nn.Module):
 
         lstm_out = self.lstm_word_proj(lstm_out)
 
-        v_emb = self.role_handler(img, lstm_out, q_emb)
+        v_emb = self.role_handler(img, lstm_out, q_emb, verb_embed_expand)
 
         ans_rep = self.ans_convert(v_emb)
         ans_rep = ans_rep.contiguous().view(verb.size(0), -1, self.emd_hidden)
@@ -194,14 +199,11 @@ class ImSituationHandler(nn.Module):
 
         lstm_out = self.lstm_word_proj(lstm_out)
 
-        v_emb = self.role_handler(img, lstm_out, q_emb)
+        v_emb = self.role_handler(img, lstm_out, q_emb, verb_embed_expand)
 
         q_repr = self.q_net(q_emb)#use q with context, not the original
         v_repr = self.v_net(v_emb)
-        verb_rep = self.verb_convert(self.verb_lookup(verb))
-        verb_embed_expand = verb_rep.expand(self.encoder.max_role_count, verb_rep.size(0), verb_rep.size(1))
-        verb_embed_expand = verb_embed_expand.transpose(0,1)
-        verb_embed_expand = verb_embed_expand.contiguous().view(-1, self.mlp_hidden)
+
         joint_repr = verb_embed_expand * q_repr * v_repr
         logits = self.classifier(joint_repr)
 
