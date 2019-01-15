@@ -399,6 +399,7 @@ def load_net(fname, net_list, prefix_list = None):
                 if need_modification:
                     k = prefix_list[i] + '.' + k
                 if k in dict:
+                    print('came here')
                     param = torch.from_numpy(np.asarray(dict[k]))
                     print('param size :', param.size())
                     v.copy_(param)
@@ -406,6 +407,7 @@ def load_net(fname, net_list, prefix_list = None):
                 else:
                     print('[Missed]: {}'.format(k))
         except Exception as e:
+            print(e)
             pdb.set_trace()
             print ('[Loaded net not complete] Parameter[{}] Size Mismatch...'.format(k))
 
