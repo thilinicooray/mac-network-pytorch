@@ -14,6 +14,7 @@ class imsitu_scorer():
             self.value_all_dict = {}
             self.role_pred = {}
             self.vall_all_correct = {}
+            self.fail_verb_role = {}
 
     def clear(self):
         self.score_cards = {}
@@ -215,7 +216,14 @@ class imsitu_scorer():
                     if label_id == gt_label_id:
                         found = True
                         break
-                if not found: all_found = False
+                if not found:
+                    all_found = False
+                    if self.write_to_file:
+                        fail_val = self.encoder.verb_list[gt_v] + '_' + gt_role_list[k]
+                        if fail_val not in self.fail_verb_role:
+                            self.fail_verb_role[fail_val] = 1
+                        else:
+                            self.fail_verb_role[fail_val] += 1
                 #both verb and at least one val found
                 if found and verb_found: score_card["value"] += 1
                 #at least one val found
