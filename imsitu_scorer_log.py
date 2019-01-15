@@ -15,6 +15,7 @@ class imsitu_scorer():
             self.role_pred = {}
             self.vall_all_correct = {}
             self.fail_verb_role = {}
+            self.all_verb_role = {}
 
     def clear(self):
         self.score_cards = {}
@@ -189,6 +190,12 @@ class imsitu_scorer():
             all_found = True
             pred_situ = []
             for k in range(0, gt_role_count):
+                if self.write_to_file:
+                    all_val = self.encoder.verb_list[gt_v] + '_' + gt_role_list[k]
+                    if all_val not in self.all_verb_role:
+                        self.all_verb_role[all_val] = 1
+                    else:
+                        self.all_verb_role[all_val] += 1
 
                 label_id = torch.max(label_pred[k],0)[1]
 
@@ -224,6 +231,7 @@ class imsitu_scorer():
                             self.fail_verb_role[fail_val] = 1
                         else:
                             self.fail_verb_role[fail_val] += 1
+
                 #both verb and at least one val found
                 if found and verb_found: score_card["value"] += 1
                 #at least one val found
