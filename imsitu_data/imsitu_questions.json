@@ -14,7 +14,7 @@
             "target": {
                 "framenet": "representation",
                 "def": "The entity being tattooed",
-                "question": "who is being tattooed?"
+                "question": "what is the body part the agent is tattooing?"
             },
             "agent": {
                 "framenet": "creator",
@@ -28,7 +28,7 @@
             "place": {
                 "framenet": "place",
                 "def": "The location where the rain event happening",
-                "question": "where is the rain event happening?"
+                "question": "what is the location of raining?"
             }
         }
     },
@@ -56,7 +56,7 @@
             "tool": {
                 "framenet": "instrument",
                 "def": "The thing helping the AGENT move the SUBSTANCE",
-                "question": "what is the thing helping the agent move the substance?"
+                "question": "what is the item the agent is using for splashing something?"
             },
             "destination": {
                 "framenet": "goal",
@@ -176,7 +176,7 @@
             "item": {
                 "framenet": "phenomenon",
                 "def": "The entity being displayed",
-                "question": "what is the item being displayed?"
+                "question": "what is the item the agent is displaying?"
             },
             "place": {
                 "framenet": "place",
@@ -219,7 +219,7 @@
             "source": {
                 "framenet": "instrument",
                 "def": "Where the FOOD is coming from",
-                "question": "where the food is coming from?"
+                "question": "what is the item that contains food?"
             },
             "eater": {
                 "framenet": "ingestor",
@@ -271,7 +271,7 @@
             "item": {
                 "framenet": "whole_patient",
                 "def": "The thing being shredded",
-                "question": "what is the thing being shredded?"
+                "question": "what is the thing the agent is shredding?"
             },
             "tool": {
                 "framenet": "instrument",
@@ -295,7 +295,7 @@
             "item": {
                 "framenet": "patient",
                 "def": "The thing being chewed",
-                "question": "what is the thing being chewed?"
+                "question": "what is the thing the agent is chewing?"
             },
             "place": {
                 "framenet": "place",
@@ -496,7 +496,7 @@
             "yanked": {
                 "framenet": "entity",
                 "def": "The thing being yanked",
-                "question": "what is the thing being yanked?"
+                "question": "what is the thing the agent is yanking?"
             },
             "agent": {
                 "framenet": "agent",
@@ -515,12 +515,12 @@
             "item": {
                 "framenet": "theme",
                 "def": "The thing being pluts",
-                "question": "what is the thing being put?"
+                "question": "what is the thing the agent is putting?"
             },
             "destination": {
                 "framenet": "goal",
                 "def": "Where the ITEM ends up",
-                "question": "where the item ends up?"
+                "question": "what is the thing the agent is putting something on?"
             },
             "place": {
                 "framenet": "place",
@@ -544,7 +544,7 @@
             "decorated": {
                 "framenet": "obstruction",
                 "def": "The entity getting decorated",
-                "question": "what is getting decorated?"
+                "question": "what is the entity the agent is decorating?"
             },
             "place": {
                 "framenet": "place",
@@ -582,7 +582,7 @@
             "tool": {
                 "framenet": "instrument",
                 "def": "The thing used for mashing the ITEM",
-                "question": "what is the thing used for mashing the item?"
+                "question": "what is the tool the agent is using for mashing?"
             },
             "place": {
                 "framenet": "place",
@@ -601,7 +601,7 @@
             "food": {
                 "framenet": "produced_food",
                 "def": "The thing being created",
-                "question": "what is the thing being created?"
+                "question": "what is the food the agent is baking?"
             },
             "place": {
                 "framenet": "place",
@@ -735,7 +735,7 @@
             "container": {
                 "framenet": "goal",
                 "def": "The thing the agent is inserting the object into",
-                "question": "what is the thing the agent is inserting the object into?"
+                "question": "what is the item the agent is inserting something into?"
             },
             "agent": {
                 "framenet": "agent",
@@ -801,7 +801,7 @@
             "item": {
                 "framenet": "victim",
                 "def": "The thing being chopped",
-                "question": "what is the thing being chopped?"
+                "question": "what is the thing the agent is chopping?"
             },
             "tool": {
                 "framenet": "instrument",
@@ -863,7 +863,7 @@
             "item": {
                 "framenet": "theme",
                 "def": "The thing being given",
-                "question": "what is the thing being given?"
+                "question": "what is the thing the agent is giving?"
             },
             "recipient": {
                 "framenet": "recipient",
@@ -897,7 +897,7 @@
             "tool": {
                 "framenet": "manner",
                 "def": "Any other tool being used to cook",
-                "question": "what is the tool being used to cook?"
+                "question": "what is the tool the agent is using to cook?"
             },
             "agent": {
                 "framenet": "cook",
@@ -1016,12 +1016,12 @@
             "item": {
                 "framenet": "entity",
                 "def": "The thing being pushed",
-                "question": "what is the thing being pushed?"
+                "question": "what is the thing the agent is pushing?"
             },
             "place": {
                 "framenet": "place",
                 "def": "The location where the push event happening",
-                "question": "where is the push event happening?"
+                "question": "what is the place the agent is pushing something?"
             },
             "agent": {
                 "framenet": "agent",
@@ -1040,7 +1040,7 @@
             "wrappeditem": {
                 "framenet": "theme",
                 "def": "The entity that is being wrapped",
-                "question": "what is being wrapped?"
+                "question": "what is the item the agent is wrapping?"
             },
             "place": {
                 "framenet": "place",
@@ -1050,7 +1050,7 @@
             "wrappingitem": {
                 "framenet": "goal",
                 "def": "The entity that is wrapping, like wrapping paper",
-                "question": "what is the thing being used to wrap the item?"
+                "question": "what is the thing the agent is using to wrap something?"
             },
             "agent": {
                 "framenet": "agent",
@@ -1117,7 +1117,7 @@
             "item": {
                 "framenet": "sought_entity",
                 "def": "The thing the agent forages for",
-                "question": "what is the thing the agent forages for?"
+                "question": "what is the food the agent is foraging for?"
             },
             "place": {
                 "framenet": "place",
@@ -1203,7 +1203,7 @@
             "boringthing": {
                 "framenet": "figure",
                 "def": "The thing ignored",
-                "question": "what is the thing being ignored?"
+                "question": "what is the thing the agent is ignoring?"
             },
             "agent": {
                 "framenet": "perceiver",
@@ -1241,7 +1241,7 @@
             "item": {
                 "framenet": "patient",
                 "def": "The object that the agent is sharpening",
-                "question": "what is the object that the agent is sharpening?"
+                "question": "what is the tool the agent is sharpening?"
             },
             "tool": {
                 "framenet": "instrument",
@@ -1298,7 +1298,7 @@
             "item": {
                 "framenet": "containing_object",
                 "def": "The thing being sealed",
-                "question": "what is the thing being sealed?"
+                "question": "what is the item the agent is sealing?"
             },
             "place": {
                 "framenet": "place",
@@ -1632,7 +1632,7 @@
             "distributed": {
                 "framenet": "individuals",
                 "def": "The entity being distributed",
-                "question": "what is being distributed?"
+                "question": "what is the item the agent is distributing?"
             },
             "recipients": {
                 "framenet": "goal_area",
@@ -1775,7 +1775,7 @@
             "paweditem": {
                 "framenet": "entity",
                 "def": "The entity being pawed",
-                "question": "who is being pawed?"
+                "question": "what is the item the agent is pawing?"
             },
             "place": {
                 "framenet": "place",
@@ -1856,7 +1856,7 @@
             "item": {
                 "framenet": "theme",
                 "def": "The thing being carried",
-                "question": "what is the thing being carried?"
+                "question": "what is the item the agent is carrying?"
             },
             "place": {
                 "framenet": "place",
@@ -1871,7 +1871,7 @@
             "agentpart": {
                 "framenet": "manner",
                 "def": "The part of the AGENT, other than hands, used to carry the ITEM",
-                "question": "what is the part of the agent used to carry the item?"
+                "question": "what is the body part of the agent used for carrying something?"
             }
         }
     },
@@ -2101,7 +2101,7 @@
             "component": {
                 "framenet": "component",
                 "def": "The thing being installed",
-                "question": "what is the thing being installed?"
+                "question": "what is the thing the agent is installing?"
             },
             "agent": {
                 "framenet": "agent",
@@ -2130,7 +2130,7 @@
             "agent": {
                 "framenet": "agent",
                 "def": "The entity doing the douse action",
-                "question": "who is doing the douse action?"
+                "question": "who is dousing something?"
             }
         }
     },
@@ -2206,7 +2206,7 @@
             "item": {
                 "framenet": "theme",
                 "def": "The thing the agent is unpacking from the container",
-                "question": "what is the thing the agent is unpacking from the container?"
+                "question": "what is the thing the agent is taking out from the container?"
             },
             "container": {
                 "framenet": "goal",
@@ -2326,7 +2326,7 @@
             "item": {
                 "framenet": "entity",
                 "def": "The object that is being pulled",
-                "question": "what is the object that is being pulled?"
+                "question": "what is the item the agent is pulling?"
             },
             "tool": {
                 "framenet": "instrument",
@@ -2436,7 +2436,7 @@
             "destroyeditem": {
                 "framenet": "patient",
                 "def": "The entity being destroyed",
-                "question": "what is being destroyed?"
+                "question": "what is the thing the agent destroyed?"
             },
             "tool": {
                 "framenet": "instrument",
@@ -2494,7 +2494,7 @@
             "object": {
                 "framenet": "entity",
                 "def": "The entity being poked",
-                "question": "who is being poked?"
+                "question": "what is the agent poking?"
             },
             "objectpart": {
                 "framenet": "locus",
@@ -2513,7 +2513,7 @@
             "tickled": {
                 "framenet": "entity",
                 "def": "The entity being tickled",
-                "question": "who is being tickled?"
+                "question": "who is the agent is tickling?"
             },
             "object": {
                 "framenet": "instrument",
@@ -2695,7 +2695,7 @@
             "tool": {
                 "framenet": "manner",
                 "def": "The thing that is helping the AGENT light the ITEM",
-                "question": "what is being used to light the item?"
+                "question": "what is the item the agent is using to light something?"
             },
             "place": {
                 "framenet": "place",
@@ -2820,7 +2820,7 @@
             "item": {
                 "framenet": "item",
                 "def": "The thing the agent is gluing",
-                "question": "what is the item the agent is gluing?"
+                "question": "what is the item the agent is applying glue onto?"
             },
             "place": {
                 "framenet": "place",
@@ -2830,7 +2830,7 @@
             "goal": {
                 "framenet": "goal",
                 "def": "The thing the agent glues the item to",
-                "question": "what is the thing the agent glues the item to?"
+                "question": "what is the thing the agent glues something to?"
             },
             "agent": {
                 "framenet": "agent",
@@ -2863,7 +2863,7 @@
             "item": {
                 "framenet": "theme",
                 "def": "The thing being hauled",
-                "question": "what is the thing being hauled?"
+                "question": "what is the thing the vehicle is hauling?"
             },
             "tool": {
                 "framenet": "manner",
@@ -3002,7 +3002,7 @@
             "agent": {
                 "framenet": "offerer",
                 "def": "The entity doing the serve action",
-                "question": "who is doing the serve action?"
+                "question": "who is serving?"
             },
             "served": {
                 "framenet": "potential_recipient",
@@ -3177,7 +3177,7 @@
             "agent": {
                 "framenet": "emitter",
                 "def": "The entity doing the glow action",
-                "question": "who is doing the glow action?"
+                "question": "what is glowing?"
             }
         }
     },
@@ -3220,7 +3220,7 @@
             "student": {
                 "framenet": "student",
                 "def": "The ones being coached",
-                "question": "who is being coached?"
+                "question": "who is the student?"
             },
             "agent": {
                 "framenet": "teacher",
@@ -3343,7 +3343,7 @@
             "sliceditem": {
                 "framenet": "item",
                 "def": "The item being sliced",
-                "question": "what is the item being sliced?"
+                "question": "what is the item the agent is slicing?"
             },
             "tool": {
                 "framenet": "instrument",
@@ -3377,7 +3377,7 @@
             "student": {
                 "framenet": "student",
                 "def": "The entity being educated",
-                "question": "who is being educated?"
+                "question": "who is the student?"
             },
             "subject": {
                 "framenet": "subject",
@@ -3487,7 +3487,7 @@
             "dye": {
                 "framenet": "alterant",
                 "def": "",
-                "question": "what is the colour of the dye?"
+                "question": "what is the dye?"
             },
             "material": {
                 "framenet": "material",
@@ -3511,12 +3511,12 @@
             "item": {
                 "framenet": "theme",
                 "def": "The item used for filling something",
-                "question": "what is the item used for filling?"
+                "question": "what is the item the agent is used for filling something?"
             },
             "destination": {
                 "framenet": "goal",
                 "def": "The destination container being filled",
-                "question": "what is the container being filled?"
+                "question": "what is the container the agent is filling?"
             },
             "place": {
                 "framenet": "place",
@@ -3531,7 +3531,7 @@
             "source": {
                 "framenet": "source",
                 "def": "The source container the item originated from",
-                "question": "what is the source container the item originated from?"
+                "question": "what is the item the agent is using to fill something?"
             }
         }
     },
@@ -3774,7 +3774,7 @@
             "destination": {
                 "framenet": "goal",
                 "def": "Where the ITEM ends up",
-                "question": "where the item ends up?"
+                "question": "what is the place the agent is ejecting something to?"
             },
             "place": {
                 "framenet": "place",
@@ -3937,7 +3937,7 @@
             "tool": {
                 "framenet": "manner",
                 "def": "The thing the AGENT is using to ignite the ITEM",
-                "question": "what is the thing the agent is using to ignite the item?"
+                "question": "what is the item that provides light?"
             },
             "place": {
                 "framenet": "place",
@@ -4071,7 +4071,7 @@
             "destination": {
                 "framenet": "goal",
                 "def": "The thing the ITEM is fastened into/onto",
-                "question": "what is the thing the item is fastened into?"
+                "question": "what is the thing the agent is fastening something onto?"
             },
             "agent": {
                 "framenet": "agent",
@@ -4086,7 +4086,7 @@
             "item": {
                 "framenet": "item",
                 "def": "The entity being fastened",
-                "question": "what is being fastened?"
+                "question": "what is the item the agent is fastening?"
             },
             "place": {
                 "framenet": "place",
@@ -4134,7 +4134,7 @@
             "tool": {
                 "framenet": "instrument",
                 "def": "The thing the agent uses to repair item",
-                "question": "what is the tool the agent uses to repair item?"
+                "question": "what is the tool the agent is using?"
             },
             "agent": {
                 "framenet": "agent",
@@ -4281,7 +4281,7 @@
             "item": {
                 "framenet": "patient",
                 "def": "the item that is being bitten",
-                "question": "what is the item that is being bitten?"
+                "question": "what is the thing the agent is biting?"
             },
             "place": {
                 "framenet": "place",
@@ -4347,7 +4347,7 @@
             "agentpart": {
                 "framenet": "subregion",
                 "def": "The part of the CoAgent being striked",
-                "question": "what is the part being striked?"
+                "question": "what is the part the agent is striking at?"
             },
             "coagent": {
                 "framenet": "impactee",
@@ -4528,7 +4528,7 @@
             "item": {
                 "framenet": "food",
                 "def": "The entity being farmed",
-                "question": "what item is being farmed?"
+                "question": "what is the food the agent is farming?"
             },
             "tool": {
                 "framenet": "instrument",
@@ -4605,7 +4605,7 @@
             "tool": {
                 "framenet": "means",
                 "def": "The object used to do the mine action",
-                "question": "what is the tool used to do the mine action?"
+                "question": "what is the tool the agent is using for mining?"
             },
             "resource": {
                 "framenet": "resource",
@@ -4634,7 +4634,7 @@
             "place": {
                 "framenet": "place",
                 "def": "The location where the sell event happening",
-                "question": "where is the sell event happening?"
+                "question": "what is the place the agent is selling things?"
             },
             "seller": {
                 "framenet": "seller",
@@ -4682,7 +4682,7 @@
             "agent": {
                 "framenet": "agent",
                 "def": "The entity doing the bounce action",
-                "question": "who is doing the bounce action?"
+                "question": "who is bouncing on something?"
             }
         }
     },
@@ -4734,7 +4734,7 @@
             "item": {
                 "framenet": "agreement",
                 "def": "The thing being autographed",
-                "question": "what is the thing being autographed?"
+                "question": "what is the thing the agent is signing?"
             },
             "place": {
                 "framenet": "place",
@@ -4815,7 +4815,7 @@
             "scrapeditem": {
                 "framenet": "theme",
                 "def": "The item that is being scraped",
-                "question": "what item is being scraped?"
+                "question": "what is the item the agent is scraping?"
             },
             "place": {
                 "framenet": "place",
@@ -5030,7 +5030,7 @@
             "container": {
                 "framenet": "source",
                 "def": "Where the ITEM started",
-                "question": "from what container the item started?"
+                "question": "what is the container the agent is emptying?"
             },
             "tool": {
                 "framenet": "instrument",
@@ -5040,7 +5040,7 @@
             "destination": {
                 "framenet": "goal",
                 "def": "Where the ITEM ends up",
-                "question": "where the item ends up?"
+                "question": "what is the item the agent is filling?"
             },
             "agent": {
                 "framenet": "agent",
@@ -5064,12 +5064,12 @@
             "place": {
                 "framenet": "place",
                 "def": "The location where the decompose event happening",
-                "question": "where is the decompose event happening?"
+                "question": "what is the place something is decomposing?"
             },
             "decomposer": {
                 "framenet": "patient",
                 "def": "The entity doing the decomposing",
-                "question": "who is doing the decomposing?"
+                "question": "what is the thing decomposing?"
             }
         }
     },
@@ -5106,12 +5106,12 @@
             "place": {
                 "framenet": "place",
                 "def": "The location where the flame event happening",
-                "question": "where is the flame event happening?"
+                "question": "what is the place flaming happening?"
             },
             "agent": {
                 "framenet": "figure",
                 "def": "The entity doing the flame action",
-                "question": "who is doing the flame action?"
+                "question": "what is the item which contains flame?"
             }
         }
     },
@@ -5154,7 +5154,7 @@
             "place": {
                 "framenet": "place",
                 "def": "The location where the hurl event happening",
-                "question": "where is the hurl event happening?"
+                "question": "what is the place the agent is hurling something?"
             },
             "agent": {
                 "framenet": "agent",
@@ -5168,7 +5168,7 @@
             "item": {
                 "framenet": "theme",
                 "def": "The item that is being scooped",
-                "question": "what is the item that is being scooped?"
+                "question": "what is the thing the agent is scooping?"
             },
             "tool": {
                 "framenet": "instrument",
@@ -5188,7 +5188,7 @@
             "source": {
                 "framenet": "source",
                 "def": "Thing where it is scooped from",
-                "question": "from where the item is scooped from?"
+                "question": "what is the container the agent is scooping things from?"
             }
         }
     },
@@ -5259,7 +5259,7 @@
             "depicted": {
                 "framenet": "phenomenon",
                 "def": "The thing being videotaped",
-                "question": "what is the thing being videotaped?"
+                "question": "what is the thing the agent is videotaping?"
             },
             "place": {
                 "framenet": "place",
@@ -5415,7 +5415,7 @@
             "weapon": {
                 "framenet": "weapon",
                 "def": "Something the AGENT is using to hurt the VICTIM",
-                "question": "what weapon the agent is using to attack the victim?"
+                "question": "what is the weapon the agent is using?"
             },
             "place": {
                 "framenet": "place",
@@ -5468,7 +5468,7 @@
             "item": {
                 "framenet": "whole_patient",
                 "def": "Then entity that is being dissected",
-                "question": "what item is being dissected?"
+                "question": "what is the entity the agent is dissecting?"
             },
             "tool": {
                 "framenet": "instrument",
@@ -5573,7 +5573,7 @@
             "hugged": {
                 "framenet": "entity",
                 "def": "The entity or entities being hugged",
-                "question": "who is being hugged?"
+                "question": "who is the agent hugging?"
             },
             "place": {
                 "framenet": "place",
@@ -5654,7 +5654,7 @@
             "tool": {
                 "framenet": "instrument",
                 "def": "The thing the agent uses to color",
-                "question": "what tool is the agent using to color?"
+                "question": "what is the item the agent is using to color?"
             },
             "place": {
                 "framenet": "place",
@@ -5692,7 +5692,7 @@
             "addressee": {
                 "framenet": "addressee",
                 "def": "The one being asked",
-                "question": "whom the agent is asking from?"
+                "question": "from whom the agent is asking?"
             },
             "place": {
                 "framenet": "medium",
@@ -5735,7 +5735,7 @@
             "victim": {
                 "framenet": "victim",
                 "def": "thing that is being clawed",
-                "question": "what thing is being clawed?"
+                "question": "what is the thing the agent is clawing?"
             },
             "agent": {
                 "framenet": "agent",
@@ -5749,7 +5749,7 @@
             "item": {
                 "framenet": "theme",
                 "def": "The thing being scrubbed",
-                "question": "what thing is being scrubbed?"
+                "question": "what thing is the agent scrubbing?"
             },
             "tool": {
                 "framenet": "instrument",
@@ -5778,7 +5778,7 @@
             "object": {
                 "framenet": "theme",
                 "def": "The entity that is being rinsed",
-                "question": "what is being rinsed?"
+                "question": "what is the item the agent is rinsing?"
             },
             "place": {
                 "framenet": "place",
@@ -5892,7 +5892,7 @@
             "destination": {
                 "framenet": "goal",
                 "def": "Where the SUBSTANCE is ending up",
-                "question": "where the substance is ending up?"
+                "question": "what is the item the agent is spraying at?"
             },
             "substance": {
                 "framenet": "theme",
@@ -5940,7 +5940,7 @@
             "food": {
                 "framenet": "food",
                 "def": "The thing being fried",
-                "question": "what is the food being fried?"
+                "question": "what is the food the agent is frying?"
             },
             "place": {
                 "framenet": "place",
@@ -5964,7 +5964,7 @@
             "model": {
                 "framenet": "standard",
                 "def": "The entity being imitated",
-                "question": "who is being imitated?"
+                "question": "what is the agent imitating?"
             },
             "place": {
                 "framenet": "place",
@@ -5974,7 +5974,7 @@
             "agent": {
                 "framenet": "agent",
                 "def": "The entity doing the imitate action",
-                "question": "who is doing the imitate action?"
+                "question": "who is imitating something?"
             }
         }
     },
@@ -6026,7 +6026,7 @@
             "source": {
                 "framenet": "source",
                 "def": "Where the SUBSTANCE started",
-                "question": "from where the substance started?"
+                "question": "what is the item the substance spilled out from?"
             },
             "destination": {
                 "framenet": "goal",
@@ -6036,7 +6036,7 @@
             "substance": {
                 "framenet": "fluid",
                 "def": "The thing that was spilled",
-                "question": "what is the substance that is spilling?"
+                "question": "what is the spilling substance?"
             },
             "place": {
                 "framenet": "place",
@@ -6055,7 +6055,7 @@
             "item": {
                 "framenet": "hidden_object",
                 "def": "The item that is covered",
-                "question": "what is the item that is covered?"
+                "question": "what is the item the agent is covering?"
             },
             "cover": {
                 "framenet": "obstruction",
@@ -6098,12 +6098,12 @@
             "item": {
                 "framenet": "theme",
                 "def": "The thing being dipped",
-                "question": "what item is being dipped?"
+                "question": "what is the item the agent is dipping?"
             },
             "substance": {
                 "framenet": "substance",
                 "def": "The thing the ITEM is being dipped into",
-                "question": "what is the substance the item is being dipped into?"
+                "question": "what is the substance the agent is dipping something in?"
             },
             "place": {
                 "framenet": "manner",
@@ -6122,7 +6122,7 @@
             "item": {
                 "framenet": "entity",
                 "def": "The item being licked",
-                "question": "what is the item being licked?"
+                "question": "what is the item the agent is licking?"
             },
             "place": {
                 "framenet": "place",
@@ -6245,7 +6245,7 @@
             "components": {
                 "framenet": "components",
                 "def": "The parts used to construct something",
-                "question": "what is the material used for constructing?"
+                "question": "what is the material the agent is using for constructing?"
             },
             "tool": {
                 "framenet": "instrument",
@@ -6260,7 +6260,7 @@
             "createditem": {
                 "framenet": "created_entity",
                 "def": "The item being created",
-                "question": "what is the item being constructed?"
+                "question": "what is the item the agent is constructing?"
             },
             "agent": {
                 "framenet": "agent",
@@ -6274,7 +6274,7 @@
             "item": {
                 "framenet": "theme",
                 "def": "The thing being buried",
-                "question": "what is the thing being buried?"
+                "question": "what is the thing the agent is burying?"
             },
             "tool": {
                 "framenet": "manner",
@@ -6284,7 +6284,7 @@
             "destination": {
                 "framenet": "goal",
                 "def": "Where the ITEM ends up",
-                "question": "where the item ends up?"
+                "question": "what is the place the agent is burrying something?"
             },
             "place": {
                 "framenet": "place",
@@ -6303,7 +6303,7 @@
             "item": {
                 "framenet": "theme",
                 "def": "The item that is being throwed",
-                "question": "what is the item that is being thrown?"
+                "question": "what is the item the agent is throwing?"
             },
             "destination": {
                 "framenet": "goal",
@@ -6327,17 +6327,17 @@
             "drencheditem": {
                 "framenet": "patient",
                 "def": "The entity that is being drenched",
-                "question": "what item is being drenched?"
+                "question": "what item is getting drenched?"
             },
             "tool": {
                 "framenet": "instrument",
                 "def": "The entity used to do the drenching",
-                "question": "what tool is used for drenching?"
+                "question": "what tool is the agent using for drenching?"
             },
             "place": {
                 "framenet": "place",
                 "def": "The location where the drench event happening",
-                "question": "where is the drench event happening?"
+                "question": "what is the place the agent is drenching at?"
             },
             "liquid": {
                 "framenet": "liquid",
@@ -6347,7 +6347,7 @@
             "agent": {
                 "framenet": "agent",
                 "def": "The entity doing the drench action",
-                "question": "who is doing the drench action?"
+                "question": "what is drenching something?"
             }
         }
     },
@@ -6390,7 +6390,7 @@
             "tool": {
                 "framenet": "instrument",
                 "def": "The tool used to prick",
-                "question": "what is the tool used to prick?"
+                "question": "what is the tool the agent is using to prick something?"
             },
             "place": {
                 "framenet": "place",
@@ -6409,12 +6409,12 @@
             "instrument": {
                 "framenet": "instrument",
                 "def": "The instrument or substance used to the the extermination",
-                "question": "what is the instrument used for the extermination?"
+                "question": "what is the tool used for the extermination?"
             },
             "place": {
                 "framenet": "place",
                 "def": "The location being exterminated",
-                "question": "where is the location being exterminated?"
+                "question": "what is the location the agent is exterminating?"
             },
             "agent": {
                 "framenet": "killer",
@@ -6471,7 +6471,7 @@
             "tool": {
                 "framenet": "instrument",
                 "def": "The thing that is helping the AGENT clear the ITEM",
-                "question": "what is the tool used by the agent to clear the item?"
+                "question": "what is the tool the agent is using for clearing?"
             },
             "place": {
                 "framenet": "place",
@@ -6562,7 +6562,7 @@
             "object": {
                 "framenet": "patient",
                 "def": "The object the agent is wetting",
-                "question": "what is the object the agent is wetting?"
+                "question": "what is the item the agent is wetting?"
             },
             "place": {
                 "framenet": "place",
@@ -6725,7 +6725,7 @@
             "place": {
                 "framenet": "place",
                 "def": "The location where the vacuum event happening",
-                "question": "where is the vacuum event happening?"
+                "question": "what is the place the agent is vacuuming something?"
             },
             "surface": {
                 "framenet": "source",
@@ -6749,7 +6749,7 @@
             "victim": {
                 "framenet": "victim",
                 "def": "The thing being kicked",
-                "question": "what is the thing being kicked?"
+                "question": "what is the thing the agent is kicking?"
             },
             "agent": {
                 "framenet": "agent",
@@ -6797,7 +6797,7 @@
             "crop": {
                 "framenet": "crop",
                 "def": "The thing being picked",
-                "question": "what is the item being picked?"
+                "question": "what is the item the agent is picking?"
             },
             "agent": {
                 "framenet": "gatherer",
@@ -6911,12 +6911,12 @@
             "smashed": {
                 "framenet": "whole_patient",
                 "def": "The thing that is getting smashed",
-                "question": "what is the thing that is getting smashed?"
+                "question": "what is the thing that agent is smashing?"
             },
             "tool": {
                 "framenet": "instrument",
                 "def": "A tool the AGENT is using to smash",
-                "question": "what is the tool the agent is using to smash?"
+                "question": "what is the item the agent is using to smash something?"
             },
             "place": {
                 "framenet": "place",
@@ -6959,7 +6959,7 @@
             "item": {
                 "framenet": "entity",
                 "def": "The item receiving the nip action",
-                "question": "what is the item receiving the nip action?"
+                "question": "what is the item the agent is nipping?"
             },
             "place": {
                 "framenet": "place",
@@ -6978,7 +6978,7 @@
             "part": {
                 "framenet": "locus",
                 "def": "The part of the Object being stroked",
-                "question": "what is the part of the object being stroked?"
+                "question": "what is the body part the agent is stroking?"
             },
             "object": {
                 "framenet": "entity",
@@ -7002,7 +7002,7 @@
             "substance": {
                 "framenet": "theme",
                 "def": "The thing being poured",
-                "question": "what is the substance being poured?"
+                "question": "what is the substance the agent is pouring?"
             },
             "tool": {
                 "framenet": "instrument",
@@ -7012,7 +7012,7 @@
             "destination": {
                 "framenet": "goal",
                 "def": "The place the SUBSTANCE ended up in",
-                "question": "what is the place the substance ended up in?"
+                "question": "what is the item the agent is pouring the substance into?"
             },
             "agent": {
                 "framenet": "agent",
@@ -7022,7 +7022,7 @@
             "source": {
                 "framenet": "source",
                 "def": "The container the SUBSTANCE started in",
-                "question": "what is the container the substance started in?"
+                "question": "what is the container the agent is pouring out the substance from?"
             },
             "place": {
                 "framenet": "place",
@@ -7079,7 +7079,7 @@
             "source": {
                 "framenet": "source",
                 "def": "The thing being dusted",
-                "question": "what is the item being dusted?"
+                "question": "what is the item the agent is dusting?"
             },
             "tool": {
                 "framenet": "instrument",
@@ -7137,7 +7137,7 @@
             "item": {
                 "framenet": "item",
                 "def": "The thing being attached",
-                "question": "what is the item agent is attaching?"
+                "question": "what is the item the agent is attaching to something?"
             },
             "place": {
                 "framenet": "place",
@@ -7156,7 +7156,7 @@
             "item": {
                 "framenet": "theme",
                 "def": "The item being dropped",
-                "question": "what is the item being dropped?"
+                "question": "what is the item the agent is dropping?"
             },
             "end": {
                 "framenet": "goal",
@@ -7247,7 +7247,7 @@
             "goods": {
                 "framenet": "goods",
                 "def": "The thing the agent is shopping for",
-                "question": "what is the thing the agent is shopping for?"
+                "question": "what is the good the agent is shopping for?"
             },
             "place": {
                 "framenet": "place",
@@ -7643,7 +7643,7 @@
             "item": {
                 "framenet": "theme",
                 "def": "The thing being stuffed",
-                "question": "what is the thing being stuffed?"
+                "question": "what is the thing the agent is stuffing into?"
             },
             "destination": {
                 "framenet": "goal",
@@ -7705,7 +7705,7 @@
             "item": {
                 "framenet": "entity",
                 "def": "The thing the agent rubs",
-                "question": "what is the thing the agent rubs?"
+                "question": "what is the agent rubbing?"
             },
             "place": {
                 "framenet": "place",
@@ -7786,7 +7786,7 @@
             "clungto": {
                 "framenet": "theme",
                 "def": "The entity the AGENT is clinging to",
-                "question": "what item is the agent clinging to?"
+                "question": "what is the item the agent is clinging to?"
             },
             "place": {
                 "framenet": "place",
@@ -7858,7 +7858,7 @@
             "destination": {
                 "framenet": "goal",
                 "def": "The object that something is being pinned onto",
-                "question": "what is the object that an item is pinned onto?"
+                "question": "what is the surface the agent is pinning something onto?"
             },
             "place": {
                 "framenet": "place",
@@ -7877,7 +7877,7 @@
             "item": {
                 "framenet": "theme",
                 "def": "The thing being dragged",
-                "question": "what is the thing being dragged?"
+                "question": "what is the thing the agent is dragging?"
             },
             "tool": {
                 "framenet": "instrument",
@@ -8145,12 +8145,12 @@
             "source": {
                 "framenet": "source",
                 "def": "thing that is being cleaned",
-                "question": "what is thing that is being cleaned?"
+                "question": "what is thing the agent is cleaning?"
             },
             "tool": {
                 "framenet": "instrument",
                 "def": "thing used to clean",
-                "question": "what tool is used to clean?"
+                "question": "what is the tool the agent is using to clean?"
             },
             "place": {
                 "framenet": "place",
@@ -8241,7 +8241,7 @@
             "recipientpart": {
                 "framenet": "body_part",
                 "def": "the part being caressed",
-                "question": "what is the body part being caressed?"
+                "question": "what is the body part the agent is caressing?"
             },
             "recipient": {
                 "framenet": "experiencer",
@@ -8322,7 +8322,7 @@
             "reference": {
                 "framenet": "reference",
                 "def": "The thing being drawn",
-                "question": "what is the thing being drawn?"
+                "question": "what is the thing the agent is drawing?"
             },
             "agent": {
                 "framenet": "creator",
@@ -8422,7 +8422,7 @@
             "item": {
                 "framenet": "medium",
                 "def": "The thing the agent is mending",
-                "question": "what is the thing the agent is mending?"
+                "question": "what is the item the agent is mending?"
             },
             "tool": {
                 "framenet": "instrument",
@@ -8665,7 +8665,7 @@
             "item": {
                 "framenet": "theme",
                 "def": "The thing being unloaded",
-                "question": "what is the thing being unloaded?"
+                "question": "what is the thing the agent is unloading?"
             },
             "tool": {
                 "framenet": "instrument",
@@ -8800,7 +8800,7 @@
             "tool": {
                 "framenet": "means_of_motion",
                 "def": "the entity the agent uses to descend",
-                "question": "what tool is the agent uses to descend?"
+                "question": "what is the tool the agent is using for descending?"
             },
             "place": {
                 "framenet": "place",
@@ -8862,7 +8862,7 @@
             "destination": {
                 "framenet": "goal",
                 "def": "The entity which is getting pounced onto",
-                "question": "what is the target of pouncing?"
+                "question": "what is the entity the agent is pouncing onto?"
             },
             "place": {
                 "framenet": "place",
@@ -8948,7 +8948,7 @@
             "item": {
                 "framenet": "item",
                 "def": "The thing being taped",
-                "question": "what is the thing being taped?"
+                "question": "what is the thing the agent is taping?"
             },
             "destination": {
                 "framenet": "goal",
@@ -9086,7 +9086,7 @@
             "item": {
                 "framenet": "phenomenon",
                 "def": "The thing being smelled",
-                "question": "what is the thing being sniffed?"
+                "question": "what is the thing the agent is sniffing?"
             },
             "place": {
                 "framenet": "place",
@@ -9168,7 +9168,7 @@
             "performer": {
                 "framenet": "performer",
                 "def": "The thing the agent is filming",
-                "question": "what is the thing the agent is filming?"
+                "question": "who is the performer the agent is filming?"
             },
             "place": {
                 "framenet": "place",
@@ -9211,7 +9211,7 @@
             "object": {
                 "framenet": "phenomenon",
                 "def": "The entity being measured",
-                "question": "what is being measured?"
+                "question": "what is the thing the agent is measuring?"
             },
             "place": {
                 "framenet": "place",
@@ -9235,7 +9235,7 @@
             "food": {
                 "framenet": "ingestibles",
                 "def": "The thing being consumed",
-                "question": "what is the food being eaten?"
+                "question": "what is the food the agent is eating?"
             },
             "place": {
                 "framenet": "place",
@@ -9398,7 +9398,7 @@
             "entityhelped": {
                 "framenet": "benefited_party",
                 "def": "The entity that is receiving the help",
-                "question": "who is receiving the help?"
+                "question": "to whom is the agent helping?"
             }
         }
     },
@@ -9493,7 +9493,7 @@
             "item": {
                 "framenet": "theme",
                 "def": "The entity being carted",
-                "question": "who is being carted?"
+                "question": "what is the entity the cart is carrying?"
             },
             "tool": {
                 "framenet": "manner",
@@ -9560,7 +9560,7 @@
             "target": {
                 "framenet": "victim",
                 "def": "The object being burned",
-                "question": "what is the object being burnt?"
+                "question": "what is the thing the agent is burning?"
             },
             "agent": {
                 "framenet": "agent",
@@ -9780,7 +9780,7 @@
             "object": {
                 "framenet": "theme",
                 "def": "The thing that the agent is retrieving",
-                "question": "what is the thing that the agent is retrieving?"
+                "question": "what is the item the agent is retrieving?"
             },
             "place": {
                 "framenet": "place",
@@ -9818,12 +9818,12 @@
             "placeditem": {
                 "framenet": "theme",
                 "def": "The entity that is being place",
-                "question": "what is being place?"
+                "question": "what is the item the agent is placing?"
             },
             "destination": {
                 "framenet": "goal",
                 "def": "The area in which PlaceItem will end following the action",
-                "question": "what is the destination of the item?"
+                "question": "what is the place the agent is putting the item?"
             },
             "place": {
                 "framenet": "place",
@@ -9962,7 +9962,7 @@
             "item": {
                 "framenet": "theme",
                 "def": "The item being offered",
-                "question": "what is the item being offered?"
+                "question": "what is the item the agent is offering?"
             },
             "place": {
                 "framenet": "place",
@@ -9981,7 +9981,7 @@
             "strapped": {
                 "framenet": "item",
                 "def": "The thing being strapped in",
-                "question": "what is the thing being strapped in?"
+                "question": "what is the thing the agent is strapping in?"
             },
             "destination": {
                 "framenet": "goal",
@@ -10010,7 +10010,7 @@
             "item": {
                 "framenet": "part",
                 "def": "The thing being adjusted",
-                "question": "what is the thing being adjusted?"
+                "question": "what is the thing the agent is adjusting?"
             },
             "tool": {
                 "framenet": "instrument",
@@ -10106,12 +10106,12 @@
             "source": {
                 "framenet": "source",
                 "def": "The thing the SUBSTANCE is being wiped from",
-                "question": "where is the substance being wiped from?"
+                "question": "what is the surface the agent is wiping?"
             },
             "tool": {
                 "framenet": "instrument",
                 "def": "The thing the AGENT is using to wipe up the SUBSTANCE",
-                "question": "what is the tool the agent is using to wipe up the substance?"
+                "question": "what is the item the agent is using to wipe?"
             },
             "substance": {
                 "framenet": "theme",
@@ -10204,7 +10204,7 @@
             "substance": {
                 "framenet": "theme",
                 "def": "thing that is being applied",
-                "question": "what is the substance that is being applied?"
+                "question": "what is the substance the agent is applying?"
             },
             "place": {
                 "framenet": "place",
@@ -10352,7 +10352,7 @@
             "item": {
                 "framenet": "patient",
                 "def": "The entity being gnawed",
-                "question": "what is being gnawed?"
+                "question": "what is the agent gnawing?"
             },
             "place": {
                 "framenet": "place",
@@ -10467,17 +10467,17 @@
             "tool": {
                 "framenet": "instrument",
                 "def": "The thing the agent uses to fix the object",
-                "question": "what is the tool the agent uses to fix the object?"
+                "question": "what is the tool the agent is using for fixing?"
             },
             "object": {
                 "framenet": "medium",
                 "def": "The thing the agent is fixing",
-                "question": "what is the object the agent is fixing?"
+                "question": "what is the agent fixing?"
             },
             "objectpart": {
                 "framenet": "problem",
                 "def": "The part of the OBJECT being repaired",
-                "question": "what is the part of the object being fixed?"
+                "question": "what is the part of the thing the agent is fixing?"
             },
             "agent": {
                 "framenet": "agent",
@@ -10635,7 +10635,7 @@
             "tool": {
                 "framenet": "manner",
                 "def": "The thing the agent uses to whistle",
-                "question": "what is the tool the agent uses to whistle?"
+                "question": "what is the item the agent is using to whistle?"
             },
             "place": {
                 "framenet": "place",
@@ -10750,12 +10750,12 @@
             "tool": {
                 "framenet": "instrument",
                 "def": "Any tool helping the AGENT create the GOALITEM",
-                "question": "what is the tool helping the agent for building?"
+                "question": "what is the tool the agent is using?"
             },
             "goalitem": {
                 "framenet": "created_entity",
                 "def": "The thing the AGENT is trying to construct",
-                "question": "what is the item the agent is building?"
+                "question": "what is the agent building?"
             },
             "components": {
                 "framenet": "components",
@@ -10860,12 +10860,12 @@
             "source": {
                 "framenet": "source",
                 "def": "The initial location where RemovedItem was located",
-                "question": "where is the item stripped from?"
+                "question": "what is the thing the agent is stripping something from ?"
             },
             "removeditem": {
                 "framenet": "theme",
                 "def": "The item that is being removed",
-                "question": "what is the item is being stripped?"
+                "question": "what is the item the agent is removing?"
             },
             "place": {
                 "framenet": "place",
@@ -10889,17 +10889,17 @@
             "item": {
                 "framenet": "theme",
                 "def": "The entity being pryed",
-                "question": "what is being pried?"
+                "question": "what is the item the agent is prying?"
             },
             "tool": {
                 "framenet": "instrument",
                 "def": "The entity used to pry with",
-                "question": "what is the tool used to pry?"
+                "question": "what is the tool the agent is using?"
             },
             "from": {
                 "framenet": "source",
                 "def": "The entity from which the ITEM is pryed from",
-                "question": "where is the item pried from?"
+                "question": "what is the item the agent is prying something from?"
             },
             "place": {
                 "framenet": "place",
