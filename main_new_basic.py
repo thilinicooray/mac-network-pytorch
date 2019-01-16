@@ -276,7 +276,7 @@ def main():
 
     print('model spec :, top down att with role q ')
 
-    train_set = json.load(open(dataset_folder + "/ordered_train.json"), object_pairs_hook=collections.OrderedDict)
+    train_set = json.load(open(dataset_folder + "/train.json"))
     imsitu_roleq = json.load(open("imsitu_data/imsitu_questions.json"))
     encoder = imsitu_encoder(train_set, imsitu_roleq)
 
@@ -289,15 +289,15 @@ def main():
 
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=64, shuffle=True, num_workers=n_worker)
 
-    dev_set = json.load(open(dataset_folder +"/ordered_dev.json"), object_pairs_hook=collections.OrderedDict)
+    dev_set = json.load(open(dataset_folder +"/dev.json"))
     dev_set = imsitu_loader_roleq(imgset_folder, dev_set, encoder, model.dev_preprocess())
     dev_loader = torch.utils.data.DataLoader(dev_set, batch_size=64, shuffle=True, num_workers=n_worker)
 
-    test_set = json.load(open(dataset_folder +"/ordered_test.json"), object_pairs_hook=collections.OrderedDict)
+    test_set = json.load(open(dataset_folder +"/test.json"))
     test_set = imsitu_loader_roleq(imgset_folder, test_set, encoder, model.dev_preprocess())
     test_loader = torch.utils.data.DataLoader(test_set, batch_size=64, shuffle=True, num_workers=n_worker)
 
-    traindev_set = json.load(open(dataset_folder +"/ordered_dev.json"), object_pairs_hook=collections.OrderedDict)
+    traindev_set = json.load(open(dataset_folder +"/dev.json"))
     traindev_set = imsitu_loader_roleq(imgset_folder, traindev_set, encoder, model.dev_preprocess())
     traindev_loader = torch.utils.data.DataLoader(traindev_set, batch_size=8, shuffle=True, num_workers=n_worker)
 
