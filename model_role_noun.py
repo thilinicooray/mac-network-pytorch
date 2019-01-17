@@ -74,7 +74,7 @@ class RolePredictor(nn.Module):
                  mlp_hidden=512):
         super(RolePredictor, self).__init__()
 
-        self.inv_roleq = FCNet([mlp_hidden + embed_hidden, mlp_hidden])
+        self.inv_roleq = nn.Linear(mlp_hidden + embed_hidden, mlp_hidden)
 
         self.vqa_model = TopDown()
 
