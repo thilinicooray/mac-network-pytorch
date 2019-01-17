@@ -90,7 +90,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
             noun_loss = model.calculate_noun_loss(verb, noun_predict, labels, args)
             role_loss = model.calculate_role_loss(verb, role_predict, roles, args)
             alpha = 0.5
-            loss = alpha*noun_loss + (1-alpha) *(role_loss*3)
+            loss = noun_loss + (role_loss*3)
             #loss = model.calculate_eval_loss_new(verb_predict, verb, rol1pred, labels, args)
             #loss = loss_ * random.random() #try random loss
             #print ("loss time = {}".format(time.time() - t1))
