@@ -89,8 +89,8 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
 
             noun_loss = model.calculate_noun_loss(verb, noun_predict, labels, args)
             role_loss = model.calculate_role_loss(verb, role_predict, roles, args)
-            alpha = 0.7
-            loss = alpha*noun_loss + (1-alpha) *role_loss
+            alpha = 0.5
+            loss = alpha*noun_loss + (1-alpha) *(role_loss*3)
             #loss = model.calculate_eval_loss_new(verb_predict, verb, rol1pred, labels, args)
             #loss = loss_ * random.random() #try random loss
             #print ("loss time = {}".format(time.time() - t1))
@@ -158,7 +158,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 max_score = max(dev_score_list)
 
                 if max_score == dev_score_list[-1]:
-                    torch.save(model.state_dict(), model_dir + "/{}_td_noun_role.model".format( model_name))
+                    torch.save(model.state_dict(), model_dir + "/{}_td_noun_role1.model".format( model_name))
                     print ('New best model saved! {0}'.format(max_score))
 
                 #eval on the trainset
