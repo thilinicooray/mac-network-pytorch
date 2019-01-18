@@ -1,5 +1,5 @@
 import torch
-from imsitu_encoder_roleq import imsitu_encoder
+from imsitu_encoder_roleq_updated import imsitu_encoder
 from imsitu_loader import imsitu_loader_roleq
 from imsitu_scorer_log import imsitu_scorer
 import json
@@ -155,7 +155,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 max_score = max(dev_score_list)
 
                 if max_score == dev_score_list[-1]:
-                    torch.save(model.state_dict(), model_dir + "/{}_td_noun_order_newq.model".format( model_name))
+                    torch.save(model.state_dict(), model_dir + "/{}_td_noun_basic_updated.model".format( model_name))
                     print ('New best model saved! {0}'.format(max_score))
 
                 #eval on the trainset
@@ -276,7 +276,7 @@ def main():
 
     print('model spec :, top down att with role q ')
 
-    train_set = json.load(open(dataset_folder + "/train.json"))
+    train_set = json.load(open(dataset_folder + "/updated_train.json"))
     imsitu_roleq = json.load(open("imsitu_data/imsitu_questions.json"))
     encoder = imsitu_encoder(train_set, imsitu_roleq)
 
