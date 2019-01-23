@@ -92,7 +92,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
             class_loss = model.calculate_loss(verb, role_predict, labels, args)
             sim_loss = sim_criterion(img_ser, img_recreate)
             alpha = 0.7
-            loss = alpha*class_loss + (1-alpha)*sim_loss
+            loss = class_loss + sim_loss
             #loss = model.calculate_eval_loss_new(verb_predict, verb, rol1pred, labels, args)
             #loss = loss_ * random.random() #try random loss
             #print ("loss time = {}".format(time.time() - t1))
