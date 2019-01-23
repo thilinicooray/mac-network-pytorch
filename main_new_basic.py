@@ -21,6 +21,8 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
     dev_score_list = []
     time_all = time.time()
 
+    sim_criterion = model_new_basic.ContrastiveLoss()
+
     '''if model.gpu_mode >= 0 :
         ngpus = 2
         device_array = [i for i in range(0,ngpus)]
@@ -79,7 +81,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
             print('=========================================================================')
             print(labels)'''
 
-            role_predict = pmodel(img, verb)
+            role_predict, img_ser, img_recreate = pmodel(img, verb)
             #verb_predict, rol1pred, role_predict = pmodel.forward_eval5(img)
             #print ("forward time = {}".format(time.time() - t1))
             t1 = time.time()
@@ -87,7 +89,10 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
             '''g = make_dot(verb_predict, model.state_dict())
             g.view()'''
 
-            loss = model.calculate_loss(verb, role_predict, labels, args)
+            class_loss = model.calculate_loss(verb, role_predict, labels, args)
+            sim_loss = sim_criterion(img_ser, img_recreate)
+            alpha = 0.7
+            loss = alpha*class_loss + (1-alpha)*sim_loss
             #loss = model.calculate_eval_loss_new(verb_predict, verb, rol1pred, labels, args)
             #loss = loss_ * random.random() #try random loss
             #print ("loss time = {}".format(time.time() - t1))
@@ -155,7 +160,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 max_score = max(dev_score_list)
 
                 if max_score == dev_score_list[-1]:
-                    torch.save(model.state_dict(), model_dir + "/{}_td_noun_basic_updated.model".format( model_name))
+                    torch.save(model.state_dict(), model_dir + "/{}_td_noun_basic_updated_recreate.model".format( model_name))
                     print ('New best model saved! {0}'.format(max_score))
 
                 #eval on the trainset
@@ -219,7 +224,7 @@ def eval(model, dev_loader, encoder, gpu_mode, write_to_file = False):
                 roles = torch.autograd.Variable(roles)
                 labels = torch.autograd.Variable(labels)
 
-            role_predict = model(img, verb)
+            role_predict,_, _ = model(img, verb)
             '''loss = model.calculate_eval_loss(verb_predict, verb, role_predict, labels)
             val_loss += loss.item()'''
             if write_to_file:
@@ -276,7 +281,7 @@ def main():
 
     print('model spec :, top down att with role q ')
 
-    train_set = json.load(open(dataset_folder + "/updated_train_new2500.json"))
+    train_set = json.load(open(dataset_folder + "/updated_train_new.json"))
     imsitu_roleq = json.load(open("imsitu_data/imsitu_questions.json"))
     encoder = imsitu_encoder(train_set, imsitu_roleq)
 
