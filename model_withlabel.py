@@ -243,7 +243,7 @@ class BaseModel(nn.Module):
         self.gpu_mode = gpu_mode
         self.n_roles = self.encoder.get_num_roles()
         self.n_verbs = self.encoder.get_num_verbs()
-        self.vocab_size = 50
+        self.vocab_size = 350
         self.max_role_count = self.encoder.get_max_role_count()
         self.n_role_q_vocab = len(self.encoder.question_words)
 
