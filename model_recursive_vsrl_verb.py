@@ -61,6 +61,8 @@ class TopDown(nn.Module):
 
 class VerbNode(nn.Module):
     def __init__(self,
+                 encoder,
+                 gpu_mode,
                  verb_lookup,
                  q_word_embeddings,
                  num_verbs,
@@ -68,6 +70,8 @@ class VerbNode(nn.Module):
                  mlp_hidden, embd_hidden):
         super(VerbNode, self).__init__()
 
+        self.encoder = encoder
+        self.gpu_mode = gpu_mode
         self.verb_lookup = verb_lookup
         self.q_word_embeddings = q_word_embeddings
         self.num_verbs = num_verbs
@@ -82,8 +86,15 @@ class VerbNode(nn.Module):
 
         embedded_verb_q = self.q_word_embeddings(verbq)
         if roles is not None and labels is not None:
-            roles_labels = torch.cat((roles, labels),1)
-            embedded_verb_q = torch.cat((embedded_verb_q.clone(), roles_labels),1)
+            is_id = self.encoder.question_words['is']
+            is_tensor = torch.LongTensor([is_id])
+            if self.gpu_mode >= 0:
+                is_tensor = is_tensor.to(torch.device('cuda'))
+
+            is_embd = self.q_word_embeddings(is_tensor)
+            is_embd = is_embd.expand(roles.size(0), roles.size(1), is_embd.size(1))
+            roles_labels = torch.cat((roles, is_embd, labels),1)
+            embedded_verb_q = torch.cat([roles_labels, embedded_verb_q.clone()],1)
 
         ans_rep = self.vqa_model(img, embedded_verb_q)
         logits = self.verb_classifier(ans_rep)
@@ -101,6 +112,8 @@ class VerbNode(nn.Module):
 
 class RoleNode(nn.Module):
     def __init__(self,
+                 encoder,
+                 gpu_mode,
                  role_lookup,
                  ans_lookup,
                  q_word_embeddings,
@@ -109,6 +122,8 @@ class RoleNode(nn.Module):
                 embd_hidden, vqa_model):
         super(RoleNode, self).__init__()
 
+        self.encoder = encoder
+        self.gpu_mode = gpu_mode
         self.role_lookup = role_lookup
         self.ans_lookup = ans_lookup
         self.q_word_embeddings = q_word_embeddings
@@ -176,10 +191,25 @@ class RoleNode(nn.Module):
             role_weights = self.sftmax(role_logits)
             role_ans_soft = torch.mm(role_weights, self.role_lookup.weight)
 
-            roles_labels = torch.cat((prev_roles, prev_labels),1)
+            is_id = self.encoder.question_words['is']
+            is_tensor = torch.LongTensor([is_id])
+            if self.gpu_mode >= 0:
+                is_tensor = is_tensor.to(torch.device('cuda'))
+
+            is_embd = self.q_word_embeddings(is_tensor)
+            is_embd = is_embd.expand(prev_roles.size(0), prev_roles.size(1), is_embd.size(1))
+
+            of_tensor = torch.LongTensor([self.q_word_embeddings.weight.size(0)-1])
+            if self.gpu_mode >= 0:
+                of_tensor = of_tensor.to(torch.device('cuda'))
+
+            of_embd = self.q_word_embeddings(of_tensor)
+            of_embd = of_embd.expand(prev_roles.size(0), of_embd.size(0), of_embd.size(1))
+
+            roles_labels = torch.cat((prev_roles, is_embd, prev_labels),1)
 
             common_roleq_phrase = self.q_word_embeddings(roleq)
-            role_q = torch.cat((roles_labels, common_roleq_phrase, role_ans_soft.unsqueeze(1), verb.unsqueeze(1)),1)
+            role_q = torch.cat((roles_labels, common_roleq_phrase, role_ans_soft.unsqueeze(1), of_embd, verb.unsqueeze(1)),1)
 
             label_rep = self.vqa_model(v_emb, role_q)
             label_logits = self.label_classifier(label_rep)
@@ -200,10 +230,25 @@ class RoleNode(nn.Module):
             roles = sorted_ridx[:,0]
             role_ans_soft = self.role_lookup(roles)
 
-            roles_labels = torch.cat((prev_roles, prev_labels),1)
+            is_id = self.encoder.question_words['is']
+            is_tensor = torch.LongTensor([is_id])
+            if self.gpu_mode >= 0:
+                is_tensor = is_tensor.to(torch.device('cuda'))
+
+            is_embd = self.q_word_embeddings(is_tensor)
+            is_embd = is_embd.expand(prev_roles.size(0), prev_roles.size(1), is_embd.size(1))
+
+            of_tensor = torch.LongTensor([self.q_word_embeddings.weight.size(0)-1])
+            if self.gpu_mode >= 0:
+                of_tensor = of_tensor.to(torch.device('cuda'))
+
+            of_embd = self.q_word_embeddings(of_tensor)
+            of_embd = of_embd.expand(prev_roles.size(0), of_embd.size(0), of_embd.size(1))
+
+            roles_labels = torch.cat((prev_roles, is_embd, prev_labels),1)
 
             common_roleq_phrase = self.q_word_embeddings(roleq)
-            role_q = torch.cat((roles_labels, common_roleq_phrase, role_ans_soft.unsqueeze(1), verb.unsqueeze(1)),1)
+            role_q = torch.cat((roles_labels, common_roleq_phrase, role_ans_soft.unsqueeze(1), of_embd, verb.unsqueeze(1)),1)
 
             label_rep = self.vqa_model(v_emb, role_q)
             label_logits = self.label_classifier(label_rep)
@@ -217,6 +262,7 @@ class RoleNode(nn.Module):
 
 class RecursiveGraph(nn.Module):
     def __init__(self,
+                 encoder,
                  verb_lookup, role_lookup, ans_lookup,
                  q_word_embeddings,
                  num_verbs, num_roles, num_labels,
@@ -226,6 +272,7 @@ class RecursiveGraph(nn.Module):
                  gpu_mode):
         super(RecursiveGraph, self).__init__()
 
+        self.encoder = encoder
         self.verb_lookup = verb_lookup
         self.role_lookup = role_lookup
         self.ans_lookup = ans_lookup
@@ -238,9 +285,9 @@ class RecursiveGraph(nn.Module):
         self.max_roles = max_roles
         self.gpu_mode = gpu_mode
         self.vqa_model = TopDown()
-        self.verb_node = VerbNode(self.verb_lookup, self.q_word_embeddings,
+        self.verb_node = VerbNode(self.encoder, self.gpu_mode, self.verb_lookup, self.q_word_embeddings,
                                   self.num_verbs, self.vqa_model, self.mlp_hidden, self.emd_hidden)
-        self.role_node = RoleNode(self.role_lookup, self.ans_lookup, self.q_word_embeddings,
+        self.role_node = RoleNode(self.encoder, self.gpu_mode, self.role_lookup, self.ans_lookup, self.q_word_embeddings,
                                   self.num_roles, self.num_labels, self.mlp_hidden,
                                   self.emd_hidden, self.vqa_model)
 
@@ -374,9 +421,9 @@ class BaseModel(nn.Module):
         self.verb_lookup = nn.Embedding(self.n_verbs, embed_hidden)
         self.role_lookup = nn.Embedding(self.n_roles +1, embed_hidden, padding_idx=self.n_roles)
         self.ans_lookup = nn.Embedding(self.vocab_size + 1, embed_hidden, padding_idx=self.vocab_size)
-        self.w_emb = nn.Embedding(self.n_role_q_vocab + 1, embed_hidden, padding_idx=self.n_role_q_vocab)
+        self.w_emb = nn.Embedding(self.n_role_q_vocab + 2, embed_hidden, padding_idx=self.n_role_q_vocab)
 
-        self.vsrl_model = RecursiveGraph(self.verb_lookup, self.role_lookup, self.ans_lookup,
+        self.vsrl_model = RecursiveGraph(self.encoder, self.verb_lookup, self.role_lookup, self.ans_lookup,
                                          self.w_emb,
                                          self.n_verbs, self.n_roles, self.vocab_size,
                                          embed_hidden,
