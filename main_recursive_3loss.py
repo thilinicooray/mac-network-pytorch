@@ -78,7 +78,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
             print('=========================================================================')
             print(labels)'''
 
-            verb_predict, label_predict, role_predict = pmodel(img, verbq, roleq, verb, ans)
+            loss_res, verb_predict, label_predict = pmodel(img, verbq, roleq, verb, ans)
             #verb_predict, rol1pred, role_predict = pmodel.forward_eval5(img)
             #print ("forward time = {}".format(time.time() - t1))
             t1 = time.time()
@@ -86,7 +86,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
             '''g = make_dot(verb_predict, model.state_dict())
             g.view()'''
 
-            loss = model.calculate_loss(verb_predict, verb, role_predict, roles, label_predict, ans, args)
+            loss = model.calculate_loss(loss_res[0], verb, loss_res[1], roles, loss_res[2], ans, args)
             #loss = model.calculate_eval_loss_new(verb_predict, verb, rol1pred, labels, args)
             #loss = loss_ * random.random() #try random loss
             #print ("loss time = {}".format(time.time() - t1))
@@ -179,7 +179,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 top1 = imsitu_scorer(encoder, 1, 3)
                 top5 = imsitu_scorer(encoder, 5, 3)
 
-            del verb_predict, role_predict, loss, img, verbq, roleq, verb, ans
+            del verb_predict, label_predict, loss, img, verbq, roleq, verb, ans
             #break
         print('Epoch ', epoch, ' completed!')
         scheduler.step()
@@ -219,7 +219,7 @@ def eval(model, dev_loader, encoder, gpu_mode, write_to_file = False):
                 roles = torch.autograd.Variable(roles)
                 ans = torch.autograd.Variable(ans)
 
-            verb_predict, label_predict, role_predict = model(img, verbq, roleq, None, None)
+            loss_res, verb_predict, label_predict = model(img, verbq, roleq, None, None)
             '''loss = model.calculate_eval_loss(verb_predict, verb, role_predict, labels)
             val_loss += loss.item()'''
             if write_to_file:
@@ -229,7 +229,7 @@ def eval(model, dev_loader, encoder, gpu_mode, write_to_file = False):
                 top1.add_point_eval5_log(img_id, verb_predict, verb, label_predict, ans)
                 #top5.add_point_noun(verb, role_predict, labels)
 
-            del verb_predict, role_predict, img, verbq, roleq, verb, ans
+            del verb_predict, label_predict, img, verbq, roleq, verb, ans
             #break
 
     #return top1, top5, val_loss/mx

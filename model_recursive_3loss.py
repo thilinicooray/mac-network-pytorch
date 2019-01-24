@@ -326,7 +326,7 @@ class RecursiveGraph(nn.Module):
 
 
 
-        return verb_pred_all, label_pred_all, role_pred_all
+        return [verb_pred_all, role_pred_all, label_pred_all ], verb_pred, label_pred
 
     def get_mask(self, batch_size, max_role_count, dim):
         id_mtx = torch.ones([max_role_count, max_role_count])
@@ -406,10 +406,10 @@ class BaseModel(nn.Module):
         img = img_features.view(batch_size, n_channel, -1)
         img = img.permute(0, 2, 1)
 
-        verb_pred, label_pred, role_pred = self.vsrl_model(img, verbq, roleq_phrase)
+        loss_rest, verb_pred, label_pred = self.vsrl_model(img, verbq, roleq_phrase)
 
 
-        return verb_pred, label_pred, role_pred
+        return loss_rest, verb_pred, label_pred
 
     def calculate_loss(self, verb_pred, gt_verbs, role_pred, gt_role, role_label_pred, gt_labels,args):
 
