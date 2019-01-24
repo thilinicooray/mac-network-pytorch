@@ -101,8 +101,8 @@ class imsitu_loader_verb_roleq_phrase(data.Dataset):
         img = Image.open(os.path.join(self.img_dir, _id)).convert('RGB')
         #transform must be None in order to give it as a tensor
         if self.transform is not None: img = self.transform(img)
-        verb, verbq, roleq, labels = self.encoder.encode(ann)
-        return _id, img, verb, verbq, roleq, labels
+        verb, verbq, roleq, roles, labels = self.encoder.encode(ann)
+        return _id, img, verb, verbq, roleq, roles, labels
 
     def __len__(self):
         return len(self.annotations)

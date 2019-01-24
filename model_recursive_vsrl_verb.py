@@ -88,8 +88,14 @@ class VerbNode(nn.Module):
         ans_rep = self.vqa_model(img, embedded_verb_q)
         logits = self.verb_classifier(ans_rep)
         weights = self.sftmax(logits)
-        weighted_verbs = torch.mm(weights, self.verb_lookup.weight)
-        converted = weighted_verbs
+
+        if self.training:
+            weighted_verbs = torch.mm(weights, self.verb_lookup.weight)
+            converted = weighted_verbs
+        else:
+            sorted_idx = torch.sort(weights, 1, True)[1]
+            verbs = sorted_idx[:,0]
+            converted = self.verb_lookup(verbs)
 
         return logits, converted, ans_rep
 
@@ -121,44 +127,92 @@ class RoleNode(nn.Module):
         self.sftmax = nn.Softmax()
 
     def init_forward(self, img, roleq, verb, context):
-        context_verb = self.contextual_verb(torch.cat((context, verb), 1))
-        att = self.v_att(img, context_verb)
-        v_emb = (att * img)
-        v_emb_vec = v_emb.sum(1)
-        role_weights = self.sftmax(self.role_classifier(v_emb_vec))
-        role_ans_soft = torch.mm(role_weights, self.role_lookup.weight)
-        common_roleq_phrase = self.q_word_embeddings(roleq)
-        role_q = torch.cat((common_roleq_phrase, role_ans_soft.unsqueeze(1), verb.unsqueeze(1)),1)
-        label_rep = self.vqa_model(v_emb, role_q)
-        label_logits = self.label_classifier(label_rep)
-        label_weights = self.sftmax(label_logits)
-        weighted_labels = torch.mm(label_weights, self.ans_lookup.weight)
-        converted = weighted_labels
+        if self.training:
+            context_verb = self.contextual_verb(torch.cat((context, verb), 1))
+            att = self.v_att(img, context_verb)
+            v_emb = (att * img)
+            v_emb_vec = v_emb.sum(1)
+            role_logits = self.role_classifier(v_emb_vec)
+            role_weights = self.sftmax(role_logits)
+            role_ans_soft = torch.mm(role_weights, self.role_lookup.weight)
+            common_roleq_phrase = self.q_word_embeddings(roleq)
+            role_q = torch.cat((common_roleq_phrase, role_ans_soft.unsqueeze(1), verb.unsqueeze(1)),1)
+            label_rep = self.vqa_model(v_emb, role_q)
+            label_logits = self.label_classifier(label_rep)
+            label_weights = self.sftmax(label_logits)
+            weighted_labels = torch.mm(label_weights, self.ans_lookup.weight)
+            converted = weighted_labels
+        else:
+            context_verb = self.contextual_verb(torch.cat((context, verb), 1))
+            att = self.v_att(img, context_verb)
+            v_emb = (att * img)
+            v_emb_vec = v_emb.sum(1)
+            role_logits = self.role_classifier(v_emb_vec)
+            role_weights = self.sftmax(role_logits)
+            sorted_ridx = torch.sort(role_weights, 1, True)[1]
+            roles = sorted_ridx[:,0]
+            role_ans_soft = self.role_lookup(roles)
+            common_roleq_phrase = self.q_word_embeddings(roleq)
+            role_q = torch.cat((common_roleq_phrase, role_ans_soft.unsqueeze(1), verb.unsqueeze(1)),1)
+            label_rep = self.vqa_model(v_emb, role_q)
+            label_logits = self.label_classifier(label_rep)
+            label_weights = self.sftmax(label_logits)
+            sorted_lidx = torch.sort(label_weights, 1, True)[1]
+            labels = sorted_lidx[:,0]
+            converted = self.ans_lookup(labels)
 
-        return label_logits, converted, role_ans_soft
+        return label_logits, converted, role_logits, role_ans_soft
 
     def forward(self, img, roleq, verb, prev_roles, prev_labels):
-        batch_size, max_role, rep_size = prev_roles.size()
-        context = self.context_maker(prev_labels.view(batch_size, -1))
-        context_verb = self.contextual_verb(torch.cat((context, verb), 1))
-        att = self.v_att(img, context_verb)
-        v_emb = (att * img)
-        v_emb_vec = v_emb.sum(1)
-        role_weights = self.sftmax(self.role_classifier(v_emb_vec))
-        role_ans_soft = torch.mm(role_weights, self.role_lookup.weight)
 
-        roles_labels = torch.cat((prev_roles, prev_labels),1)
+        if self.training:
+            batch_size, max_role, rep_size = prev_roles.size()
+            context = self.context_maker(prev_labels.view(batch_size, -1))
+            context_verb = self.contextual_verb(torch.cat((context, verb), 1))
+            att = self.v_att(img, context_verb)
+            v_emb = (att * img)
+            v_emb_vec = v_emb.sum(1)
+            role_logits = self.role_classifier(v_emb_vec)
+            role_weights = self.sftmax(role_logits)
+            role_ans_soft = torch.mm(role_weights, self.role_lookup.weight)
 
-        common_roleq_phrase = self.q_word_embeddings(roleq)
-        role_q = torch.cat((roles_labels, common_roleq_phrase, role_ans_soft.unsqueeze(1), verb.unsqueeze(1)),1)
+            roles_labels = torch.cat((prev_roles, prev_labels),1)
 
-        label_rep = self.vqa_model(v_emb, role_q)
-        label_logits = self.label_classifier(label_rep)
-        label_weights = self.sftmax(label_logits)
-        weighted_labels = torch.mm(label_weights, self.ans_lookup.weight)
-        converted = weighted_labels
+            common_roleq_phrase = self.q_word_embeddings(roleq)
+            role_q = torch.cat((roles_labels, common_roleq_phrase, role_ans_soft.unsqueeze(1), verb.unsqueeze(1)),1)
 
-        return label_logits, converted, role_ans_soft
+            label_rep = self.vqa_model(v_emb, role_q)
+            label_logits = self.label_classifier(label_rep)
+            label_weights = self.sftmax(label_logits)
+            weighted_labels = torch.mm(label_weights, self.ans_lookup.weight)
+            converted = weighted_labels
+
+        else:
+            batch_size, max_role, rep_size = prev_roles.size()
+            context = self.context_maker(prev_labels.view(batch_size, -1))
+            context_verb = self.contextual_verb(torch.cat((context, verb), 1))
+            att = self.v_att(img, context_verb)
+            v_emb = (att * img)
+            v_emb_vec = v_emb.sum(1)
+            role_logits = self.role_classifier(v_emb_vec)
+            role_weights = self.sftmax(role_logits)
+            sorted_ridx = torch.sort(role_weights, 1, True)[1]
+            roles = sorted_ridx[:,0]
+            role_ans_soft = self.role_lookup(roles)
+
+            roles_labels = torch.cat((prev_roles, prev_labels),1)
+
+            common_roleq_phrase = self.q_word_embeddings(roleq)
+            role_q = torch.cat((roles_labels, common_roleq_phrase, role_ans_soft.unsqueeze(1), verb.unsqueeze(1)),1)
+
+            label_rep = self.vqa_model(v_emb, role_q)
+            label_logits = self.label_classifier(label_rep)
+            label_weights = self.sftmax(label_logits)
+            sorted_lidx = torch.sort(label_weights, 1, True)[1]
+            labels = sorted_lidx[:,0]
+            converted = self.ans_lookup(labels)
+
+        return label_logits, converted, role_logits, role_ans_soft
 
 
 class RecursiveGraph(nn.Module):
@@ -190,7 +244,7 @@ class RecursiveGraph(nn.Module):
                                   self.num_roles, self.num_labels, self.mlp_hidden,
                                   self.emd_hidden, self.vqa_model)
 
-    def forward(self, img, verbq, roleq):
+    def forward(self, img, verbq, roleq_phrase):
 
         verbs = []
         roles = []
@@ -200,6 +254,7 @@ class RecursiveGraph(nn.Module):
 
         for iter in range(3):
             label_pred = None
+            role_pred = None
             role_rep = None
             label_rep = None
             if iter == 0:
@@ -211,17 +266,19 @@ class RecursiveGraph(nn.Module):
                     context = context.to(torch.device('cuda'))
 
                 for i in range(self.max_roles):
-                    label_logits, label_soft_ans, role_ans = self.role_node.init_forward(img, roleq, verb_soft_ans, context)
+                    label_logits, label_soft_ans, role_logits, role_ans = self.role_node.init_forward(img, roleq_phrase, verb_soft_ans, context)
                     context *= label_soft_ans
 
                     if i == 0:
                         label_pred = label_logits.unsqueeze(1)
                         label_rep = label_soft_ans.unsqueeze(1)
                         role_rep = role_ans.unsqueeze(1)
+                        role_pred = role_logits.unsqueeze(1)
                     else:
                         label_pred = torch.cat((label_pred.clone(), label_logits.unsqueeze(1)), 1)
                         label_rep = torch.cat((label_rep.clone(), label_soft_ans.unsqueeze(1)), 1)
                         role_rep = torch.cat((role_rep.clone(), role_ans.unsqueeze(1)), 1)
+                        role_pred = torch.cat((role_pred.clone(), role_logits.unsqueeze(1)), 1)
 
                 roles.append(role_rep)
                 labels.append(label_rep)
@@ -248,23 +305,25 @@ class RecursiveGraph(nn.Module):
                 #print('masked role :', role_prev_masked[0][1])
 
                 for i in range(self.max_roles):
-                    label_logits, label_soft_ans, role_ans = self.role_node(img, roleq, verb_soft_ans,
+                    label_logits, label_soft_ans, role_logits,role_ans = self.role_node(img, roleq_phrase, verb_soft_ans,
                                                                             role_prev_masked[:,i,:,:],
                                                                             label_prev_masked[:,i,:,:])
                     if i == 0:
                         label_pred = label_logits.unsqueeze(1)
                         label_rep = label_soft_ans.unsqueeze(1)
                         role_rep = role_ans.unsqueeze(1)
+                        role_pred = role_logits.unsqueeze(1)
                     else:
                         label_pred = torch.cat((label_pred.clone(), label_logits.unsqueeze(1)), 1)
                         label_rep = torch.cat((label_rep.clone(), label_soft_ans.unsqueeze(1)), 1)
                         role_rep = torch.cat((role_rep.clone(), role_ans.unsqueeze(1)), 1)
+                        role_pred = torch.cat((role_pred.clone(), role_logits.unsqueeze(1)), 1)
 
                 roles.append(role_rep)
                 labels.append(label_rep)
 
 
-        return verb_pred, label_pred
+        return verb_pred, label_pred, role_pred
 
     def get_mask(self, batch_size, max_role_count, dim):
         id_mtx = torch.ones([max_role_count, max_role_count])
@@ -337,18 +396,19 @@ class BaseModel(nn.Module):
     def dev_preprocess(self):
         return self.dev_transform
 
-    def forward(self, img, verbq, roleq, verb, ans):
+    def forward(self, img, verbq, roleq_phrase, verb, ans):
 
         img_features = self.conv(img)
         batch_size, n_channel, conv_h, conv_w = img_features.size()
         img = img_features.view(batch_size, n_channel, -1)
         img = img.permute(0, 2, 1)
 
-        verb_pred, role_pred = self.vsrl_model(img, verbq, roleq)
+        verb_pred, label_pred, role_pred = self.vsrl_model(img, verbq, roleq_phrase)
 
-        return verb_pred, role_pred
 
-    def calculate_loss(self, verb_pred, gt_verbs, role_label_pred, gt_labels,args):
+        return verb_pred, label_pred, role_pred
+
+    def calculate_loss(self, verb_pred, gt_verbs, role_pred, gt_role, role_label_pred, gt_labels,args):
 
         batch_size = verb_pred.size()[0]
         if args.train_all:
@@ -359,7 +419,8 @@ class BaseModel(nn.Module):
                     verb_loss = utils.cross_entropy_loss(verb_pred[i], gt_verbs[i])
                     #frame_loss = criterion(role_label_pred[i], gt_labels[i,index])
                     for j in range(0, self.max_role_count):
-                        frame_loss += utils.cross_entropy_loss(role_label_pred[i][j], gt_labels[i,index,j] ,self.vocab_size)
+                        frame_loss += utils.cross_entropy_loss(role_pred[i][j], gt_role[i,j] ,self.n_roles) + \
+                                      utils.cross_entropy_loss(role_label_pred[i][j], gt_labels[i,index,j] ,self.vocab_size)
                     frame_loss = verb_loss + frame_loss/len(self.encoder.verb2_role_dict[self.encoder.verb_list[gt_verbs[i]]])
                     #print('frame loss', frame_loss, 'verb loss', verb_loss)
                     loss += frame_loss
