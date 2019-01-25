@@ -154,6 +154,52 @@ class imsitu_scorer():
 
             self.score_cards.append(new_card)
 
+
+    def add_point_agent_only(self, labels_predict, gt_labels):
+        #encoded predictions should be batch x verbs x values #assumes the are the same order as the references
+        #encoded reference should be batch x 1+ references*roles,values (sorted)
+
+        batch_size = labels_predict.size()[0]
+        for i in range(batch_size):
+            label_pred = labels_predict[i]
+            gt_label = gt_labels[i]
+
+
+            new_card = {"verb":0.0, "value":0.0, "value*":0.0, "n_value":0.0, "value-all":0.0, "value-all*":0.0}
+
+
+            score_card = new_card
+
+            '''verb_found = (torch.sum(sorted_idx[0:self.topk] == gt_v) == 1)
+            if verb_found: score_card["verb"] += 1'''
+            verb_found = False
+
+
+            all_found = True
+            label_id = torch.max(label_pred,0)[1]
+            found = False
+            for r in range(0,self.nref):
+                gt_label_id = gt_label[r]
+                #print('ground truth label id = ', gt_label_id)
+                if label_id == gt_label_id:
+                    found = True
+                    break
+            if not found: all_found = False
+            #both verb and at least one val found
+            if found and verb_found: score_card["value"] += 1
+            #at least one val found
+            if found: score_card["value*"] += 1
+            '''if self.topk == 1:
+                print('predicted labels :',pred_list)'''
+            #both verb and all values found
+            score_card["value*"] /= 1
+            score_card["value"] /= 1
+            if all_found and verb_found: score_card["value-all"] += 1
+            #all values found
+            if all_found: score_card["value-all*"] += 1
+
+            self.score_cards.append(new_card)
+
     def add_point_noun_log(self, img_id, gt_verbs, labels_predict, gt_labels):
         #encoded predictions should be batch x verbs x values #assumes the are the same order as the references
         #encoded reference should be batch x 1+ references*roles,values (sorted)
