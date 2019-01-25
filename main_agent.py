@@ -85,8 +85,8 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
 
 
             if total_steps % print_freq == 0:
-                top1_a = top1.get_average_results()
-                top5_a = top5.get_average_results()
+                top1_a = top1.get_average_results_nouns()
+                top5_a = top5.get_average_results_nouns()
                 print ("{},{},{}, {} , {}, loss = {:.2f}, avg loss = {:.2f}"
                        .format(total_steps-1,epoch,i, utils.format_dict(top1_a, "{:.2f}", "1-"),
                                utils.format_dict(top5_a,"{:.2f}","5-"), loss.item(),
@@ -97,8 +97,8 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 top1, _, val_loss = eval(model, dev_loader, encoder, gpu_mode)
                 model.train()
 
-                top1_avg = top1.get_average_results()
-                #top5_avg = top5.get_average_results()
+                top1_avg = top1.get_average_results_nouns()
+                top5_avg = top5.get_average_results_nouns()
                 #todo : top 5
 
                 '''avg_score = top1_avg["verb"] + top1_avg["value"] + top1_avg["value-all"] + top5_avg["verb"] + \
