@@ -183,6 +183,24 @@ def group_features_noun(net_):
 
     return cnn_features, role_features
 
+def group_features_agent2verb(net_):
+
+    cnn_features = list(net_.conv.parameters())
+    cnn_feature_len = len(list(net_.conv.parameters()))
+    agent_features = list(net_.agent.parameters())
+    agent_feature_len = len(list(net_.agent.parameters()))
+    verb_features = list(net_.verb.parameters())
+    verb_feature_len = len(list(net_.verb.parameters()))
+
+
+    print('Network details :')
+    print('\tcnn features :', cnn_feature_len)
+    print('\tagent features :', agent_feature_len)
+    print('\tverb features :', verb_feature_len)
+
+
+    return cnn_features, agent_features, verb_features
+
 def set_trainable(model, requires_grad):
     set_trainable_param(model.parameters(), requires_grad)
 
@@ -318,6 +336,20 @@ def get_optimizer_verb(mode, cnn_features,  verb_features):
 
     return optimizer
 
+def get_optimizer_agent2verb(lr, decay, mode, cnn_features,  agent_features, verb_features):
+    """ To get the optimizer
+    mode 0: training from scratch
+    mode 1: cnn fix, v training
+    mode 2: cnn fix, verb fine tune, role training
+    mode 3: cnn finetune, verb finetune, role training"""
+    if mode == 1:
+        set_trainable_param(verb_features, True)
+        optimizer = torch.optim.Adam([
+            {'params': verb_features},
+        ], lr=1e-3)
+
+    return optimizer
+
 def get_optimizer_noun(lr, decay, mode, cnn_features, role_features):
     """ To get the optimizer
     mode 0: training from scratch
@@ -403,7 +435,7 @@ def load_net(fname, net_list, prefix_list = None):
                     param = torch.from_numpy(np.asarray(dict[k].cpu()))
                     #print('param size :', param.size(), dict[k].type())
                     v.copy_(param)
-                    #print('[Copied]: {}'.format(k))
+                    print('[Copied]: {}'.format(k))
                 else:
                     print('[Missed]: {}'.format(k))
         except Exception as e:
