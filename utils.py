@@ -347,6 +347,13 @@ def get_optimizer_agent2verb(lr, decay, mode, cnn_features,  agent_features, ver
         optimizer = torch.optim.Adam([
             {'params': verb_features},
         ], lr=1e-3)
+    if mode == 2:
+        set_trainable_param(agent_features, True)
+        set_trainable_param(verb_features, True)
+        optimizer = torch.optim.Adam([
+            {'params': agent_features, 'lr': 5e-5},
+            {'params': verb_features},
+        ], lr=1e-3)
 
     return optimizer
 

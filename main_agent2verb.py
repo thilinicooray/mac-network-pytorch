@@ -203,7 +203,7 @@ def main():
     parser.add_argument('--agent_module', type=str, default='', help='pretrained agent module')
     parser.add_argument('--train_role', action='store_true', help='cnn fix, verb fix, role train from the scratch')
     parser.add_argument('--train_verb', action='store_true', help='cnn fix, agent fix, verb train from the scratch')
-    parser.add_argument('--finetune_verb', action='store_true', help='cnn fix, verb finetune, role train from the scratch')
+    parser.add_argument('--finetune_agent', action='store_true', help='cnn fix, agent finetune, verb train from the scratch')
     parser.add_argument('--finetune_cnn', action='store_true', help='cnn finetune, verb finetune, role train from the scratch')
     parser.add_argument('--output_dir', type=str, default='./trained_models', help='Location to output the model')
     parser.add_argument('--evaluate', action='store_true', help='Only use the testing mode')
@@ -272,19 +272,19 @@ def main():
         print('CNN fix, agent fix, train verb from the scratch from: {}'.format(args.agent_module))
         args.train_all = False
         if len(args.agent_module) == 0:
-            raise Exception('[pretrained verb module] not specified')
+            raise Exception('[pretrained agent module] not specified')
         utils.load_net(args.agent_module, [model.conv, model.agent], ['conv', 'agent'])
         optimizer_select = 1
         model_name = 'cfx_afx_vtrain'
 
-    elif args.finetune_verb:
-        print('CNN fix, Verb finetune, train role from the scratch from: {}'.format(args.verb_module))
+    elif args.finetune_agent:
+        print('CNN fix, agent finetune, train verb from the scratch from: {}'.format(args.agent_module))
         args.train_all = True
-        if len(args.verb_module) == 0:
-            raise Exception('[pretrained verb module] not specified')
-        utils.load_net(args.verb_module, [model.conv, model.verb], ['conv', 'verb'])
+        if len(args.agent_module) == 0:
+            raise Exception('[pretrained agent module] not specified')
+        utils.load_net(args.agent_module, [model.conv, model.agent], ['conv', 'agent'])
         optimizer_select = 2
-        model_name = 'cfx_vft_rtrain'
+        model_name = 'cfx_aft_vtrain'
 
     elif args.finetune_cnn:
         print('CNN finetune, Verb finetune, train role from the scratch from: {}'.format(args.verb_module))
