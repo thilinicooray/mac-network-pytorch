@@ -16,6 +16,7 @@ class imsitu_scorer():
             self.vall_all_correct = {}
             self.fail_verb_role = {}
             self.all_verb_role = {}
+            self.fail_agent = {}
 
     def clear(self):
         self.score_cards = {}
@@ -195,7 +196,10 @@ class imsitu_scorer():
                         self.role_dict[gt_label_name]['found'] += 1
                     found = True
                     break
-            if not found: all_found = False
+            if not found:
+                all_found = False
+                if self.write_to_file:
+                    self.fail_agent[img_id] = self.encoder.label_list[label_id]
             #both verb and at least one val found
             if found and verb_found: score_card["value"] += 1
             #at least one val found

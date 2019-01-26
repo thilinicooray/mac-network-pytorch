@@ -331,12 +331,16 @@ def main():
 
         #write results to csv file
         role_dict = top1.role_dict
+        fail_agent = top1.fail_agent
         #print('roles :', role_dict)
         #fail_val_all = top1.value_all_dict
         #pass_val_dict = top1.vall_all_correct
 
         with open('role_pred_data.json', 'w') as fp:
             json.dump(role_dict, fp, indent=4)
+
+        with open('fail_agent.json', 'w') as fp:
+            json.dump(fail_agent, fp, indent=4)
 
         '''with open('fail_val_all.json', 'w') as fp:
             json.dump(fail_val_all, fp, indent=4)
