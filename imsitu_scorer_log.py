@@ -184,7 +184,7 @@ class imsitu_scorer():
                 gt_label_name = self.encoder.label_list[gt_label_id]
 
                 if self.write_to_file:
-                    if gt_label_id not in self.role_dict:
+                    if gt_label_name not in self.role_dict:
                         self.role_dict[gt_label_name] = {'all':1, 'found': 0}
                     else:
                         self.role_dict[gt_label_name]['all'] += 1
