@@ -13,7 +13,7 @@ class imsitu_encoder():
         self.verb_list = {}
         self.role_list = []
         self.max_label_count = 3
-        self.label_list = ['#UNK#']
+        self.label_list = []
         self.agent_roles = ['agent', 'individuals','brancher', 'agenttype', 'gatherers', 'agents', 'teacher', 'traveler', 'mourner',
                        'seller', 'boaters', 'blocker', 'farmer']
         label_frequency = {}
@@ -31,13 +31,7 @@ class imsitu_encoder():
                 if agent_found:
                     label = frame['agent']
                     if label not in self.label_list:
-                        if label not in label_frequency:
-                            label_frequency[label] = 1
-                        else:
-                            label_frequency[label] += 1
-                        #only labels occur at least 20 times are considered
-                        if label_frequency[label] == 20:
-                            self.label_list.append(label)
+                        self.label_list.append(label)
 
                 else:
 
@@ -46,13 +40,7 @@ class imsitu_encoder():
                             if role not in self.verb_list[img['verb']]:
                                 self.verb_list[img['verb']].append(role)
                             if label not in self.label_list:
-                                if label not in label_frequency:
-                                    label_frequency[label] = 1
-                                else:
-                                    label_frequency[label] += 1
-                                #only labels occur at least 20 times are considered
-                                if label_frequency[label] == 20:
-                                    self.label_list.append(label)
+                                self.label_list.append(label)
 
         print('train set stats: \n\t verb count:', len(self.verb_list), '\n\t role count:',len(self.role_list),
               '\n\t label count:', len(self.label_list) )

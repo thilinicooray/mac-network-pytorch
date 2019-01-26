@@ -226,7 +226,7 @@ def main():
 
     print('model spec :, verb role with context ')
 
-    train_set = json.load(open(dataset_folder + "/train.json"))
+    train_set = json.load(open(dataset_folder + "/updated_train_new.json"))
     encoder = imsitu_encoder(train_set)
 
     model = model_agent.BaseModel(encoder, args.gpuid)
