@@ -331,6 +331,7 @@ def main():
 
         #write results to csv file
         role_dict = top1.role_dict
+        #print('roles :', role_dict)
         #fail_val_all = top1.value_all_dict
         #pass_val_dict = top1.vall_all_correct
 

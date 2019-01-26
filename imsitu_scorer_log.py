@@ -181,17 +181,18 @@ class imsitu_scorer():
             found = False
             for r in range(0,self.nref):
                 gt_label_id = gt_label[r]
+                gt_label_name = self.encoder.label_list[gt_label_id]
 
                 if self.write_to_file:
                     if gt_label_id not in self.role_dict:
-                        self.role_dict[gt_label_id] = {'all':1, 'found': 0}
+                        self.role_dict[gt_label_name] = {'all':1, 'found': 0}
                     else:
-                        self.role_dict[gt_label_id]['all'] += 1
+                        self.role_dict[gt_label_name]['all'] += 1
                 #print('ground truth label id = ', gt_label_id)
                 if label_id == gt_label_id:
                     #print('correct :', img_id, self.encoder.label_list[gt_label_id])
                     if self.write_to_file:
-                        self.role_dict[gt_label_id]['found'] += 1
+                        self.role_dict[gt_label_name]['found'] += 1
                     found = True
                     break
             if not found: all_found = False
