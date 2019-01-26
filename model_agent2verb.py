@@ -133,7 +133,6 @@ class BaseModel(nn.Module):
 
         self.verb = nn.Sequential(
             nn.Linear(mlp_hidden*2, mlp_hidden*2),
-            nn.BatchNorm1d(mlp_hidden*2),
             nn.ReLU(),
             nn.Dropout(0.5),
             nn.Linear(mlp_hidden*2, self.n_verbs)
