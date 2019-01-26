@@ -325,7 +325,7 @@ def main():
         torch.cuda.manual_seed(1234)
         torch.backends.cudnn.deterministic = True
 
-    optimizer = torch.optim.Adamax([
+    optimizer = torch.optim.Adamax([{'params': agent_features, 'lr': 5e-5},
                                     {'params': verb_features}],
                                    lr=1e-3)
 
