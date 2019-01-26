@@ -184,7 +184,9 @@ class imsitu_loader_agent(data.Dataset):
         #transform must be None in order to give it as a tensor
         if self.transform is not None: img = self.transform(img)
         labels = self.encoder.encode(ann)
-        #print('labels size :', labels.size())
+
+        if labels.size(0) != 3:
+            print('ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR')
         return _id, img, labels
 
     def __len__(self):

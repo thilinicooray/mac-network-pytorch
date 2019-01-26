@@ -41,7 +41,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
         #print('current sample : ', i, img.size(), verb.size(), roles.size(), labels.size())
         #sizes batch_size*3*height*width, batch*504*1, batch*6*190*1, batch*3*6*lebale_count*1
         mx = len(train_loader)
-        for i, (_, img, labels) in enumerate(train_loader):
+        for i, (id, img, labels) in enumerate(train_loader):
             #print("epoch{}-{}/{} batches\r".format(epoch,i+1,mx)) ,
             total_steps += 1
             if gpu_mode >= 0:
@@ -80,8 +80,8 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
 
             train_loss += loss.item()
 
-            top1.add_point_agent_only(agent_predict, labels)
-            top5.add_point_agent_only(agent_predict, labels)
+            top1.add_point_agent_only(id, agent_predict, labels)
+            top5.add_point_agent_only(id, agent_predict, labels)
 
 
             if total_steps % print_freq == 0:
@@ -94,7 +94,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
 
 
             if total_steps % eval_frequency == 0:
-                top1, _, val_loss = eval(model, dev_loader, encoder, gpu_mode)
+                top1, top5, val_loss = eval(model, dev_loader, encoder, gpu_mode)
                 model.train()
 
                 top1_avg = top1.get_average_results_nouns()
@@ -103,18 +103,19 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
 
                 '''avg_score = top1_avg["verb"] + top1_avg["value"] + top1_avg["value-all"] + top5_avg["verb"] + \
                             top5_avg["value"] + top5_avg["value-all"] + top5_avg["value*"] + top5_avg["value-all*"]'''
-                avg_score = top1_avg["verb"] + top1_avg["value"] + top1_avg["value-all"]
-                avg_score /= 3
+                avg_score = top1_avg["value*"]
+                #avg_score /= 3
 
-                print ('Dev {} average :{:.2f} {}'.format(total_steps-1, avg_score*100,
-                                                          utils.format_dict(top1_avg,'{:.2f}', '1-')))
+                print ('Dev {} average :{:.2f} {} {}'.format(total_steps-1, avg_score*100,
+                                                             utils.format_dict(top1_avg,'{:.2f}', '1-'),
+                                                             utils.format_dict(top5_avg, '{:.2f}', '5-')))
                 #print('Dev loss :', val_loss)
 
                 dev_score_list.append(avg_score)
                 max_score = max(dev_score_list)
 
                 if max_score == dev_score_list[-1]:
-                    torch.save(model.state_dict(), model_dir + "/{}_agent.model".format( model_name))
+                    torch.save(model.state_dict(), model_dir + "/{}_agentall.model".format(model_name))
                     print ('New best model saved! {0}'.format(max_score))
 
                 #eval on the trainset
@@ -153,8 +154,8 @@ def eval(model, dev_loader, encoder, gpu_mode):
     top5 = imsitu_scorer(encoder, 5, 3)
     with torch.no_grad():
         mx = len(dev_loader)
-        for i, (_, img, labels) in enumerate(dev_loader):
-            #print("{}/{} batches\r".format(i+1,mx)) ,
+        for i, (id, img, labels) in enumerate(dev_loader):
+            #prit("{}/{} batches\r".format(i+1,mx)) ,
             '''im_data = torch.squeeze(im_data,0)
             im_info = torch.squeeze(im_info,0)
             gt_boxes = torch.squeeze(gt_boxes,0)
@@ -162,6 +163,8 @@ def eval(model, dev_loader, encoder, gpu_mode):
             verb = torch.squeeze(verb,0)
             roles = torch.squeeze(roles,0)
             labels = torch.squeeze(labels,0)'''
+
+            #print('handling batch :', id)
 
             if gpu_mode >= 0:
                 img = torch.autograd.Variable(img.cuda())
@@ -173,8 +176,8 @@ def eval(model, dev_loader, encoder, gpu_mode):
             agent_predict = model(img)
             '''loss = model.calculate_eval_loss(verb_predict, verb, role_predict, labels)
             val_loss += loss.item()'''
-            top1.add_point_agent_only(agent_predict, labels)
-            top5.add_point_agent_only(agent_predict, labels)
+            top1.add_point_agent_only(id, agent_predict, labels)
+            top5.add_point_agent_only(id, agent_predict, labels)
 
             del img, labels
             #break

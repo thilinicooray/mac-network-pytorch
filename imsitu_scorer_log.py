@@ -155,12 +155,13 @@ class imsitu_scorer():
             self.score_cards.append(new_card)
 
 
-    def add_point_agent_only(self, labels_predict, gt_labels):
+    def add_point_agent_only(self, id_set, labels_predict, gt_labels):
         #encoded predictions should be batch x verbs x values #assumes the are the same order as the references
         #encoded reference should be batch x 1+ references*roles,values (sorted)
 
         batch_size = labels_predict.size()[0]
         for i in range(batch_size):
+            img_id = id_set[i]
             label_pred = labels_predict[i]
             gt_label = gt_labels[i]
 
@@ -182,6 +183,7 @@ class imsitu_scorer():
                 gt_label_id = gt_label[r]
                 #print('ground truth label id = ', gt_label_id)
                 if label_id == gt_label_id:
+                    #print('correct :', img_id, self.encoder.label_list[gt_label_id])
                     found = True
                     break
             if not found: all_found = False
