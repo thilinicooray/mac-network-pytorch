@@ -300,7 +300,7 @@ def main():
 
     optimizer = torch.optim.Adamax([{'params': cnn_verb_features, 'lr': 5e-5},
                                     {'params': verb_features}],
-                                   lr=5e-3)
+                                   lr=2e-3)
 
     #optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     #scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=lr_step, gamma=lr_gamma)
