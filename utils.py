@@ -445,7 +445,7 @@ def load_net(fname, net_list, prefix_list = None):
                     param = torch.from_numpy(np.asarray(dict[k].cpu()))
                     #print('param size :', param.size(), dict[k].type())
                     v.copy_(param)
-                    print('[Copied]: {}'.format(k))
+                    #print('[Copied]: {}'.format(k))
                 else:
                     print('[Missed]: {}'.format(k))
         except Exception as e:
