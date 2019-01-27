@@ -139,7 +139,7 @@ class BaseModel(nn.Module):
         )
 
         self.classifier = nn.Sequential(
-            nn.Linear(mlp_hidden*4, mlp_hidden*2),
+            nn.Linear(mlp_hidden*2, mlp_hidden*2),
             nn.ReLU(),
             nn.Dropout(0.5),
             nn.Linear(mlp_hidden*2, self.n_verbs)
@@ -165,7 +165,7 @@ class BaseModel(nn.Module):
         agent_feat = self.agent(conv_agent)
         conv_verb = self.conv_verb(image)
         verb_feat = self.verb(conv_verb)
-        concat = torch.cat([agent_feat,verb_feat],1)
+        concat = agent_feat*verb_feat
 
         verb_pred = self.classifier(concat)
 
