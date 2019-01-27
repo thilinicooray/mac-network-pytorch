@@ -40,6 +40,12 @@ class imsitu_encoder():
         label_frequency = {}
         #self.verb_wise_items = {}
 
+        for img_id in train_set:
+            img = train_set[img_id]
+            current_verb = img['verb']
+            if current_verb not in self.verb_list:
+                self.verb_list.append(current_verb)
+
         '''for img_id in train_set:
             img = train_set[img_id]
             current_verb = img['verb']
