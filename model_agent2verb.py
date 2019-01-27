@@ -123,7 +123,8 @@ class BaseModel(nn.Module):
         #self.vocab_size = self.encoder.get_num_labels()
         self.n_verbs = self.encoder.get_num_verbs()
 
-        self.conv = vgg16_modified()
+        self.conv_agent = vgg16_modified()
+        self.conv_verb = vgg16_modified()
 
         self.agent = nn.Sequential(
             nn.Linear(mlp_hidden*8, mlp_hidden*2),
@@ -132,13 +133,18 @@ class BaseModel(nn.Module):
         )
 
         self.verb = nn.Sequential(
-            nn.Linear(mlp_hidden*2, mlp_hidden*2),
+            nn.Linear(mlp_hidden*8, mlp_hidden*2),
+            nn.BatchNorm1d(mlp_hidden*2),
             nn.ReLU(),
-            nn.Linear(mlp_hidden*2, mlp_hidden*2),
+        )
+
+        self.classifier = nn.Sequential(
+            nn.Linear(mlp_hidden*4, mlp_hidden*2),
             nn.ReLU(),
             nn.Dropout(0.5),
             nn.Linear(mlp_hidden*2, self.n_verbs)
         )
+
     def train_preprocess(self):
         return self.train_transform
 
@@ -153,12 +159,15 @@ class BaseModel(nn.Module):
         x = x.repeat(1,2)
         print('xxxxxx', x, x.view(-1,3), x.size())'''
 
-        conv = self.conv(image)
+        conv_agent = self.conv_agent(image)
 
         #verb pred
-        agent_feat = self.agent(conv)
+        agent_feat = self.agent(conv_agent)
+        conv_verb = self.conv_verb(image)
+        verb_feat = self.verb(conv_verb)
+        concat = torch.cat([agent_feat,verb_feat],1)
 
-        verb_pred = self.verb(agent_feat)
+        verb_pred = self.classifier(concat)
 
         return verb_pred
 

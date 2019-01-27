@@ -240,7 +240,7 @@ def main():
 
     # To group up the features
     #all verb and role feat are under role as it's a single unit
-    cnn_features, agent_features, verb_features = utils.group_features_agent2verb(model)
+    cnn_agent_features, cnn_verb_features, agent_features, verb_features = utils.group_features_agent2verb(model)
 
     train_set = imsitu_loader(imgset_folder, train_set, encoder, model.train_preprocess())
 
@@ -259,21 +259,14 @@ def main():
     traindev_loader = torch.utils.data.DataLoader(traindev_set, batch_size=8, shuffle=True, num_workers=n_worker)
 
     utils.set_trainable(model, False)
-    if args.train_role:
-        print('CNN fix, Verb fix, train role from the scratch from: {}'.format(args.verb_module))
-        args.train_all = False
-        if len(args.verb_module) == 0:
-            raise Exception('[pretrained verb module] not specified')
-        utils.load_net(args.verb_module, [model.conv, model.verb], ['conv', 'verb'])
-        optimizer_select = 1
-        model_name = 'cfx_vfx_rtrain'
 
-    elif args.train_verb:
+
+    if args.train_verb:
         print('CNN fix, agent fix, train verb from the scratch from: {}'.format(args.agent_module))
         args.train_all = False
         if len(args.agent_module) == 0:
             raise Exception('[pretrained agent module] not specified')
-        utils.load_net(args.agent_module, [model.conv, model.agent], ['conv', 'agent'])
+        utils.load_net(args.agent_module, [model.conv_agent, model.agent], ['conv', 'agent'])
         optimizer_select = 1
         model_name = 'cfx_afx_vtrain'
 
@@ -286,23 +279,6 @@ def main():
         optimizer_select = 2
         model_name = 'cfx_aft_vtrain'
 
-    elif args.finetune_cnn:
-        print('CNN finetune, Verb finetune, train role from the scratch from: {}'.format(args.verb_module))
-        args.train_all = True
-        if len(args.verb_module) == 0:
-            raise Exception('[pretrained verb module] not specified')
-        utils.load_net(args.verb_module, [model.conv, model.verb], ['conv', 'verb'])
-        optimizer_select = 3
-        model_name = 'cft_vft_rtrain'
-
-    elif args.resume_training:
-        print('Resume training from: {}'.format(args.resume_model))
-        args.train_all = True
-        if len(args.resume_model) == 0:
-            raise Exception('[pretrained verb module] not specified')
-        utils.load_net(args.resume_model, [model])
-        optimizer_select = 0
-        model_name = 'resume_all'
     else:
         print('Training from the scratch.')
         optimizer_select = 0
@@ -313,7 +289,7 @@ def main():
                                          cnn_features, role_features)'''
 
     optimizer = utils.get_optimizer_agent2verb(lr,weight_decay,optimizer_select,
-                                         cnn_features, agent_features, verb_features)
+                                               cnn_agent_features, cnn_verb_features, agent_features, verb_features)
 
     if not os.path.exists(args.output_dir):
         os.mkdir(args.output_dir)
@@ -325,7 +301,7 @@ def main():
         torch.cuda.manual_seed(1234)
         torch.backends.cudnn.deterministic = True
 
-    optimizer = torch.optim.Adamax([{'params': agent_features, 'lr': 5e-5},
+    optimizer = torch.optim.Adamax([{'params': cnn_verb_features, 'lr': 5e-5},
                                     {'params': verb_features}],
                                    lr=1e-3)
 

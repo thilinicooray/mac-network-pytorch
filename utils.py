@@ -185,21 +185,22 @@ def group_features_noun(net_):
 
 def group_features_agent2verb(net_):
 
-    cnn_features = list(net_.conv.parameters())
-    cnn_feature_len = len(list(net_.conv.parameters()))
+    cnn_agent_features = list(net_.conv_agent.parameters())
+    cnn_agent_feature_len = len(list(net_.conv_agent.parameters()))
+    cnn_verb_features = list(net_.conv_verb.parameters())
+    cnn_verb_feature_len = len(list(net_.conv_verb.parameters()))
     agent_features = list(net_.agent.parameters())
     agent_feature_len = len(list(net_.agent.parameters()))
-    verb_features = list(net_.verb.parameters())
-    verb_feature_len = len(list(net_.verb.parameters()))
+    verb_features = list(net_.parameters())[(cnn_agent_feature_len + cnn_verb_feature_len + agent_feature_len):]
 
 
     print('Network details :')
-    print('\tcnn features :', cnn_feature_len)
+    print('\tcnn features :', cnn_agent_feature_len, cnn_verb_feature_len)
     print('\tagent features :', agent_feature_len)
-    print('\tverb features :', verb_feature_len)
+    print('\tverb features :', len(verb_features))
 
 
-    return cnn_features, agent_features, verb_features
+    return cnn_agent_features, cnn_verb_features, agent_features, verb_features
 
 def set_trainable(model, requires_grad):
     set_trainable_param(model.parameters(), requires_grad)
@@ -336,7 +337,7 @@ def get_optimizer_verb(mode, cnn_features,  verb_features):
 
     return optimizer
 
-def get_optimizer_agent2verb(lr, decay, mode, cnn_features,  agent_features, verb_features):
+def get_optimizer_agent2verb(lr, decay, mode, cnn_agent_features,  cnn_verb_features, agent_features, verb_features):
     """ To get the optimizer
     mode 0: training from scratch
     mode 1: cnn fix, v training
@@ -344,7 +345,9 @@ def get_optimizer_agent2verb(lr, decay, mode, cnn_features,  agent_features, ver
     mode 3: cnn finetune, verb finetune, role training"""
     if mode == 1:
         set_trainable_param(verb_features, True)
+        set_trainable_param(cnn_verb_features, True)
         optimizer = torch.optim.Adam([
+            {'params': cnn_verb_features, 'lr': 5e-5},
             {'params': verb_features},
         ], lr=1e-3)
     if mode == 2:
