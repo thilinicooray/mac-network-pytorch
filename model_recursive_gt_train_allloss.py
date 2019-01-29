@@ -180,7 +180,7 @@ class RecursiveGraph(nn.Module):
                                   self.num_roles, self.num_labels, self.mlp_hidden,
                                   self.emd_hidden, self.vqa_model)
 
-    def forward(self, img, verbq, verb):
+    def forward(self, img, verbq, gt_verb):
         verbs = []
         roles = []
         labels = []
@@ -191,12 +191,14 @@ class RecursiveGraph(nn.Module):
 
         batch_size = img.size(0)
 
-        for iter in range(1):
+        for iter in range(3):
             label_pred = None
             label_rep = None
             if iter == 0:
                 verb_pred = self.verb_node(img, verbq)
-                role_qs = self.encoder.get_role_questions_batch(verb)
+                sorted_idx = torch.sort(verb_pred, 1, True)[1]
+                verb = sorted_idx[:,0]
+                role_qs = self.encoder.get_role_questions_batch(gt_verb)
                 if self.gpu_mode >= 0:
                     role_qs = role_qs.to(torch.device('cuda'))
 
@@ -217,7 +219,9 @@ class RecursiveGraph(nn.Module):
 
             else:
                 verb_pred = self.verb_node(img, verbq, labels[-1])
-                role_qs = self.encoder.get_role_questions_batch(verb)
+                sorted_idx = torch.sort(verb_pred, 1, True)[1]
+                verb = sorted_idx[:,0]
+                role_qs = self.encoder.get_role_questions_batch(gt_verb)
                 if self.gpu_mode >= 0:
                     role_qs = role_qs.to(torch.device('cuda'))
 
