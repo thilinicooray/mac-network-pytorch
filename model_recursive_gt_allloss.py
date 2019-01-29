@@ -89,7 +89,7 @@ class VerbNode(nn.Module):
 
         if context is not None:
             #for every word we need to calc att
-            repeated_ctx = context.expand(verbq.size(-2), context.size(0), context.size(1), context.size(2))
+            repeated_ctx = context.expand(verbq.size(-1), context.size(0), context.size(1), context.size(2))
             repeated_ctx = repeated_ctx.transpose(0,1)
             word_wise_att = self.word_att(repeated_ctx, embedded_verb_q)
             word_wise_ctx = (word_wise_att * repeated_ctx).sum(2)
