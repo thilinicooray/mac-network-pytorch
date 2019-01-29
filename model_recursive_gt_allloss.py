@@ -200,6 +200,8 @@ class RecursiveGraph(nn.Module):
                 sorted_idx = torch.sort(verb_pred, 1, True)[1]
                 verb = sorted_idx[:,0]
                 role_qs = self.encoder.get_role_questions_batch(verb)
+                if self.gpu_mode >= 0:
+                    role_qs = role_qs.to(torch.device('cuda'))
 
                 for i in range(self.max_roles):
                     label_soft_ans, label_logits  = self.role_node(img, role_qs[:,i], self.verb_lookup(verb))
@@ -221,6 +223,8 @@ class RecursiveGraph(nn.Module):
                 sorted_idx = torch.sort(verb_pred, 1, True)[1]
                 verb = sorted_idx[:,0]
                 role_qs = self.encoder.get_role_questions_batch(verb)
+                if self.gpu_mode >= 0:
+                    role_qs = role_qs.to(torch.device('cuda'))
 
                 for i in range(self.max_roles):
                     label_soft_ans, label_logits  = self.role_node(img, role_qs[:,i], self.verb_lookup(verb))
