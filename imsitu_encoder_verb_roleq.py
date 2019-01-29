@@ -21,7 +21,7 @@ class imsitu_encoder():
         self.question_words = {}
         self.max_q_word_count = 0
         self.vrole_question = {}
-        self.verb_question = "what is the action happening?"
+        self.verb_question = "what is someone doing?"
 
         #save verb q
         words = nltk.word_tokenize(self.verb_question)
