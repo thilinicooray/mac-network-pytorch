@@ -191,7 +191,7 @@ class RecursiveGraph(nn.Module):
 
         batch_size = img.size(0)
 
-        for iter in range(3):
+        for iter in range(1):
             label_pred = None
             label_rep = None
             if iter == 0:
