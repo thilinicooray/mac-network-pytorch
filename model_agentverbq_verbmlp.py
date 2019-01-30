@@ -129,11 +129,11 @@ class BaseModel(nn.Module):
             nn.Dropout(0.5),
             nn.Linear(mlp_hidden*2, self.vocab_size),
         )
-        '''self.verb = nn.Sequential(
+        self.verb = nn.Sequential(
             nn.Linear(mlp_hidden*8, mlp_hidden*2),
             nn.BatchNorm1d(mlp_hidden*2),
             nn.ReLU(),
-        )'''
+        )
 
         self.vqa_model = TopDown()
 
@@ -141,7 +141,7 @@ class BaseModel(nn.Module):
         self.v_net = FCNet([mlp_hidden, mlp_hidden])
 
         self.classifier = SimpleClassifier(
-            mlp_hidden*9, 2 * mlp_hidden, self.n_verbs, 0.5)
+            mlp_hidden*3, 2 * mlp_hidden, self.n_verbs, 0.5)
 
     def train_preprocess(self):
         return self.train_transform
@@ -175,10 +175,11 @@ class BaseModel(nn.Module):
         img = img.permute(0, 2, 1)
 
         q_emb, v_emb = self.vqa_model(img, verb_q)
+        verb_alone = self.verb(v_class)
 
         q_repr = self.q_net(q_emb)
         v_repr = self.v_net(v_emb)
-        joint_repr = torch.cat([q_repr * v_repr, v_class], -1)
+        joint_repr = torch.cat([q_repr * v_repr, verb_alone], -1)
         verb_pred = self.classifier(joint_repr)
 
         return verb_pred
