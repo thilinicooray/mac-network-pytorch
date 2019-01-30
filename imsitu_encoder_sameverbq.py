@@ -23,7 +23,7 @@ class imsitu_encoder():
         self.verb_question = {}
 
         for img_id, question in role_questions.items():
-            question = "what is the doing?"
+            question = "what is someone doing?"
             self.verb_question[img_id] = question
             words = nltk.word_tokenize(question)
             words = words[:-1] #ignore ? mark
