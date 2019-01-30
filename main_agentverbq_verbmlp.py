@@ -237,7 +237,7 @@ def main():
 
     # To group up the features
     #all verb and role feat are under role as it's a single unit
-    cnn_agent_features, cnn_verb_features, agent_features, verb_features = utils.group_features_agent2verb(model)
+    cnn_agent_features, cnn_verb_features, verb_features = utils.group_features_agent2verb_small(model)
 
     train_set = imsitu_loader_agentverbq(imgset_folder, train_set, encoder, model.train_preprocess())
 
@@ -263,7 +263,7 @@ def main():
         args.train_all = False
         if len(args.agent_module) == 0:
             raise Exception('[pretrained agent module] not specified')
-        utils.load_net(args.agent_module, [model.conv_agent, model.agent], ['conv', 'agent'])
+        utils.load_net(args.agent_module, [model.conv_agent], ['conv'])
         optimizer_select = 1
         model_name = 'cfx_afx_vtrain'
 
@@ -285,8 +285,8 @@ def main():
     '''optimizer = utils.get_optimizer_noun(lr,weight_decay,optimizer_select,
                                          cnn_features, role_features)'''
 
-    optimizer = utils.get_optimizer_agent2verb(lr,weight_decay,optimizer_select,
-                                               cnn_agent_features, cnn_verb_features, agent_features, verb_features)
+    optimizer = utils.get_optimizer_agent2verbsmall(lr,weight_decay,optimizer_select,
+                                               cnn_agent_features, cnn_verb_features, verb_features)
 
     if not os.path.exists(args.output_dir):
         os.mkdir(args.output_dir)

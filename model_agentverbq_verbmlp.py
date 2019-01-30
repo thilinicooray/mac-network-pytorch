@@ -5,7 +5,7 @@ import utils
 import torchvision as tv
 from classifier import SimpleClassifier
 from fc import FCNet
-from attention import Attention
+from attention import Attention, BigAttention
 
 class vgg16_modified(nn.Module):
     def __init__(self):
@@ -25,11 +25,11 @@ class vgg16_modified(nn.Module):
 
     def forward(self,x):
         #return self.dropout2(self.relu2(self.lin2(self.dropout1(self.relu1(self.lin1(self.vgg_features(x).view(-1, 512*7*7)))))))
-        y =  self.vgg_classifier(self.vgg_features(x).view(-1, 512*7*7))
+        #y =  self.vgg_classifier(self.vgg_features(x).view(-1, 512*7*7))
         #print('y size :',  y.size())
-        return y
-        #features = self.vgg_features(x)
-        #return features
+        #return y
+        features = self.vgg_features(x)
+        return features
 
 
 class vgg16_modified_feat(nn.Module):
@@ -62,7 +62,7 @@ class TopDown(nn.Module):
                  mlp_hidden=512):
         super(TopDown, self).__init__()
 
-        self.q_emb = nn.LSTM(embed_hidden + mlp_hidden*2, mlp_hidden,
+        self.q_emb = nn.LSTM(embed_hidden + mlp_hidden, mlp_hidden,
                              batch_first=True, bidirectional=True)
         self.q_prep = FCNet([mlp_hidden, mlp_hidden])
         self.lstm_proj = nn.Linear(mlp_hidden * 2, mlp_hidden)
@@ -118,17 +118,17 @@ class BaseModel(nn.Module):
         self.n_verbs = self.encoder.get_num_verbs()
         self.vocab_size = self.encoder.get_num_labels()
 
-        self.agent_label_lookup = nn.Embedding(self.vocab_size, embed_hidden)
-        self.q_word_count = len(self.encoder.question_words)
-        self.w_emb = nn.Embedding(self.q_word_count, embed_hidden)
+        #self.agent_label_lookup = nn.Embedding(self.vocab_size, embed_hidden)
 
         self.conv_agent = vgg16_modified()
         self.conv_verb = vgg16_modified_feat()
 
-        self.agent = nn.Sequential(
-            nn.Linear(mlp_hidden*8, mlp_hidden*2)
+        self.q_word_count = len(self.encoder.question_words)
+        self.w_emb = nn.Embedding(self.q_word_count, embed_hidden)
 
-        )
+
+
+        self.word_att = BigAttention(mlp_hidden, embed_hidden, mlp_hidden)
 
         self.vqa_model = TopDown()
 
@@ -153,23 +153,26 @@ class BaseModel(nn.Module):
         print('xxxxxx', x, x.view(-1,3), x.size())'''
 
         conv_agent = self.conv_agent(image)
+        batch_size, n_channel, conv_h, conv_w = conv_agent.size()
+        img = conv_agent.view(batch_size, n_channel, -1)
+        img = img.permute(0, 2, 1)
 
         #verb pred
         verbq_word_count = verbq.size(1)
-        agent_logit = self.agent(conv_agent)
-        agent_expand = agent_logit.expand(verbq_word_count, agent_logit.size(0), agent_logit.size(1))
+        agent_expand = img.expand(verbq_word_count, img.size(0), img.size(1), img.size(2))
         agent_expand = agent_expand.transpose(0,1)
-
-        verb_q = torch.cat([self.w_emb(verbq), agent_expand], -1)
-        #print('verbq :', verb_q.size())
+        embedded_verb_q = self.w_emb(verbq)
+        word_wise_att = self.word_att(agent_expand, embedded_verb_q)
+        word_wise_ctx = (word_wise_att * agent_expand).sum(2)
+        updated_verb_q = torch.cat([embedded_verb_q, word_wise_ctx],-1)
 
 
         img_feat, v_class = self.conv_verb(image)
         batch_size, n_channel, conv_h, conv_w = img_feat.size()
-        img = img_feat.view(batch_size, n_channel, -1)
-        img = img.permute(0, 2, 1)
+        vimg = img_feat.view(batch_size, n_channel, -1)
+        vimg = vimg.permute(0, 2, 1)
 
-        q_emb, v_emb = self.vqa_model(img, verb_q)
+        q_emb, v_emb = self.vqa_model(vimg, updated_verb_q)
 
         q_repr = self.q_net(q_emb)
         v_repr = self.v_net(v_emb)
