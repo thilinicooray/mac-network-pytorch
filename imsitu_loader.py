@@ -215,6 +215,31 @@ class imsitu_loader_agent(data.Dataset):
     def __len__(self):
         return len(self.annotations)
 
+class imsitu_loader_agent_objoh(data.Dataset):
+    def __init__(self, img_dir, annotation_file, obj_file, encoder, transform=None):
+        self.img_dir = img_dir
+        self.annotations = annotation_file
+        self.ids = list(self.annotations.keys())
+        self.encoder = encoder
+        self.transform = transform
+        self.obj_det = obj_file
+
+    def __getitem__(self, index):
+        _id = self.ids[index]
+        ann = self.annotations[_id]
+        detected_obj = self.obj_det[_id]
+        img = Image.open(os.path.join(self.img_dir, _id)).convert('RGB')
+        #transform must be None in order to give it as a tensor
+        if self.transform is not None: img = self.transform(img)
+        labels = self.encoder.encode(ann)
+
+        if labels.size(0) != 3:
+            print('ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR')
+        return _id, img, torch.tensor(detected_obj, dtype=torch.float), labels
+
+    def __len__(self):
+        return len(self.annotations)
+
 
 def shuffle_minibatch(batch):
     random.shuffle(batch)
