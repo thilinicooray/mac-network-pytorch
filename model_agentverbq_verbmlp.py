@@ -28,6 +28,9 @@ class vgg16_modified(nn.Module):
         y =  self.vgg_classifier(self.vgg_features(x).view(-1, 512*7*7))
         #print('y size :',  y.size())
         return y
+        #features = self.vgg_features(x)
+        #return features
+
 
 class vgg16_modified_feat(nn.Module):
     def __init__(self):
@@ -59,7 +62,7 @@ class TopDown(nn.Module):
                  mlp_hidden=512):
         super(TopDown, self).__init__()
 
-        self.q_emb = nn.LSTM(embed_hidden, mlp_hidden,
+        self.q_emb = nn.LSTM(embed_hidden + mlp_hidden*2, mlp_hidden,
                              batch_first=True, bidirectional=True)
         self.q_prep = FCNet([mlp_hidden, mlp_hidden])
         self.lstm_proj = nn.Linear(mlp_hidden * 2, mlp_hidden)
@@ -123,16 +126,8 @@ class BaseModel(nn.Module):
         self.conv_verb = vgg16_modified_feat()
 
         self.agent = nn.Sequential(
-            nn.Linear(mlp_hidden*8, mlp_hidden*2),
-            nn.BatchNorm1d(mlp_hidden*2),
-            nn.ReLU(),
-            nn.Dropout(0.5),
-            nn.Linear(mlp_hidden*2, self.vocab_size),
-        )
-        self.verb = nn.Sequential(
-            nn.Linear(mlp_hidden*8, mlp_hidden*2),
-            nn.BatchNorm1d(mlp_hidden*2),
-            nn.ReLU(),
+            nn.Linear(mlp_hidden*8, mlp_hidden*2)
+
         )
 
         self.vqa_model = TopDown()
@@ -141,7 +136,7 @@ class BaseModel(nn.Module):
         self.v_net = FCNet([mlp_hidden, mlp_hidden])
 
         self.classifier = SimpleClassifier(
-            mlp_hidden*3, 2 * mlp_hidden, self.n_verbs, 0.5)
+            mlp_hidden, 2 * mlp_hidden, self.n_verbs, 0.5)
 
     def train_preprocess(self):
         return self.train_transform
@@ -160,12 +155,12 @@ class BaseModel(nn.Module):
         conv_agent = self.conv_agent(image)
 
         #verb pred
+        verbq_word_count = verbq.size(1)
         agent_logit = self.agent(conv_agent)
-        sorted_idx = torch.sort(agent_logit, 1, True)[1]
-        #print('sorted ', sorted_idx.size())
-        current_agent = sorted_idx[:,0]
+        agent_expand = agent_logit.expand(verbq_word_count, agent_logit.size(0), agent_logit.size(1))
+        agent_expand = agent_expand.transpose(0,1)
 
-        verb_q = torch.cat([self.w_emb(verbq[:,:3]), self.agent_label_lookup(current_agent).unsqueeze(1), self.w_emb(verbq[:,3:])], 1)
+        verb_q = torch.cat([self.w_emb(verbq), agent_expand], -1)
         #print('verbq :', verb_q.size())
 
 
@@ -175,11 +170,10 @@ class BaseModel(nn.Module):
         img = img.permute(0, 2, 1)
 
         q_emb, v_emb = self.vqa_model(img, verb_q)
-        verb_alone = self.verb(v_class)
 
         q_repr = self.q_net(q_emb)
         v_repr = self.v_net(v_emb)
-        joint_repr = torch.cat([q_repr * v_repr, verb_alone], -1)
+        joint_repr = q_repr * v_repr
         verb_pred = self.classifier(joint_repr)
 
         return verb_pred
