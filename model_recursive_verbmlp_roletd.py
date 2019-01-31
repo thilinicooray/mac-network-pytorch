@@ -186,7 +186,7 @@ class RecursiveGraph(nn.Module):
             nn.BatchNorm1d(mlp_hidden*2),
             nn.ReLU(),
             nn.Dropout(0.5),
-            nn.Linear(mlp_hidden*2, self.n_verbs),
+            nn.Linear(mlp_hidden*2, self.num_verbs),
         )
         self.role_node = RoleNode(self.encoder, self.gpu_mode, self.role_lookup, self.ans_lookup, self.q_word_embeddings,
                                   self.num_roles, self.num_labels, self.mlp_hidden,

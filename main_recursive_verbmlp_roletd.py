@@ -3,7 +3,7 @@ from imsitu_encoder_verb_roleq import imsitu_encoder
 from imsitu_loader import imsitu_loader_verb_roleq
 from imsitu_scorer_log import imsitu_scorer
 import json
-import model_recursive_gt_train_allloss
+import model_recursive_verbmlp_roletd
 import os
 import utils
 import time
@@ -272,7 +272,7 @@ def main():
     imsitu_roleq = json.load(open("imsitu_data/imsitu_questions.json"))
     encoder = imsitu_encoder(train_set, imsitu_roleq)
 
-    model = model_recursive_gt_train_allloss.BaseModel(encoder, args.gpuid)
+    model = model_recursive_verbmlp_roletd.BaseModel(encoder, args.gpuid)
 
     # To group up the features
     #all verb and role feat are under role as it's a single unit
