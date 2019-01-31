@@ -191,7 +191,7 @@ class RecursiveGraph(nn.Module):
 
         batch_size = img.size(0)
 
-        for iter in range(3):
+        for iter in range(1):
             label_pred = None
             label_rep = None
             if iter == 0:
@@ -203,7 +203,7 @@ class RecursiveGraph(nn.Module):
                     role_qs = role_qs.to(torch.device('cuda'))
 
                 for i in range(self.max_roles):
-                    label_soft_ans, label_logits  = self.role_node(img, role_qs[:,i], self.verb_lookup(verb))
+                    label_soft_ans, label_logits  = self.role_node(img, role_qs[:,i], self.verb_lookup(gt_verb))
 
                     if i == 0:
                         label_pred = label_logits.unsqueeze(1)
