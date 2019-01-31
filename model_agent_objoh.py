@@ -132,7 +132,7 @@ class BaseModel(nn.Module):
             nn.Dropout(0.5),
         )
 
-        self.oh_to_comp = FCNet([385, mlp_hidden,mlp_hidden])
+        self.oh_to_comp = FCNet([385, mlp_hidden,mlp_hidden,mlp_hidden])
         self.final_layer = nn.Linear(mlp_hidden*3, self.vocab_size)
 
 
