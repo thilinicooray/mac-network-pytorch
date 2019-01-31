@@ -14,6 +14,10 @@ class vgg16_modified(nn.Module):
         super(vgg16_modified, self).__init__()
         vgg = tv.models.vgg16(pretrained=True)
         self.vgg_features = vgg.features
+        self.out_features = vgg.classifier[6].in_features
+        features = list(vgg.classifier.children())[:-1] # Remove last layer
+        self.vgg_classifier = nn.Sequential(*features) # Replace the model classifier
+        #print(self.vgg_classifier)
 
     def rep_size(self):
         return 1024
@@ -24,8 +28,9 @@ class vgg16_modified(nn.Module):
     def forward(self,x):
         #return self.dropout2(self.relu2(self.lin2(self.dropout1(self.relu1(self.lin1(self.vgg_features(x).view(-1, 512*7*7)))))))
         features = self.vgg_features(x)
-
-        return features
+        y =  self.vgg_classifier(features.view(-1, 512*7*7))
+        #print('y size :',  y.size())
+        return features, y
 
 class TopDown(nn.Module):
     def __init__(self,
@@ -174,13 +179,20 @@ class RecursiveGraph(nn.Module):
         self.max_roles = max_roles
         self.gpu_mode = gpu_mode
         self.vqa_model = TopDown()
-        self.verb_node = VerbNode(self.encoder, self.gpu_mode, self.verb_lookup, self.q_word_embeddings,
-                                  self.num_verbs, self.vqa_model, self.mlp_hidden, self.emd_hidden)
+        '''self.verb_node = VerbNode(self.encoder, self.gpu_mode, self.verb_lookup, self.q_word_embeddings,
+                                  self.num_verbs, self.vqa_model, self.mlp_hidden, self.emd_hidden)'''
+        self.verb_mlp = nn.Sequential(
+            nn.Linear(mlp_hidden*8, mlp_hidden*2),
+            nn.BatchNorm1d(mlp_hidden*2),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            nn.Linear(mlp_hidden*2, self.n_verbs),
+        )
         self.role_node = RoleNode(self.encoder, self.gpu_mode, self.role_lookup, self.ans_lookup, self.q_word_embeddings,
                                   self.num_roles, self.num_labels, self.mlp_hidden,
                                   self.emd_hidden, self.vqa_model)
 
-    def forward(self, img, verbq, gt_verb):
+    def forward(self, img, img_cls, verbq, gt_verb):
         verbs = []
         roles = []
         labels = []
@@ -195,9 +207,8 @@ class RecursiveGraph(nn.Module):
             label_pred = None
             label_rep = None
             if iter == 0:
-                verb_pred = self.verb_node(img, verbq)
-                sorted_idx = torch.sort(verb_pred, 1, True)[1]
-                verb = sorted_idx[:,0]
+                verb_pred = self.verb_mlp(img_cls)
+
                 role_qs = self.encoder.get_role_questions_batch(gt_verb)
                 if self.gpu_mode >= 0:
                     role_qs = role_qs.to(torch.device('cuda'))
@@ -246,7 +257,7 @@ class RecursiveGraph(nn.Module):
 
         return [verb_pred_all, label_pred_all ], verb_pred, label_pred
 
-    def forward_eval(self, img, verbq):
+    def forward_eval(self, img, img_cls, verbq):
 
         verbs = []
         roles = []
@@ -262,7 +273,7 @@ class RecursiveGraph(nn.Module):
             label_pred = None
             label_rep = None
             if iter == 0:
-                verb_pred = self.verb_node(img, verbq)
+                verb_pred = self.verb_mlp(img_cls)
                 sorted_idx = torch.sort(verb_pred, 1, True)[1]
                 verb = sorted_idx[:,0]
                 role_qs = self.encoder.get_role_questions_batch(verb)
@@ -283,29 +294,6 @@ class RecursiveGraph(nn.Module):
 
                 label_pred_all = label_pred.unsqueeze(-2)
                 verb_pred_all = verb_pred.unsqueeze(-2)
-
-            else:
-                verb_pred = self.verb_node(img, verbq, labels[-1])
-                sorted_idx = torch.sort(verb_pred, 1, True)[1]
-                verb = sorted_idx[:,0]
-                role_qs = self.encoder.get_role_questions_batch(verb)
-                if self.gpu_mode >= 0:
-                    role_qs = role_qs.to(torch.device('cuda'))
-
-                for i in range(self.max_roles):
-                    label_soft_ans, label_logits  = self.role_node(img, role_qs[:,i], self.verb_lookup(verb))
-
-                    if i == 0:
-                        label_pred = label_logits.unsqueeze(1)
-                        label_rep = label_soft_ans.unsqueeze(1)
-                    else:
-                        label_pred = torch.cat((label_pred.clone(), label_logits.unsqueeze(1)), 1)
-                        label_rep = torch.cat((label_rep.clone(), label_soft_ans.unsqueeze(1)), 1)
-
-                labels.append(label_rep)
-
-                label_pred_all = torch.cat((label_pred_all.clone(), label_pred.unsqueeze(-2)), -2)
-                verb_pred_all = torch.cat((verb_pred_all.clone(), verb_pred.unsqueeze(-2)), -2)
 
         #print('sizes of pred :', label_pred_all.size(), role_pred_all.size(), verb_pred_all.size())
         label_pred_all = torch.mean(label_pred_all, -2)
@@ -386,15 +374,15 @@ class BaseModel(nn.Module):
 
     def forward(self, img, verbq, verb):
 
-        img_features = self.conv(img)
+        img_features, img_cls = self.conv(img)
         batch_size, n_channel, conv_h, conv_w = img_features.size()
         img = img_features.view(batch_size, n_channel, -1)
         img = img.permute(0, 2, 1)
 
         if self.training:
-            loss_rest, verb_pred, label_pred = self.vsrl_model(img, verbq, verb)
+            loss_rest, verb_pred, label_pred = self.vsrl_model(img, img_cls, verbq, verb)
         else:
-            loss_rest, verb_pred, label_pred = self.vsrl_model.forward_eval(img, verbq)
+            loss_rest, verb_pred, label_pred = self.vsrl_model.forward_eval(img, img_cls, verbq)
 
 
         return loss_rest, verb_pred, label_pred
