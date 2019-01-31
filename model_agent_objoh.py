@@ -2,6 +2,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 import utils
+from fc import FCNet
 import torchvision as tv
 
 class vgg16_modified(nn.Module):
@@ -131,8 +132,8 @@ class BaseModel(nn.Module):
             nn.Dropout(0.5),
         )
 
-        self.oh_to_comp = nn.Linear(385, 256)
-        self.final_layer = nn.Linear(mlp_hidden*2+256, self.vocab_size)
+        self.oh_to_comp = FCNet([385, mlp_hidden,mlp_hidden])
+        self.final_layer = nn.Linear(mlp_hidden*3, self.vocab_size)
 
 
 
