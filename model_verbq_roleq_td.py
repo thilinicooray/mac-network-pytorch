@@ -65,7 +65,6 @@ class VerbNode(nn.Module):
                  gpu_mode,
                  q_word_embeddings,
                  num_verbs,
-                 vqa_model,
                  mlp_hidden, embd_hidden):
         super(VerbNode, self).__init__()
 
@@ -73,7 +72,7 @@ class VerbNode(nn.Module):
         self.gpu_mode = gpu_mode
         self.q_word_embeddings = q_word_embeddings
         self.num_verbs = num_verbs
-        self.vqa_model = vqa_model
+        self.vqa_model = TopDown()
         self.mlp_hidden = mlp_hidden
         self.embd_hidden = embd_hidden
         self.verb_classifier = SimpleClassifier(
@@ -96,7 +95,7 @@ class RoleNode(nn.Module):
                  q_word_embeddings,
                  num_roles,
                  num_labels, mlp_hidden,
-                 embd_hidden, vqa_model):
+                 embd_hidden):
         super(RoleNode, self).__init__()
 
         self.encoder = encoder
@@ -107,7 +106,7 @@ class RoleNode(nn.Module):
         self.num_labels = num_labels
         self.mlp_hidden = mlp_hidden
         self.embd_hidden = embd_hidden
-        self.vqa_model = vqa_model
+        self.vqa_model = TopDown()
 
         self.label_classifier = SimpleClassifier(
             mlp_hidden, 2 * mlp_hidden, self.num_labels + 1, 0.5)
@@ -161,9 +160,8 @@ class RecursiveGraph(nn.Module):
         self.mlp_hidden = mlp_hidden
         self.max_roles = max_roles
         self.gpu_mode = gpu_mode
-        self.vqa_model = TopDown()
         self.verb_node = VerbNode(self.encoder, self.gpu_mode, self.q_word_embeddings,
-                                  self.num_verbs, self.vqa_model, self.mlp_hidden, self.emd_hidden)
+                                  self.num_verbs, self.mlp_hidden, self.emd_hidden)
         self.verb_mlp = nn.Sequential(
             nn.Linear(mlp_hidden*8, mlp_hidden*2),
             nn.BatchNorm1d(mlp_hidden*2),
@@ -173,7 +171,7 @@ class RecursiveGraph(nn.Module):
         )
         self.role_node = RoleNode(self.encoder, self.gpu_mode, self.q_word_embeddings,
                                   self.num_roles, self.num_labels, self.mlp_hidden,
-                                  self.emd_hidden, self.vqa_model)
+                                  self.emd_hidden)
 
     def forward(self, img, verbq, gt_verb):
         verb_pred = self.verb_node(img, verbq)
