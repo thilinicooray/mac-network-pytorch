@@ -79,9 +79,14 @@ class VerbNode(nn.Module):
             mlp_hidden, 2 * mlp_hidden, self.num_verbs, 0.5)
         self.sftmax = nn.Softmax()
 
-    def forward(self, img, verbq, context=None):
+    def forward(self, img, obj_det, verbq):
 
         embedded_verb_q = self.q_word_embeddings(verbq)
+        obj_count = img.size(-2)
+        obj_expand = obj_det.expand(obj_count, obj_det.size(0), obj_det.size(1))
+        obj_expand = obj_expand.transpose(0,1)
+        img = img * obj_expand
+
 
         ans_rep = self.vqa_model(img, embedded_verb_q)
         logits = self.verb_classifier(ans_rep)
@@ -111,7 +116,7 @@ class RoleNode(nn.Module):
         self.label_classifier = SimpleClassifier(
             mlp_hidden, 2 * mlp_hidden, self.num_labels + 1, 0.5)
 
-    def forward(self, img, roleq):
+    def forward(self, img, obj_det, roleq):
 
 
         roleq = self.q_word_embeddings(roleq)
@@ -123,6 +128,13 @@ class RoleNode(nn.Module):
         img = img.expand(max_role_count,img.size(0), img.size(1), img.size(2))
         img = img.transpose(0,1)
         img = img.contiguous().view(batch_size* max_role_count, -1, self.mlp_hidden)
+
+        obj_count = img.size(-2)
+        obj_det = obj_det.unsqueeze(0)
+        obj_expand = obj_det.expand(obj_count, max_role_count, obj_det.size(1), obj_det.size(2))
+        obj_expand = obj_expand.transpose(0,2)
+        obj_expand = obj_expand.contiguous().view(batch_size* max_role_count, -1, self.mlp_hidden)
+        img = img * obj_expand
 
         '''word_count = roleq.size(-2)
         verb = verb.unsqueeze(0)
@@ -173,28 +185,28 @@ class RecursiveGraph(nn.Module):
                                   self.num_roles, self.num_labels, self.mlp_hidden,
                                   self.emd_hidden)
 
-    def forward(self, img, verbq, gt_verb):
-        verb_pred = self.verb_node(img, verbq)
+    def forward(self, img, obj_det, verbq, gt_verb):
+        verb_pred = self.verb_node(img, obj_det, verbq)
 
         role_qs = self.encoder.get_role_questions_batch(gt_verb)
         if self.gpu_mode >= 0:
             role_qs = role_qs.to(torch.device('cuda'))
 
-        label_soft_ans, label_logits = self.role_node(img, role_qs)
+        label_soft_ans, label_logits = self.role_node(img, obj_det, role_qs)
 
         return verb_pred, label_logits
 
 
-    def forward_eval(self, img, verbq):
+    def forward_eval(self, img, obj_det, verbq):
 
-        verb_pred = self.verb_node(img, verbq)
+        verb_pred = self.verb_node(img, obj_det, verbq)
         sorted_idx = torch.sort(verb_pred, 1, True)[1]
         verb = sorted_idx[:,0]
         role_qs = self.encoder.get_role_questions_batch(verb)
         if self.gpu_mode >= 0:
             role_qs = role_qs.to(torch.device('cuda'))
 
-        label_soft_ans, label_logits  = self.role_node(img, role_qs)
+        label_soft_ans, label_logits  = self.role_node(img, obj_det, role_qs)
 
         return verb_pred, label_logits
 
@@ -243,7 +255,7 @@ class BaseModel(nn.Module):
                                          self.max_role_count,
                                          self.gpu_mode
                                          )
-
+        self.oh_to_comp = nn.Linear(385, mlp_hidden)
 
         self.conv_hidden = self.conv.base_size()
         self.mlp_hidden = mlp_hidden
@@ -255,17 +267,18 @@ class BaseModel(nn.Module):
     def dev_preprocess(self):
         return self.dev_transform
 
-    def forward(self, img, verbq, verb):
+    def forward(self, img, img_obj_oh, verbq, verb):
 
         img_features = self.conv(img)
         batch_size, n_channel, conv_h, conv_w = img_features.size()
         img = img_features.view(batch_size, n_channel, -1)
         img = img.permute(0, 2, 1)
+        obj_oh = self.oh_to_comp(img_obj_oh)
 
         if self.training:
-            verb_pred, label_pred = self.vsrl_model(img, verbq, verb)
+            verb_pred, label_pred = self.vsrl_model(img, obj_oh, verbq, verb)
         else:
-            verb_pred, label_pred = self.vsrl_model.forward_eval(img, verbq)
+            verb_pred, label_pred = self.vsrl_model.forward_eval(img, obj_oh, verbq)
 
 
         return verb_pred, label_pred

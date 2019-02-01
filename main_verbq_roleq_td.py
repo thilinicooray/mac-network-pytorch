@@ -1,6 +1,6 @@
 import torch
 from imsitu_encoder_verb_roleq import imsitu_encoder
-from imsitu_loader import imsitu_loader_verb_roleq
+from imsitu_loader import imsitu_loader_verb_roleq_obj
 from imsitu_scorer_log import imsitu_scorer
 import json
 import model_verbq_roleq_td
@@ -46,7 +46,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
         #print('current sample : ', i, img.size(), verb.size(), roles.size(), labels.size())
         #sizes batch_size*3*height*width, batch*504*1, batch*6*190*1, batch*3*6*lebale_count*1
         mx = len(train_loader)
-        for i, (_, img, verb, verbq, ans) in enumerate(train_loader):
+        for i, (_, img, obj_oh, verb, verbq, ans) in enumerate(train_loader):
             #print("epoch{}-{}/{} batches\r".format(epoch,i+1,mx)) ,
             t0 = time.time()
             t1 = time.time()
@@ -54,11 +54,13 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
 
             if gpu_mode >= 0:
                 img = torch.autograd.Variable(img.cuda())
+                obj_oh = torch.autograd.Variable(obj_oh.cuda())
                 verb = torch.autograd.Variable(verb.cuda())
                 verbq = torch.autograd.Variable(verbq.cuda())
                 ans = torch.autograd.Variable(ans.cuda())
             else:
                 img = torch.autograd.Variable(img)
+                obj_oh = torch.autograd.Variable(obj_oh)
                 verb = torch.autograd.Variable(verb)
                 verbq = torch.autograd.Variable(verbq)
                 ans = torch.autograd.Variable(ans)
@@ -74,7 +76,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
             print('=========================================================================')
             print(labels)'''
 
-            verb_predict, label_predict = pmodel(img, verbq, verb)
+            verb_predict, label_predict = pmodel(img, obj_oh, verbq, verb)
             #verb_predict, rol1pred, role_predict = pmodel.forward_eval5(img)
             #print ("forward time = {}".format(time.time() - t1))
             t1 = time.time()
@@ -151,7 +153,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 max_score = max(dev_score_list)
 
                 if max_score == dev_score_list[-1]:
-                    torch.save(model.state_dict(), model_dir + "/{}_verbq_roletd_verb1.model".format( model_name))
+                    torch.save(model.state_dict(), model_dir + "/{}_verbq_roletd_obj.model".format( model_name))
                     print ('New best model saved! {0}'.format(max_score))
 
                 #eval on the trainset
@@ -190,7 +192,7 @@ def eval(model, dev_loader, encoder, gpu_mode, write_to_file = False):
     #top5 = imsitu_scorer(encoder, 5, 3)
     with torch.no_grad():
         mx = len(dev_loader)
-        for i, (img_id, img, verb, verbq, ans) in enumerate(dev_loader):
+        for i, (img_id, img, obj_oh, verb, verbq, ans) in enumerate(dev_loader):
             #print("{}/{} batches\r".format(i+1,mx)) ,
             '''im_data = torch.squeeze(im_data,0)
             im_info = torch.squeeze(im_info,0)
@@ -202,16 +204,18 @@ def eval(model, dev_loader, encoder, gpu_mode, write_to_file = False):
 
             if gpu_mode >= 0:
                 img = torch.autograd.Variable(img.cuda())
+                obj_oh = torch.autograd.Variable(obj_oh.cuda())
                 verb = torch.autograd.Variable(verb.cuda())
                 verbq = torch.autograd.Variable(verbq.cuda())
                 ans = torch.autograd.Variable(ans.cuda())
             else:
                 img = torch.autograd.Variable(img)
+                obj_oh = torch.autograd.Variable(obj_oh)
                 verb = torch.autograd.Variable(verb)
                 verbq = torch.autograd.Variable(verbq)
                 ans = torch.autograd.Variable(ans)
 
-            verb_predict, label_predict = model(img, verbq, None)
+            verb_predict, label_predict = model(img, obj_oh, verbq, None)
             '''loss = model.calculate_eval_loss(verb_predict, verb, role_predict, labels)
             val_loss += loss.item()'''
             if write_to_file:
@@ -270,6 +274,7 @@ def main():
 
     train_set = json.load(open(dataset_folder + "/train.json"))
     imsitu_roleq = json.load(open("imsitu_data/imsitu_questions.json"))
+    obj_oh_set = json.load(open("imsitu_data/objes_oh.json"))
     encoder = imsitu_encoder(train_set, imsitu_roleq)
 
     model = model_verbq_roleq_td.BaseModel(encoder, args.gpuid)
@@ -278,20 +283,20 @@ def main():
     #all verb and role feat are under role as it's a single unit
     cnn_features, role_features = utils.group_features_noun(model)
 
-    train_set = imsitu_loader_verb_roleq(imgset_folder, train_set, encoder, model.train_preprocess())
+    train_set = imsitu_loader_verb_roleq_obj(imgset_folder, train_set, obj_oh_set, encoder, model.train_preprocess())
 
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=64, shuffle=True, num_workers=n_worker)
 
     dev_set = json.load(open(dataset_folder +"/dev.json"))
-    dev_set = imsitu_loader_verb_roleq(imgset_folder, dev_set, encoder, model.dev_preprocess())
+    dev_set = imsitu_loader_verb_roleq_obj(imgset_folder, dev_set, obj_oh_set, encoder, model.dev_preprocess())
     dev_loader = torch.utils.data.DataLoader(dev_set, batch_size=64, shuffle=True, num_workers=n_worker)
 
     test_set = json.load(open(dataset_folder +"/test.json"))
-    test_set = imsitu_loader_verb_roleq(imgset_folder, test_set, encoder, model.dev_preprocess())
+    test_set = imsitu_loader_verb_roleq_obj(imgset_folder, test_set, obj_oh_set, encoder, model.dev_preprocess())
     test_loader = torch.utils.data.DataLoader(test_set, batch_size=64, shuffle=True, num_workers=n_worker)
 
     traindev_set = json.load(open(dataset_folder +"/dev.json"))
-    traindev_set = imsitu_loader_verb_roleq(imgset_folder, traindev_set, encoder, model.dev_preprocess())
+    traindev_set = imsitu_loader_verb_roleq_obj(imgset_folder, traindev_set, obj_oh_set, encoder, model.dev_preprocess())
     traindev_loader = torch.utils.data.DataLoader(traindev_set, batch_size=8, shuffle=True, num_workers=n_worker)
 
     utils.set_trainable(model, False)
