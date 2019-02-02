@@ -30,7 +30,26 @@ class vgg16_modified(nn.Module):
         features = self.vgg_features(x)
         y =  self.vgg_classifier(features.view(-1, 512*7*7))
         #print('y size :',  y.size())
-        return features, y
+        return y
+
+class vgg16_modified_feat(nn.Module):
+    def __init__(self):
+        super(vgg16_modified_feat, self).__init__()
+        vgg = tv.models.vgg16(pretrained=True)
+        self.vgg_features = vgg.features
+
+
+    def rep_size(self):
+        return 1024
+
+    def base_size(self):
+        return 512
+
+    def forward(self,x):
+        #return self.dropout2(self.relu2(self.lin2(self.dropout1(self.relu1(self.lin1(self.vgg_features(x).view(-1, 512*7*7)))))))
+        features = self.vgg_features(x)
+
+        return features
 
 class TopDown(nn.Module):
     def __init__(self,
@@ -80,13 +99,18 @@ class RoleNode(nn.Module):
         self.num_labels = num_labels
         self.mlp_hidden = mlp_hidden
         self.embd_hidden = embd_hidden
+        self.role_conv = vgg16_modified_feat()
         self.vqa_model = TopDown()
 
         self.label_classifier = SimpleClassifier(
             mlp_hidden, 2 * mlp_hidden, self.num_labels + 1, 0.5)
 
     def forward(self, img, roleq, verb):
+        img_features = self.role_conv(img)
 
+        batch_size, n_channel, conv_h, conv_w = img_features.size()
+        img = img_features.view(batch_size, n_channel, -1)
+        img = img.permute(0, 2, 1)
 
         roleq = self.q_word_embeddings(roleq)
         batch_size = img.size(0)
@@ -175,12 +199,9 @@ class BaseModel(nn.Module):
     def dev_preprocess(self):
         return self.dev_transform
 
-    def forward(self, img, verbq, verb):
+    def forward(self, org_img, verbq, verb):
 
-        img_features, img_cls = self.conv(img)
-        batch_size, n_channel, conv_h, conv_w = img_features.size()
-        img = img_features.view(batch_size, n_channel, -1)
-        img = img.permute(0, 2, 1)
+        img_cls = self.conv(org_img)
 
         verb_pred = self.verb(img_cls)
 
@@ -189,7 +210,7 @@ class BaseModel(nn.Module):
             if self.gpu_mode >= 0:
                 role_qs = role_qs.to(torch.device('cuda'))
 
-            label_soft_ans, label_pred = self.role_node(img, role_qs, self.verb_lookup(verb))
+            label_soft_ans, label_pred = self.role_node(org_img, role_qs, self.verb_lookup(verb))
         else:
             sorted_idx = torch.sort(verb_pred, 1, True)[1]
             verb = sorted_idx[:,0]
@@ -197,7 +218,7 @@ class BaseModel(nn.Module):
             if self.gpu_mode >= 0:
                 role_qs = role_qs.to(torch.device('cuda'))
 
-            label_soft_ans, label_pred  = self.role_node(img, role_qs, self.verb_lookup(verb))
+            label_soft_ans, label_pred  = self.role_node(org_img, role_qs, self.verb_lookup(verb))
 
 
         return verb_pred, label_pred
