@@ -263,7 +263,7 @@ class BaseModel(nn.Module):
                     #frame_loss = criterion(role_label_pred[i], gt_labels[i,index])
                     for j in range(0, self.max_role_count):
                         frame_loss += utils.cross_entropy_loss(role_label_pred[i][j], gt_labels[i,index,j] ,self.vocab_size)
-                    frame_loss = (verb_loss) + 1.3 *(frame_loss/len(self.encoder.verb2_role_dict[self.encoder.verb_list[gt_verbs[i]]]))
+                    frame_loss = (verb_loss) + 1.5 *(frame_loss/len(self.encoder.verb2_role_dict[self.encoder.verb_list[gt_verbs[i]]]))
                     #print('frame loss', frame_loss, 'verb loss', verb_loss)
                     loss += frame_loss
         else:
