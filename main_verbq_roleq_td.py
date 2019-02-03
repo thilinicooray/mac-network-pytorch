@@ -151,7 +151,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 max_score = max(dev_score_list)
 
                 if max_score == dev_score_list[-1]:
-                    torch.save(model.state_dict(), model_dir + "/{}_verbq_roletd_updated.model".format( model_name))
+                    torch.save(model.state_dict(), model_dir + "/{}_verbq_roletd_gtagent.model".format( model_name))
                     print ('New best model saved! {0}'.format(max_score))
 
                 #eval on the trainset
@@ -270,7 +270,7 @@ def main():
 
     train_set = json.load(open(dataset_folder + "/train.json"))
     imsitu_roleq = json.load(open("imsitu_data/imsitu_questions.json"))
-    imsitu_verbq = json.load(open("imsitu_data/verb_questions_updated.json"))
+    imsitu_verbq = json.load(open("imsitu_data/verb_questions.json"))
     encoder = imsitu_encoder(train_set, imsitu_verbq, imsitu_roleq)
 
     model = model_verbq_roleq_td.BaseModel(encoder, args.gpuid)
