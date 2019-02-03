@@ -152,7 +152,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 max_score = max(dev_score_list)
 
                 if max_score == dev_score_list[-1]:
-                    torch.save(model.state_dict(), model_dir + "/{}_topdown_action.model".format( model_name))
+                    torch.save(model.state_dict(), model_dir + "/{}_topdown_action_updated.model".format( model_name))
                     print ('New best model saved! {0}'.format(max_score))
 
                 #eval on the trainset
@@ -268,7 +268,7 @@ def main():
     print('model spec :, top down att with verb q ')
 
     train_set = json.load(open(dataset_folder + "/train.json"))
-    imsitu_roleq = json.load(open("imsitu_data/verb_questions.json"))
+    imsitu_roleq = json.load(open("imsitu_data/verb_questions_updated.json"))
     encoder = imsitu_encoder(train_set, imsitu_roleq)
 
     model = model_top_down_action.BaseModel(encoder, args.gpuid)
