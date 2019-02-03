@@ -8,7 +8,7 @@ import nltk
 #todo: the structure
 
 class imsitu_encoder():
-    def __init__(self, train_set, role_questions):
+    def __init__(self, train_set, verb_questions, role_questions):
         # json structure -> {<img_id>:{frames:[{<role1>:<label1>, ...},{}...], verb:<verb1>}}
         print('imsitu encoder initialization started.')
         self.verb_list = []
@@ -21,18 +21,21 @@ class imsitu_encoder():
         self.question_words = {}
         self.max_q_word_count = 0
         self.vrole_question = {}
-        self.verb_question = "what is someone doing?"
+        self.verb_question = {}
 
-        #save verb q
-        words = nltk.word_tokenize(self.verb_question)
-        words = words[:-1] #ignore ? mark
-        if len(words) > self.max_q_word_count:
-            self.max_q_word_count = len(words)
-        #print('q words :', words)
+        for img_id, question in verb_questions.items():
 
-        for word in words:
-            if word not in self.question_words:
-                self.question_words[word] = len(self.question_words)
+            self.verb_question[img_id] = question
+            words = nltk.word_tokenize(question)
+            words = words[:-1] #ignore ? mark
+            if len(words) > self.max_q_word_count:
+                self.max_q_word_count = len(words)
+            #print('q words :', words)
+
+            for word in words:
+                if word not in self.question_words:
+                    self.question_words[word] = len(self.question_words)
+
 
         for verb, values in role_questions.items():
 
@@ -112,9 +115,9 @@ class imsitu_encoder():
                 if role != len(self.role_list):
                     print('role : ', self.role_list[role])'''
 
-    def encode(self, item):
+    def encode(self, item, id):
         verb = self.verb_list.index(item['verb'])
-        verbq = self.get_verb_question()
+        verbq = self.get_verbq(id)
         #roles = self.get_role_ids(verb)
         #role_qs, q_len = self.get_role_questions(item['verb'])
         labels = self.get_label_ids(item['frames'])
@@ -122,6 +125,21 @@ class imsitu_encoder():
         #print('item encoding size : v r l', verb.size(), roles.size(), labels.size())
         #assuming labels are also in order of roles in encoder
         return verb, verbq, labels
+
+    def get_verbq(self, id):
+        vquestion_tokens = []
+        question = self.verb_question[id]
+
+        words = nltk.word_tokenize(question)
+        words = words[:-1]
+        for word in words:
+            vquestion_tokens.append(self.question_words[word])
+        padding_words = self.max_q_word_count - len(vquestion_tokens)
+
+        for w in range(padding_words):
+            vquestion_tokens.append(len(self.question_words))
+
+        return torch.tensor(vquestion_tokens)
 
     def get_verb2role_encoding(self):
         verb2role_embedding_list = []
