@@ -268,7 +268,7 @@ def main():
     print('model spec :, top down att with verb q ')
 
     train_set = json.load(open(dataset_folder + "/train.json"))
-    imsitu_roleq = json.load(open("imsitu_data/verb_questions_updated.json"))
+    imsitu_roleq = json.load(open("imsitu_data/verb_questions.json"))
     encoder = imsitu_encoder(train_set, imsitu_roleq)
 
     model = model_top_down_action.BaseModel(encoder, args.gpuid)
