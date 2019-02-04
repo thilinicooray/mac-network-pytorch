@@ -18,6 +18,7 @@ class imsitu_scorer():
             self.all_verb_role = {}
             self.fail_agent = {}
             self.pass_list = []
+            self.all_res = {}
 
     def clear(self):
         self.score_cards = {}
@@ -633,6 +634,14 @@ class imsitu_scorer():
             for r in range(0,5):
                 sorted_idx = torch.sort(verb_pred[r], 0, True)[1]
                 verb_found = (torch.sum(sorted_idx[0:self.topk] == gt_verb) == 1)
+
+                if self.write_to_file:
+                    cur_v = self.encoder.verb_list[sorted_idx[0]]
+                    if current_id not in self.all_res:
+                        self.all_res[current_id] = [cur_v]
+                    else:
+                        self.all_res[current_id].append(cur_v)
+
                 if verb_found:
                     if self.write_to_file:
                         self.pass_list.append(current_id)

@@ -360,8 +360,8 @@ def main():
     if args.evaluate:
         top1, top5, val_loss = eval(model, dev_loader, encoder, args.gpuid, write_to_file = True)
 
-        top1_avg = top1.get_average_results_nouns()
-        top5_avg = top5.get_average_results_nouns()
+        top1_avg = top1.get_average_results()
+        top5_avg = top5.get_average_results()
 
         avg_score = top1_avg["verb"] + top1_avg["value"] + top1_avg["value-all"] + top5_avg["verb"] + \
                     top5_avg["value"] + top5_avg["value-all"] + top5_avg["value*"] + top5_avg["value-all*"]
@@ -372,18 +372,12 @@ def main():
                                                    utils.format_dict(top5_avg, '{:.2f}', '5-')))
 
         #write results to csv file
-        role_dict = top1.role_dict
+        all_res = top1.all_res
         fail_val_all = top1.value_all_dict
         pass_val_dict = top1.vall_all_correct
 
-        with open('role_pred_data.json', 'w') as fp:
-            json.dump(role_dict, fp, indent=4)
-
-        with open('fail_val_all.json', 'w') as fp:
-            json.dump(fail_val_all, fp, indent=4)
-
-        with open('pass_val_all.json', 'w') as fp:
-            json.dump(pass_val_dict, fp, indent=4)
+        with open('all_res.json', 'w') as fp:
+            json.dump(all_res, fp, indent=4)
 
         print('Writing predictions to file completed !')
 
