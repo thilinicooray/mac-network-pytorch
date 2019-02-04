@@ -213,7 +213,10 @@ class imsitu_encoder():
                 words = nltk.word_tokenize(question)
                 words = words[:-1]
                 for word in words:
-                    q_tokens.append(self.question_words[word])
+                    if word in self.question_words:
+                        q_tokens.append(self.question_words[word])
+                    else:
+                        q_tokens.append(len(self.question_words))
                 padding_words = self.max_q_word_count - len(q_tokens)
 
                 for w in range(padding_words):
