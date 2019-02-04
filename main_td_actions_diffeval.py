@@ -267,7 +267,7 @@ def main():
 
     train_set = json.load(open(dataset_folder + "/train.json"))
     imsitu_verbq = json.load(open("imsitu_data/verb_questions.json"))
-    imsitu_verbq_eval = json.load(open("imsitu_data/verb_questions_updated2.json"))
+    imsitu_verbq_eval = json.load(open("imsitu_data/verb_questions_updated3.json"))
     encoder = imsitu_encoder(train_set, imsitu_verbq, imsitu_verbq_eval)
 
     model = model_td_actions_diffeval.BaseModel(encoder, args.gpuid)
