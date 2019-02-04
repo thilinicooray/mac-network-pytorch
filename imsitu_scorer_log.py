@@ -596,7 +596,7 @@ class imsitu_scorer():
         for i in range(batch_size):
             verb_pred = verb_predict[i]
             gt_verb = gt_verbs[i]
-
+            current_id = img_id[i]
 
             #print('check sizes:', verb_pred.size(), gt_verb.size(), label_pred.size(), gt_label.size())
             sorted_idx = torch.sort(verb_pred, 0, True)[1]
@@ -614,7 +614,7 @@ class imsitu_scorer():
             if verb_found:
                 score_card["verb"] += 1
                 if self.write_to_file:
-                    self.pass_list.append(img_id)
+                    self.pass_list.append(current_id)
 
             self.score_cards.append(score_card)
 
@@ -626,6 +626,7 @@ class imsitu_scorer():
         for i in range(batch_size):
             verb_pred = verb_predict[i]
             gt_verb = gt_verbs[i]
+            current_id = img_id[i]
 
             new_card = {"verb":0.0, "value":0.0, "value*":0.0, "n_value":0.0, "value-all":0.0, "value-all*":0.0}
 
@@ -634,7 +635,7 @@ class imsitu_scorer():
                 verb_found = (torch.sum(sorted_idx[0:self.topk] == gt_verb) == 1)
                 if verb_found:
                     if self.write_to_file:
-                        self.pass_list.append(img_id)
+                        self.pass_list.append(current_id)
                     new_card["verb"] += 1
                     break
 
