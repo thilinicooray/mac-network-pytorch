@@ -616,7 +616,7 @@ class imsitu_scorer():
                 if self.write_to_file:
                     self.pass_list.append(img_id)
 
-            self.score_cards.append(new_card)
+            self.score_cards.append(score_card)
 
     def add_point_verb_only_diffeval(self, img_id, verb_predict, gt_verbs):
         #encoded predictions should be batch x verbs x values #assumes the are the same order as the references
