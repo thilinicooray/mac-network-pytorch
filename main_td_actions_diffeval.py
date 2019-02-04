@@ -187,7 +187,7 @@ def eval(model, dev_loader, encoder, gpu_mode, write_to_file = False):
     val_loss = 0
 
     print ('evaluating model...')
-    top1 = imsitu_scorer(encoder, 1, 3, write_to_file)
+    top1 = imsitu_scorer(encoder, 1, 3, True)
     top5 = imsitu_scorer(encoder, 5, 3)
     with torch.no_grad():
         mx = len(dev_loader)
@@ -215,13 +215,18 @@ def eval(model, dev_loader, encoder, gpu_mode, write_to_file = False):
             verb_predict = model.forward_eval(img_id, img)
             '''loss = model.calculate_eval_loss(verb_predict, verb, role_predict, labels)
             val_loss += loss.item()'''
-            top1.add_point_verb_only_diffeval(verb_predict, verb)
-            top5.add_point_verb_only_diffeval(verb_predict, verb)
+            top1.add_point_verb_only_diffeval(img_id, verb_predict, verb)
+            top5.add_point_verb_only_diffeval(img_id, verb_predict, verb)
 
             del verb_predict, img, verb, roles, labels
             #break
 
     #return top1, top5, val_loss/mx
+    pass_list = top1.pass_list
+
+    with open('passverb_updated.txt', 'w') as filehandle:
+        for listitem in pass_list:
+            filehandle.write('%s\n' % listitem)
 
     return top1, top5, 0
 
@@ -267,7 +272,7 @@ def main():
 
     train_set = json.load(open(dataset_folder + "/train.json"))
     imsitu_verbq = json.load(open("imsitu_data/verb_questions.json"))
-    imsitu_verbq_eval = json.load(open("imsitu_data/verb_questions_updated3.json"))
+    imsitu_verbq_eval = json.load(open("imsitu_data/verb_questions_updated2.json"))
     encoder = imsitu_encoder(train_set, imsitu_verbq, imsitu_verbq_eval)
 
     model = model_td_actions_diffeval.BaseModel(encoder, args.gpuid)
