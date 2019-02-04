@@ -166,7 +166,7 @@ class BaseModel(nn.Module):
         '''lstm_out, _ = nn.utils.rnn.pad_packed_sequence(lstm_out,
                                                        batch_first=True)'''
         #q_emb = self.lstm_proj(lstm_out)
-        q_emb = h.permute(1, 0, 2).contiguous().view(batch_size * 5, -1)
+        q_emb = h.permute(1, 0, 2).contiguous().view(batch_size *verb_q_count , -1)
         q_emb = self.lstm_proj(q_emb)
         #q_emb = self.q_emb(w_emb) # [batch, q_dim]
 

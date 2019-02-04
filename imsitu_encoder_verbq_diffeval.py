@@ -221,7 +221,7 @@ class imsitu_encoder():
 
                 rquestion_tokens.append(torch.tensor(q_tokens))
 
-            verb_padding_count = 5 - len(current_q_list)
+            verb_padding_count = 9 - len(current_q_list)
 
             for i in range(verb_padding_count):
                 q_tokens = []
