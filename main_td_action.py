@@ -228,7 +228,7 @@ def eval(model, dev_loader, encoder, gpu_mode, write_to_file = False):
 
     with open('passverb_gtagent.txt', 'w') as filehandle:
         for listitem in pass_list:
-            filehandle.write('%s\n' % listitem)
+            filehandle.write('{}\n'.format(listitem))
 
     return top1, top5, 0
 

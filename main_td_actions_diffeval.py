@@ -12,7 +12,7 @@ import random
 #from graphviz import Digraph
 
 
-def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler, max_epoch, model_dir, encoder, gpu_mode, clip_norm, lr_max, model_name, args,eval_frequency=1000):
+def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler, max_epoch, model_dir, encoder, gpu_mode, clip_norm, lr_max, model_name, args,eval_frequency=4000):
     model.train()
     train_loss = 0
     total_steps = 0
@@ -226,7 +226,7 @@ def eval(model, dev_loader, encoder, gpu_mode, write_to_file = False):
 
     with open('passverb_updated.txt', 'w') as filehandle:
         for listitem in pass_list:
-            filehandle.write('%s\n' % listitem)
+            filehandle.write('{}\n'.format(listitem))
 
     return top1, top5, 0
 
