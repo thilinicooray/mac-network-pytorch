@@ -80,8 +80,8 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
 
             train_loss += loss.item()
 
-            top1.add_point_agent_only(id, agent_predict, labels)
-            top5.add_point_agent_only(id, agent_predict, labels)
+            top1.add_point_agent_only(agent_predict, labels)
+            top5.add_point_agent_only(agent_predict, labels)
 
 
             if total_steps % print_freq == 0:
@@ -176,8 +176,8 @@ def eval(model, dev_loader, encoder, gpu_mode, write_to_file = False):
             agent_predict = model(img)
             '''loss = model.calculate_eval_loss(verb_predict, verb, role_predict, labels)
             val_loss += loss.item()'''
-            top1.add_point_agent_only(id, agent_predict, labels)
-            top5.add_point_agent_only(id, agent_predict, labels)
+            top1.add_point_agent_only(agent_predict, labels)
+            top5.add_point_agent_only(agent_predict, labels)
 
             del img, labels
             #break
@@ -330,7 +330,7 @@ def main():
                                                    utils.format_dict(top5_avg, '{:.2f}', '5-')))
 
         #write results to csv file
-        role_dict = top1.role_dict
+        '''role_dict = top1.role_dict
         fail_agent = top1.fail_agent
         #print('roles :', role_dict)
         #fail_val_all = top1.value_all_dict
@@ -340,7 +340,7 @@ def main():
             json.dump(role_dict, fp, indent=4)
 
         with open('fail_agent.json', 'w') as fp:
-            json.dump(fail_agent, fp, indent=4)
+            json.dump(fail_agent, fp, indent=4)'''
 
         '''with open('fail_val_all.json', 'w') as fp:
             json.dump(fail_val_all, fp, indent=4)
