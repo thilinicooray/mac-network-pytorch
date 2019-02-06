@@ -709,6 +709,27 @@ class imsitu_scorer():
 
             self.score_cards.append(new_card)
 
+    def add_point_multi_verb_beam(self, img_id, verb_predict, gt_verbs):
+        #encoded predictions should be batch x verbs x values #assumes the are the same order as the references
+        #encoded reference should be batch x 1+ references*roles,values (sorted)
+
+        batch_size = verb_predict.size()[0]
+        for i in range(batch_size):
+            verb_pred = verb_predict[i]
+            gt_verb = gt_verbs[i]
+            current_id = img_id[i]
+
+            new_card = {"verb":0.0, "value":0.0, "value*":0.0, "n_value":0.0, "value-all":0.0, "value-all*":0.0}
+
+            verb_found = (torch.sum(verb_pred[0:self.topk] == gt_verb) == 1)
+            if verb_found:
+                if self.write_to_file:
+                    self.pass_list.append(current_id)
+                new_card["verb"] += 1
+
+
+            self.score_cards.append(new_card)
+
     def combine(self, rv, card):
         for (k,v) in card.items(): rv[k] += v
 
