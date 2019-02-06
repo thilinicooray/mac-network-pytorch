@@ -39,6 +39,9 @@ class imsitu_encoder():
                         words.append(' '.join(words_org[3:-1]))
                         words.append(words_org[-1])
 
+                else:
+                    words = words_org
+
                 if len(words) > self.max_q_word_count:
                     self.max_q_word_count = len(words)
                 #print('q words :', words)
@@ -123,6 +126,9 @@ class imsitu_encoder():
                         words = words_org[:3]
                         words.append(' '.join(words_org[3:-1]))
                         words.append(words_org[-1])
+
+                else:
+                    words = words_org
 
                 for word in words:
                     if word in self.question_words:
