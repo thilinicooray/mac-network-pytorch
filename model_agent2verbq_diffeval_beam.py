@@ -213,8 +213,8 @@ class BaseModel(nn.Module):
         verb_pred = verb_pred.contiguous().view(batch_size, -1, self.n_verbs)
         sorted_verbs = torch.sort(verb_pred, -1, True)
 
-        sorted_verbs_5_val = sorted_verbs[0][:, :, :5]
-        sorted_verbs_5_idx = sorted_verbs[1][:, :, :5]
+        sorted_verbs_5_val = sorted_verbs[0][:, :, 0]
+        sorted_verbs_5_idx = sorted_verbs[1][:, :, 0]
         verb_pred_top5 = self.get_top_5(sorted_verbs_5_val, sorted_verbs_5_idx)
 
         if self.gpu_mode >= 0:
