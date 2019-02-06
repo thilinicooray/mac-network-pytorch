@@ -195,13 +195,6 @@ class BaseModel(nn.Module):
 
         q_word_idx = q_word_idx.view(topk * batch_size, -1)
 
-        a = q_word_idx[0]
-        b = verbq[0]
-
-        for k,v in self.encoder.question_words.items():
-            if a == v or v in b:
-                print(k)
-
         verb_q = torch.cat([self.w_emb(verbq[:,:3]), self.w_emb(q_word_idx), self.w_emb(verbq[:,3:])], 1)
 
         #print('verbq :', verb_q.size())
