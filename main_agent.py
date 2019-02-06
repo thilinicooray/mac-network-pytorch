@@ -151,7 +151,7 @@ def eval(model, dev_loader, encoder, gpu_mode, write_to_file = False):
 
     print ('evaluating model...')
     top1 = imsitu_scorer(encoder, 1, 3, write_to_file)
-    top5 = imsitu_scorer(encoder, 5, 3)
+    top5 = imsitu_scorer(encoder, 10, 3)
     with torch.no_grad():
         mx = len(dev_loader)
         for i, (id, img, labels) in enumerate(dev_loader):
