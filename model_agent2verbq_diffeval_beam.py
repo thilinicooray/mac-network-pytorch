@@ -224,14 +224,13 @@ class BaseModel(nn.Module):
 
     def get_top_5(self, all_res_val, all_res_idx):
 
-        batch_size, ref, items = all_res_val.size()
+        batch_size, ref = all_res_val.size()
         top_res = []
         for b in range(batch_size):
             all_data = {}
 
             for r in range(ref):
-                for i in range(items):
-                    all_data[all_res_val[b][r][i]] = all_res_idx[b][r][i]
+                all_data[all_res_val[b][r]] = all_res_idx[b][r]
 
             sorted_data = sorted(all_data.items(), reverse=True, key=lambda kv: kv[0])
             top5 = sorted_data[:5]
