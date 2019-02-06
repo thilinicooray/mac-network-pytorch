@@ -42,9 +42,9 @@ class imsitu_loader_agentverbq(data.Dataset):
         img = Image.open(os.path.join(self.img_dir, _id)).convert('RGB')
         #transform must be None in order to give it as a tensor
         if self.transform is not None: img = self.transform(img)
-        verb, verbq = self.encoder.encode(ann, _id)
+        verb = self.encoder.encode(ann)
 
-        return _id, img, verb, verbq
+        return _id, img, verb
 
     def __len__(self):
         return len(self.annotations)
