@@ -174,13 +174,22 @@ def eval(model, dev_loader, encoder, gpu_mode, write_to_file = False):
             verb_predict = model.forward_eval(img)
             '''loss = model.calculate_eval_loss(verb_predict, verb, role_predict, labels)
             val_loss += loss.item()'''
-            top1.add_point_verb_beamdirect(verb_predict, verb)
-            top5.add_point_verb_beamdirect(verb_predict, verb)
+            top1.add_point_verb_beamdirect(_id, verb_predict, verb)
+            top5.add_point_verb_beamdirect(_id, verb_predict, verb)
 
             del verb_predict, img, verb
             #break
 
     #return top1, top5, val_loss/mx
+    topkissue1 = top1.topk_issue
+    topkissue5 = top5.topk_issue
+
+    with open('topkissue1.json', 'w') as fp:
+        json.dump(topkissue1, fp, indent=4)
+
+    with open('topkissue5.json', 'w') as fp:
+        json.dump(topkissue5, fp, indent=4)
+
 
     return top1, top5, 0
 

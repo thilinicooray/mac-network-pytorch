@@ -19,6 +19,7 @@ class imsitu_scorer():
             self.fail_agent = {}
             self.pass_list = []
             self.all_res = {}
+        self.topk_issue = {}
 
     def clear(self):
         self.score_cards = {}
@@ -730,12 +731,13 @@ class imsitu_scorer():
 
             self.score_cards.append(new_card)
 
-    def add_point_verb_beamdirect(self, verb_predict, gt_verbs):
+    def add_point_verb_beamdirect(self, _id, verb_predict, gt_verbs):
         #encoded predictions should be batch x verbs x values #assumes the are the same order as the references
         #encoded reference should be batch x 1+ references*roles,values (sorted)
 
         batch_size = verb_predict.size()[0]
         for i in range(batch_size):
+            curr_id = _id[i]
             verb_pred = verb_predict[i]
             gt_verb = gt_verbs[i]
 
@@ -752,7 +754,11 @@ class imsitu_scorer():
 
             gt_v = gt_verb
 
+            if curr_id not in self.topk_issue:
+                self.topk_issue[curr_id] = {self.topk:sorted_idx[0:self.topk].tolist(), 'gt_v':gt_v.item()}
 
+
+            #print(curr_id, self.topk, sorted_idx[0:self.topk], gt_v)
 
             new_card = {"verb":0.0, "value":0.0, "value*":0.0, "n_value":0.0, "value-all":0.0, "value-all*":0.0}
 
