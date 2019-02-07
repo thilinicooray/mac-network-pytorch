@@ -219,11 +219,11 @@ class BaseModel(nn.Module):
         sorted_verbs_5_val = sorted_verbs[0][:, :, :5]
         sorted_verbs_5_idx = sorted_verbs[1][:, :, :5]
 
-        print('sorted idx :', sorted_verbs_5_idx, sorted_verbs_5_val)
+        #print('sorted idx :', sorted_verbs_5_idx, sorted_verbs_5_val)
 
         verb_pred_top5 = self.get_top_5(sorted_verbs_5_val, sorted_verbs_5_idx)
 
-        print('top 5:', verb_pred_top5)
+        #print('top 5:', verb_pred_top5)
 
         if self.gpu_mode >= 0:
             verb_pred_top5 = verb_pred_top5.to(torch.device('cuda'))
