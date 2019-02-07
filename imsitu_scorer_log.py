@@ -754,8 +754,8 @@ class imsitu_scorer():
 
             gt_v = gt_verb
 
-            if curr_id not in self.topk_issue:
-                self.topk_issue[curr_id] = {self.topk:sorted_idx[0:self.topk].tolist(), 'gt_v':gt_v.item()}
+            '''if curr_id not in self.topk_issue:
+                self.topk_issue[curr_id] = {self.topk:sorted_idx[0:self.topk].tolist(), 'gt_v':gt_v.item()}'''
 
 
             #print(curr_id, self.topk, sorted_idx[0:self.topk], gt_v)
@@ -763,10 +763,8 @@ class imsitu_scorer():
             new_card = {"verb":0.0, "value":0.0, "value*":0.0, "n_value":0.0, "value-all":0.0, "value-all*":0.0}
 
 
-            score_card = new_card
-
-            verb_found = (torch.sum(sorted_idx[0:self.topk] == gt_v) == 1)
-            if verb_found: score_card["verb"] += 1
+            verb_found = (torch.sum(sorted_idx[0:self.topk] == gt_v) >= 1)
+            if verb_found: new_card["verb"] += 1
 
             self.score_cards.append(new_card)
 

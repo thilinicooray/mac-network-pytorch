@@ -181,14 +181,14 @@ def eval(model, dev_loader, encoder, gpu_mode, write_to_file = False):
             #break
 
     #return top1, top5, val_loss/mx
-    topkissue1 = top1.topk_issue
+    '''topkissue1 = top1.topk_issue
     topkissue5 = top5.topk_issue
 
     with open('topkissue1.json', 'w') as fp:
         json.dump(topkissue1, fp, indent=4)
 
     with open('topkissue5.json', 'w') as fp:
-        json.dump(topkissue5, fp, indent=4)
+        json.dump(topkissue5, fp, indent=4)'''
 
 
     return top1, top5, 0
