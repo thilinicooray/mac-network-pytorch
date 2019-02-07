@@ -749,16 +749,19 @@ class imsitu_scorer():
             n_verbs = len(self.encoder.verb_list)
             #print('n verbs :', n_verbs)
 
-            sorted_idx = torch.remainder(sorted_idx_all, n_verbs)
+            sorted_idx_dup = torch.remainder(sorted_idx_all, n_verbs)
             #print('after mod :', sorted_idx)
+            sorted_idx = []
+            for q in sorted_idx_dup:
+                if q.item() not in sorted_idx:
+                    sorted_idx.append(q.item())
+
+            sorted_idx = torch.tensor(sorted_idx, dtype=torch.long)
+
+            if torch.cuda.is_available():
+                sorted_idx = sorted_idx.to(torch.device('cuda'))
 
             gt_v = gt_verb
-
-            '''if curr_id not in self.topk_issue:
-                self.topk_issue[curr_id] = {self.topk:sorted_idx[0:self.topk].tolist(), 'gt_v':gt_v.item()}'''
-
-
-            #print(curr_id, self.topk, sorted_idx[0:self.topk], gt_v)
 
             new_card = {"verb":0.0, "value":0.0, "value*":0.0, "n_value":0.0, "value-all":0.0, "value-all*":0.0}
 

@@ -210,9 +210,11 @@ class BaseModel(nn.Module):
         joint_repr = q_repr * v_repr
         verb_pred = self.classifier(joint_repr)
 
-        verb_pred = verb_pred.contiguous().view(batch_size, -1)
+        verb_pred_sm = F.softmax(verb_pred)
 
-        return verb_pred
+        verb_pred_sm = verb_pred_sm.contiguous().view(batch_size, -1)
+
+        return verb_pred_sm
 
 
 
