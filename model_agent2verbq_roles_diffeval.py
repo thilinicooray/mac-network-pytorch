@@ -239,7 +239,7 @@ class BaseModel(nn.Module):
         verb_pred = self.classifier(joint_repr)
 
         verb_pred_sm = F.log_softmax(verb_pred)
-
+        n = 5
         verb_pred_sm = verb_pred_sm.contiguous().view(batch_size, -1)
         top_10_verbs, top_10_prob = self.get_top10_verbs(verb_pred_sm)
 
@@ -248,7 +248,7 @@ class BaseModel(nn.Module):
             top_10_prob = top_10_prob.to(torch.device('cuda'))
 
         #noun pred
-        pred_verbs = top_10_verbs.view(batch_size*10)
+        pred_verbs = top_10_verbs.view(batch_size*n)
         role_qs = self.encoder.get_role_questions_batch(pred_verbs)
         if self.gpu_mode >= 0:
             role_qs = role_qs.to(torch.device('cuda'))
@@ -256,9 +256,9 @@ class BaseModel(nn.Module):
         role_embd = self.w_emb(role_qs)
         roleq = role_embd.view(-1, role_embd.size(-2), role_embd.size(-1))
 
-        img_noun = img_full.expand(self.max_role_count*10,img_full.size(0), img_full.size(1), img_full.size(2))
+        img_noun = img_full.expand(self.max_role_count*n,img_full.size(0), img_full.size(1), img_full.size(2))
         img_noun = img_noun.transpose(0,1)
-        img_noun = img_noun.contiguous().view(batch_size* self.max_role_count*10, -1, self.mlp_hidden)
+        img_noun = img_noun.contiguous().view(batch_size* self.max_role_count*n, -1, self.mlp_hidden)
 
         q_emb_noun, v_emb_noun = self.nouns(img_noun, roleq)
 
@@ -267,7 +267,7 @@ class BaseModel(nn.Module):
         joint_repr_noun = q_repr_noun * v_repr_noun
         noun_pred = self.noun_classifier(joint_repr_noun)
 
-        noun_pred = noun_pred.contiguous().view(batch_size, 10, 6, self.all_nouns_count)
+        noun_pred = noun_pred.contiguous().view(batch_size, n, 6, self.all_nouns_count)
         noun_pred_sm = F.log_softmax(noun_pred, dim=-1)
         sorted_nouns_prob = torch.sort(noun_pred_sm, -1, True)[0]
         best_nouns = sorted_nouns_prob[:,:,:,0]
@@ -276,7 +276,7 @@ class BaseModel(nn.Module):
 
         if self.gpu_mode >= 0:
             verb_mask = verb_mask.to(torch.device('cuda'))
-        verb_mask = verb_mask.view(batch_size, 10, -1)
+        verb_mask = verb_mask.view(batch_size, n, -1)
 
         masked_nouns = best_nouns * verb_mask
 
@@ -307,7 +307,7 @@ class BaseModel(nn.Module):
                 if sorted_idx_dup[b][q] not in sorted_idx:
                     sorted_idx.append(sorted_idx_dup[b][q].item())
                     sorted_prob.append(sorted_val_all[b][q].item())
-                    if len(sorted_idx) == 10:
+                    if len(sorted_idx) == 5:
                         break
 
             sorted_idx = torch.tensor(sorted_idx, dtype=torch.long)
