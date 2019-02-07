@@ -3,7 +3,7 @@ from imsitu_encoder_agentverbq_diffeval import imsitu_encoder
 from imsitu_loader import imsitu_loader_agentverbq
 from imsitu_scorer_log import imsitu_scorer
 import json
-import model_agent2verbq_diffeval
+import model_test_agent2verbq_diff_eval
 import os
 import utils
 import torchvision as tv
@@ -12,7 +12,7 @@ import torchvision as tv
 
 
 
-def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler, max_epoch, model_dir, encoder, gpu_mode, clip_norm, lr_max, model_name, args,eval_frequency=4000):
+def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler, max_epoch, model_dir, encoder, gpu_mode, clip_norm, lr_max, model_name, args,eval_frequency=1000):
     model.train()
     train_loss = 0
     total_steps = 0
@@ -115,7 +115,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 max_score = max(dev_score_list)
 
                 if max_score == dev_score_list[-1]:
-                    torch.save(model.state_dict(), model_dir + "/{}_agent2verbq_diffeval.model".format(model_name))
+                    torch.save(model.state_dict(), model_dir + "/{}_agent2verbq_diffeval_test.model".format(model_name))
                     print ('New best model saved! {0}'.format(max_score))
 
                 #eval on the trainset
@@ -150,7 +150,7 @@ def eval(model, dev_loader, encoder, gpu_mode, write_to_file = False):
     val_loss = 0
 
     print ('evaluating model...')
-    top1 = imsitu_scorer(encoder, 1, 3, write_to_file)
+    top1 = imsitu_scorer(encoder, 1, 3, True)
     top5 = imsitu_scorer(encoder, 5, 3)
     with torch.no_grad():
         mx = len(dev_loader)
@@ -171,7 +171,7 @@ def eval(model, dev_loader, encoder, gpu_mode, write_to_file = False):
                 img = torch.autograd.Variable(img)
                 verb = torch.autograd.Variable(verb)
 
-            verb_predict = model.forward_eval(img)
+            verb_predict = model.forward_eval(_id, img)
             '''loss = model.calculate_eval_loss(verb_predict, verb, role_predict, labels)
             val_loss += loss.item()'''
             top1.add_point_multi_verb(_id, verb_predict, verb)
@@ -181,6 +181,18 @@ def eval(model, dev_loader, encoder, gpu_mode, write_to_file = False):
             #break
 
     #return top1, top5, val_loss/mx
+    all = top1.all_res
+    logit_info = model.logits
+    #print('roles :', role_dict)
+    #fail_val_all = top1.value_all_dict
+    #pass_val_dict = top1.vall_all_correct
+
+    with open('all_pred.json', 'w') as fp:
+        json.dump(all, fp, indent=4)
+
+    with open('all_logits.json', 'w') as fp:
+        json.dump(logit_info, fp, indent=4)
+
 
     return top1, top5, 0
 
@@ -231,7 +243,7 @@ def main():
 
     encoder = imsitu_encoder(train_set, imsitu_verbq, space['nouns'])
 
-    model = model_agent2verbq_diffeval.BaseModel(encoder, args.gpuid)
+    model = model_test_agent2verbq_diff_eval.BaseModel(encoder, args.gpuid)
 
     # To group up the features
     #all verb and role feat are under role as it's a single unit
