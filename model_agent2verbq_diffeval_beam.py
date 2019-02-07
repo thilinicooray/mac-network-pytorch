@@ -169,7 +169,7 @@ class BaseModel(nn.Module):
 
         return verb_pred
 
-    def forward_eval(self, image, topk=10):
+    def forward_eval(self, image, topk=5):
 
         conv_agent = self.conv_agent(image)
 
@@ -211,26 +211,30 @@ class BaseModel(nn.Module):
         verb_pred = self.classifier(joint_repr)
 
         verb_pred = verb_pred.contiguous().view(batch_size, -1, self.n_verbs)
+
         sorted_verbs = torch.sort(verb_pred, -1, True)
 
-        sorted_verbs_5_val = sorted_verbs[0][:, :, 0]
-        sorted_verbs_5_idx = sorted_verbs[1][:, :, 0]
+        #check here
+
+        sorted_verbs_5_val = sorted_verbs[0][:, :, :5]
+        sorted_verbs_5_idx = sorted_verbs[1][:, :, :5]
         verb_pred_top5 = self.get_top_5(sorted_verbs_5_val, sorted_verbs_5_idx)
 
-        if self.gpu_mode >= 0:
-            verb_pred_top5 = verb_pred_top5.to(torch.device('cuda'))
+        '''if self.gpu_mode >= 0:
+            verb_pred_top5 = verb_pred_top5.to(torch.device('cuda'))'''
 
         return verb_pred_top5
 
     def get_top_5(self, all_res_val, all_res_idx):
 
-        batch_size, ref = all_res_val.size()
+        batch_size, ref,items = all_res_val.size()
         top_res = []
         for b in range(batch_size):
             all_data = {}
 
             for r in range(ref):
-                all_data[all_res_val[b][r]] = all_res_idx[b][r]
+                for i in range(items):
+                    all_data[all_res_val[b][r][i]] = all_res_idx[b][r][i]
 
             sorted_data = sorted(all_data.items(), reverse=True, key=lambda kv: kv[0])
             top5 = sorted_data[:5]
