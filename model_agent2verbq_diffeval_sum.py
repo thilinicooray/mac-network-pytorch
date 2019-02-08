@@ -169,7 +169,7 @@ class BaseModel(nn.Module):
 
         return verb_pred
 
-    def forward_eval(self, image, topk=5):
+    def forward_eval(self, image, topk=10):
 
         conv_agent = self.conv_agent(image)
 
