@@ -256,11 +256,11 @@ def main():
 
     train_set = imsitu_loader_rotation(imgset_folder, train_set, encoder, model.train_preprocess())
 
-    train_loader = torch.utils.data.DataLoader(train_set, batch_size=64, shuffle=True, num_workers=n_worker, collate_fn=_collate_fun)
+    train_loader = torch.utils.data.DataLoader(train_set, batch_size=32, shuffle=True, num_workers=n_worker, collate_fn=_collate_fun)
 
     dev_set = json.load(open(dataset_folder +"/dev.json"))
     dev_set = imsitu_loader_rotation(imgset_folder, dev_set, encoder, model.dev_preprocess())
-    dev_loader = torch.utils.data.DataLoader(dev_set, batch_size=64, shuffle=True, num_workers=n_worker, collate_fn=_collate_fun)
+    dev_loader = torch.utils.data.DataLoader(dev_set, batch_size=32, shuffle=True, num_workers=n_worker, collate_fn=_collate_fun)
 
     test_set = json.load(open(dataset_folder +"/test.json"))
     test_set = imsitu_loader_rotation(imgset_folder, test_set, encoder, model.dev_preprocess())
