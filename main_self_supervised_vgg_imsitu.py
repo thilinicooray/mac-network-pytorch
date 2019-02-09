@@ -12,11 +12,11 @@ import random
 #from graphviz import Digraph
 
 
-def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler, max_epoch, model_dir, encoder, gpu_mode, clip_norm, lr_max, model_name, args,eval_frequency=4000):
+def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler, max_epoch, model_dir, encoder, gpu_mode, clip_norm, lr_max, model_name, args,eval_frequency=16000):
     model.train()
     train_loss = 0
     total_steps = 0
-    print_freq = 400
+    print_freq = 1600
     dev_score_list = []
     time_all = time.time()
 
@@ -322,9 +322,9 @@ def main():
         #print('GPU enabled')
         model.cuda()
 
-    optimizer = torch.optim.Adamax([{'params': cnn_features, 'lr': 1e-3},
+    optimizer = torch.optim.Adamax([{'params': cnn_features, 'lr': 1e-4},
                                     {'params': role_features}],
-                                   lr=1e-3)
+                                   lr=1e-4)
 
     #optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     #scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=lr_step, gamma=lr_gamma)
