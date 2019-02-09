@@ -322,7 +322,7 @@ def main():
         #print('GPU enabled')
         model.cuda()
 
-    optimizer = torch.optim.Adamax([{'params': cnn_features, 'lr': 1e-4},
+    optimizer = torch.optim.Adamax([{'params': cnn_features, 'lr': 1e-3},
                                     {'params': role_features}],
                                    lr=1e-3)
 
