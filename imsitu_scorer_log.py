@@ -590,6 +590,28 @@ class imsitu_scorer():
 
             self.score_cards.append(new_card)
 
+    def add_point_rot_only(self, rot_predict, gt_labels):
+        #encoded predictions should be batch x verbs x values #assumes the are the same order as the references
+        #encoded reference should be batch x 1+ references*roles,values (sorted)
+
+        batch_size = rot_predict.size()[0]
+        for i in range(batch_size):
+            rot_pred = rot_predict[i]
+            gt_rot = gt_labels[i]
+
+
+            #print('check sizes:', verb_pred.size(), gt_verb.size(), label_pred.size(), gt_label.size())
+            sorted_idx = torch.sort(rot_pred, 0, True)[1]
+
+            gt_r = gt_rot
+
+            new_card = {"rot":0.0}
+
+            rot_found = (torch.sum(sorted_idx[0:self.topk] == gt_r) == 1)
+            if rot_found: new_card["rot"] += 1
+
+            self.score_cards.append(new_card)
+
     def add_point_agent_only(self, agent_predict, gt_agents):
         #encoded predictions should be batch x verbs x values #assumes the are the same order as the references
         #encoded reference should be batch x 1+ references*roles,values (sorted)
@@ -799,6 +821,17 @@ class imsitu_scorer():
         #rv["value*"] /= total_len
 
         return rv
+
+    def get_average_rot_results(self):
+        rv = {"rot":0, }
+        total_len = len(self.score_cards)
+        for card in self.score_cards:
+            rv["rot"] += card["rot"]
+
+        rv["rot"] /= total_len
+
+        return rv
+
 
     def get_average_results_nouns(self, groups = []):
         #average across score cards.

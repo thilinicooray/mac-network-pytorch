@@ -5,6 +5,7 @@ import os
 import numpy as np
 import torch
 import random
+from torch.utils.data.dataloader import default_collate
 
 class imsitu_loader(data.Dataset):
     def __init__(self, img_dir, annotation_file, encoder, transform=None):
@@ -107,6 +108,32 @@ class imsitu_loader_verbq(data.Dataset):
         if self.transform is not None: img = self.transform(img)
         verb, verb_q, roles, labels = self.encoder.encode(ann, _id)
         return _id, img, verb, verb_q, roles, labels
+
+class imsitu_loader_rotation(data.Dataset):
+    def __init__(self, img_dir, annotation_file, encoder, transform=None):
+        self.img_dir = img_dir
+        self.annotations = annotation_file
+        self.ids = list(self.annotations.keys())
+        self.encoder = encoder
+        self.first_transform = transform
+        self.second_transform = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        ])
+
+    def __getitem__(self, index):
+        _id = self.ids[index]
+        img = Image.open(os.path.join(self.img_dir, _id)).convert('RGB')
+        trans_1 = self.first_transform(img)
+        rotated_imgs = [
+            self.second_transform(trans_1),
+            self.second_transform(rotate_img(trans_1,  90)),
+            self.second_transform(rotate_img(trans_1, 180)),
+            self.second_transform(rotate_img(trans_1, 270))
+        ]
+        rotation_labels = torch.LongTensor([0, 1, 2, 3])
+        return torch.stack(rotated_imgs, dim=0), rotation_labels
+
 
     def __len__(self):
         return len(self.annotations)
@@ -297,3 +324,23 @@ def shuffle_minibatch(batch):
         label_set.append(labels)
 
     return ids, torch.stack(imgs), torch.LongTensor(verbs), torch.stack(role_set), torch.stack(label_set)
+
+def rotate_img(img, rot):
+    if rot == 0: # 0 degrees rotation
+        return img
+    elif rot == 90: # 90 degrees rotation
+        return np.ascontiguousarray(np.flipud(np.transpose(img, (1,0,2))))
+    elif rot == 180: # 90 degrees rotation
+        return np.ascontiguousarray((np.fliplr(np.flipud(img))))
+    elif rot == 270: # 270 degrees rotation / or -90
+        return np.ascontiguousarray(np.transpose(np.flipud(img), (1,0,2)))
+    else:
+        raise ValueError('rotation should be 0, 90, 180, or 270 degrees')
+
+def _collate_fun(batch):
+    batch = default_collate(batch)
+    assert(len(batch)==2)
+    batch_size, rotations, channels, height, width = batch[0].size()
+    batch[0] = batch[0].view([batch_size*rotations, channels, height, width])
+    batch[1] = batch[1].view([batch_size*rotations])
+    return batch
