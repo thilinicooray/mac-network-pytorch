@@ -101,7 +101,7 @@ def main():
     print('model spec :, verb role with context ')
 
     train_set = json.load(open(dataset_folder + "/train.json"))
-    imsitu_roleq = json.load(open("imsitu_data/imsitu_questions.json"))
+    imsitu_roleq = json.load(open("imsitu_data/imsitu_questions_prev.json"))
     encoder = imsitu_encoder(train_set, imsitu_roleq)
 
     model = model_verbmlp_roletd_new.BaseModel(encoder, args.gpuid)
