@@ -276,7 +276,7 @@ def main():
     print('model spec :, top down att with role q ')
 
     train_set = json.load(open(dataset_folder + "/train.json"))
-    imsitu_roleq = json.load(open("imsitu_data/imsitu_questions_prev.json"))
+    imsitu_roleq = json.load(open("imsitu_data/imsitu_questions.json"))
     encoder = imsitu_encoder(train_set, imsitu_roleq)
 
     model = model_top_down.BaseModel(encoder, args.gpuid)
