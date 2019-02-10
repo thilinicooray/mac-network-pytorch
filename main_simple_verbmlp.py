@@ -1,15 +1,15 @@
 import torch
-from imsitu_encoder_verbq import imsitu_encoder
-from imsitu_loader import imsitu_loader_verbq
-from imsitu_scorer_log import imsitu_scorer
+from imsitu_encoder import imsitu_encoder
+from imsitu_loader import imsitu_loader
+from imsitu_scorer_updated import imsitu_scorer
 import json
 import model_simple_verbmlp
 import os
 import utils
-import time
-import random
+import torchvision as tv
 #from torchviz import make_dot
 #from graphviz import Digraph
+
 
 
 def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler, max_epoch, model_dir, encoder, gpu_mode, clip_norm, lr_max, model_name, args,eval_frequency=4000):
@@ -18,7 +18,6 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
     total_steps = 0
     print_freq = 400
     dev_score_list = []
-    time_all = time.time()
 
     '''if model.gpu_mode >= 0 :
         ngpus = 2
@@ -28,9 +27,6 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
     else:
         pmodel = model'''
     pmodel = model
-
-    '''if scheduler.get_lr()[0] < lr_max:
-        scheduler.step()'''
 
     top1 = imsitu_scorer(encoder, 1, 3)
     top5 = imsitu_scorer(encoder, 5, 3)
@@ -42,30 +38,24 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
 
 
     for epoch in range(max_epoch):
-
         #print('current sample : ', i, img.size(), verb.size(), roles.size(), labels.size())
         #sizes batch_size*3*height*width, batch*504*1, batch*6*190*1, batch*3*6*lebale_count*1
         mx = len(train_loader)
-        for i, (_, img, verb, verbq, roles, labels) in enumerate(train_loader):
+        for i, (_id, img, verb, roles,labels) in enumerate(train_loader):
             #print("epoch{}-{}/{} batches\r".format(epoch,i+1,mx)) ,
-            t0 = time.time()
-            t1 = time.time()
             total_steps += 1
-
             if gpu_mode >= 0:
                 img = torch.autograd.Variable(img.cuda())
                 roles = torch.autograd.Variable(roles.cuda())
                 verb = torch.autograd.Variable(verb.cuda())
-                verbq = torch.autograd.Variable(verbq.cuda())
                 labels = torch.autograd.Variable(labels.cuda())
             else:
                 img = torch.autograd.Variable(img)
                 verb = torch.autograd.Variable(verb)
-                verbq = torch.autograd.Variable(verbq)
                 roles = torch.autograd.Variable(roles)
                 labels = torch.autograd.Variable(labels)
 
-
+            #optimizer.zero_grad()
 
             '''print('all inputs')
             print(img)
@@ -76,48 +66,23 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
             print('=========================================================================')
             print(labels)'''
 
+
             verb_predict = pmodel(img)
-            #verb_predict, rol1pred, role_predict = pmodel.forward_eval5(img)
-            #print ("forward time = {}".format(time.time() - t1))
-            t1 = time.time()
 
             '''g = make_dot(verb_predict, model.state_dict())
             g.view()'''
 
             loss = model.calculate_loss(verb_predict, verb)
-            #loss = model.calculate_eval_loss_new(verb_predict, verb, rol1pred, labels, args)
-            #loss = loss_ * random.random() #try random loss
-            #print ("loss time = {}".format(time.time() - t1))
-            t1 = time.time()
             #print('current loss = ', loss)
 
             loss.backward()
-            #print ("backward time = {}".format(time.time() - t1))
 
-            #torch.nn.utils.clip_grad_norm_(model.parameters(), clip_norm)
-
-
-            '''for param in filter(lambda p: p.requires_grad,model.parameters()):
-                print(param.grad.data.sum())'''
-
-            #start debugger
-            #import pdb; pdb.set_trace()
-
+            # torch.nn.utils.clip_grad_norm_(model.parameters(), clip_norm)
 
             optimizer.step()
             optimizer.zero_grad()
 
-            '''print('grad check :')
-            for f in model.parameters():
-                print('data is')
-                print(f.data)
-                print('grad is')
-                print(f.grad)'''
-
             train_loss += loss.item()
-
-            #top1.add_point_eval5(verb_predict, verb, role_predict, labels)
-            #top5.add_point_eval5(verb_predict, verb, role_predict, labels)
 
             top1.add_point_verb_only(verb_predict, verb)
             top5.add_point_verb_only(verb_predict, verb)
@@ -138,10 +103,12 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
 
                 top1_avg = top1.get_average_results()
                 top5_avg = top5.get_average_results()
+                #todo : top 5
 
                 avg_score = top1_avg["verb"] + top1_avg["value"] + top1_avg["value-all"] + top5_avg["verb"] + \
-                            top5_avg["value"] + top5_avg["value-all"]
-                avg_score /= 8
+                            top5_avg["value"] + top5_avg["value-all"] + top5_avg["value*"] + top5_avg["value-all*"]
+                #avg_score = top1_avg["value*"]
+                avg_score /= 2
 
                 print ('Dev {} average :{:.2f} {} {}'.format(total_steps-1, avg_score*100,
                                                              utils.format_dict(top1_avg,'{:.2f}', '1-'),
@@ -152,7 +119,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 max_score = max(dev_score_list)
 
                 if max_score == dev_score_list[-1]:
-                    torch.save(model.state_dict(), model_dir + "/{}_simple_verbmlp_selfsup.model".format( model_name))
+                    torch.save(model.state_dict(), model_dir + "/{}_verbmlp_selfsup.model".format(model_name))
                     print ('New best model saved! {0}'.format(max_score))
 
                 #eval on the trainset
@@ -176,7 +143,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 top1 = imsitu_scorer(encoder, 1, 3)
                 top5 = imsitu_scorer(encoder, 5, 3)
 
-            del verb_predict, loss, img, verb, verbq, roles, labels
+            del loss, img, labels
             #break
         print('Epoch ', epoch, ' completed!')
         scheduler.step()
@@ -187,11 +154,11 @@ def eval(model, dev_loader, encoder, gpu_mode, write_to_file = False):
     val_loss = 0
 
     print ('evaluating model...')
-    top1 = imsitu_scorer(encoder, 1, 3, True)
+    top1 = imsitu_scorer(encoder, 1, 3)
     top5 = imsitu_scorer(encoder, 5, 3)
     with torch.no_grad():
         mx = len(dev_loader)
-        for i, (img_id, img, verb, verbq, roles, labels) in enumerate(dev_loader):
+        for i, (_id, img, verb, roles,labels) in enumerate(dev_loader):
             #print("{}/{} batches\r".format(i+1,mx)) ,
             '''im_data = torch.squeeze(im_data,0)
             im_info = torch.squeeze(im_info,0)
@@ -204,31 +171,24 @@ def eval(model, dev_loader, encoder, gpu_mode, write_to_file = False):
             if gpu_mode >= 0:
                 img = torch.autograd.Variable(img.cuda())
                 roles = torch.autograd.Variable(roles.cuda())
-                verbq = torch.autograd.Variable(verbq.cuda())
                 verb = torch.autograd.Variable(verb.cuda())
                 labels = torch.autograd.Variable(labels.cuda())
             else:
                 img = torch.autograd.Variable(img)
                 verb = torch.autograd.Variable(verb)
-                verbq = torch.autograd.Variable(verbq)
                 roles = torch.autograd.Variable(roles)
                 labels = torch.autograd.Variable(labels)
 
             verb_predict = model(img)
             '''loss = model.calculate_eval_loss(verb_predict, verb, role_predict, labels)
             val_loss += loss.item()'''
-            top1.add_point_verb_only_eval(img_id, verb_predict, verb)
-            top5.add_point_verb_only_eval(img_id, verb_predict, verb)
+            top1.add_point_verb_only(verb_predict, verb)
+            top5.add_point_verb_only(verb_predict, verb)
 
             del verb_predict, img, verb, roles, labels
             #break
 
     #return top1, top5, val_loss/mx
-    '''pass_list = top1.pass_list
-
-    with open('passverb_gtagent.txt', 'w') as filehandle:
-        for listitem in pass_list:
-            filehandle.write('{}\n'.format(listitem))'''
 
     return top1, top5, 0
 
@@ -240,9 +200,10 @@ def main():
     #parser.add_argument("--command", choices = ["train", "eval", "resume", 'predict'], required = True)
     parser.add_argument('--resume_training', action='store_true', help='Resume training from the model [resume_model]')
     parser.add_argument('--resume_model', type=str, default='', help='The model we resume')
-    parser.add_argument('--verb_module', type=str, default='', help='pretrained verb module')
+    parser.add_argument('--agent_module', type=str, default='', help='pretrained agent module')
     parser.add_argument('--train_role', action='store_true', help='cnn fix, verb fix, role train from the scratch')
-    parser.add_argument('--finetune_verb', action='store_true', help='cnn fix, verb finetune, role train from the scratch')
+    parser.add_argument('--train_verb', action='store_true', help='cnn fix, agent fix, verb train from the scratch')
+    parser.add_argument('--finetune_agent', action='store_true', help='cnn fix, agent finetune, verb train from the scratch')
     parser.add_argument('--finetune_cnn', action='store_true', help='cnn finetune, verb finetune, role train from the scratch')
     parser.add_argument('--output_dir', type=str, default='./trained_models', help='Location to output the model')
     parser.add_argument('--evaluate', action='store_true', help='Only use the testing mode')
@@ -250,7 +211,6 @@ def main():
     parser.add_argument('--dataset_folder', type=str, default='./imSitu', help='Location of annotations')
     parser.add_argument('--imgset_dir', type=str, default='./resized_256', help='Location of original images')
     parser.add_argument('--frcnn_feat_dir', type=str, help='Location of output from detectron')
-    parser.add_argument('--selfsup_module', type=str, default='', help='pretrained cnn')
     #todo: train role module separately with gt verbs
 
     args = parser.parse_args()
@@ -271,88 +231,59 @@ def main():
     dataset_folder = args.dataset_folder
     imgset_folder = args.imgset_dir
 
-    print('model spec :, top down att with verb q ')
+    print('model spec :, verb role with context ')
 
-    train_set = json.load(open(dataset_folder + "/train.json"))
-    imsitu_roleq = json.load(open("imsitu_data/verb_questions.json"))
-    encoder = imsitu_encoder(train_set, imsitu_roleq)
+    train_set = json.load(open(dataset_folder + "/updated_train_new.json"))
+    encoder = imsitu_encoder(train_set)
 
     model = model_simple_verbmlp.BaseModel(encoder, args.gpuid)
 
     # To group up the features
-    cnn_features, role_features = utils.group_features_noun(model)
+    #all verb and role feat are under role as it's a single unit
+    cnn_features, verb_features = utils.group_features_noun(model)
 
-    train_set = imsitu_loader_verbq(imgset_folder, train_set, encoder, model.train_preprocess())
+    train_set = imsitu_loader(imgset_folder, train_set, encoder, model.train_preprocess())
 
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=64, shuffle=True, num_workers=n_worker)
 
     dev_set = json.load(open(dataset_folder +"/dev.json"))
-    dev_set = imsitu_loader_verbq(imgset_folder, dev_set, encoder, model.dev_preprocess())
+    dev_set = imsitu_loader(imgset_folder, dev_set, encoder, model.dev_preprocess())
     dev_loader = torch.utils.data.DataLoader(dev_set, batch_size=64, shuffle=True, num_workers=n_worker)
 
     test_set = json.load(open(dataset_folder +"/test.json"))
-    test_set = imsitu_loader_verbq(imgset_folder, test_set, encoder, model.dev_preprocess())
+    test_set = imsitu_loader(imgset_folder, test_set, encoder, model.dev_preprocess())
     test_loader = torch.utils.data.DataLoader(test_set, batch_size=64, shuffle=True, num_workers=n_worker)
 
     traindev_set = json.load(open(dataset_folder +"/dev.json"))
-    traindev_set = imsitu_loader_verbq(imgset_folder, traindev_set, encoder, model.dev_preprocess())
+    traindev_set = imsitu_loader(imgset_folder, traindev_set, encoder, model.dev_preprocess())
     traindev_loader = torch.utils.data.DataLoader(traindev_set, batch_size=8, shuffle=True, num_workers=n_worker)
 
     utils.set_trainable(model, False)
-    if args.train_role:
-        print('CNN fix, Verb fix, train role from the scratch from: {}'.format(args.verb_module))
-        args.train_all = False
-        if len(args.verb_module) == 0:
-            raise Exception('[pretrained verb module] not specified')
-        utils.load_net(args.verb_module, [model.conv, model.verb], ['conv', 'verb'])
-        optimizer_select = 1
-        model_name = 'cfx_vfx_rtrain'
 
-    elif args.finetune_verb:
-        print('CNN fix, Verb finetune, train role from the scratch from: {}'.format(args.verb_module))
-        args.train_all = True
-        if len(args.verb_module) == 0:
-            raise Exception('[pretrained verb module] not specified')
-        utils.load_net(args.verb_module, [model.conv, model.verb], ['conv', 'verb'])
-        optimizer_select = 2
-        model_name = 'cfx_vft_rtrain'
+    print('Training from the scratch.')
+    optimizer_select = 0
+    args.train_all = True
+    model_name = 'train_full'
+    utils.load_net('./trained_models/train_full_self_supervised_vgg_imsitu.model', [model.conv], ['conv'])
 
-    elif args.finetune_cnn:
-        print('CNN finetune, Verb finetune, train role from the scratch from: {}'.format(args.verb_module))
-        args.train_all = True
-        if len(args.verb_module) == 0:
-            raise Exception('[pretrained verb module] not specified')
-        utils.load_net(args.verb_module, [model.conv, model.verb], ['conv', 'verb'])
-        optimizer_select = 3
-        model_name = 'cft_vft_rtrain'
+    '''optimizer = utils.get_optimizer_noun(lr,weight_decay,optimizer_select,
+                                         cnn_features, role_features)'''
 
-    elif args.resume_training:
-        print('Resume training from: {}'.format(args.resume_model))
-        args.train_all = True
-        if len(args.resume_model) == 0:
-            raise Exception('[pretrained verb module] not specified')
-        utils.load_net(args.resume_model, [model])
-        optimizer_select = 0
-        model_name = 'resume_all'
-    else:
-        print('Training from the scratch.')
-        utils.load_net(args.selfsup_module, [model.conv], ['conv'])
-        optimizer_select = 0
-        args.train_all = True
-        model_name = 'train_full'
-
-    optimizer = utils.get_optimizer_noun(lr,weight_decay,optimizer_select,
-                                         cnn_features, role_features)
+    optimizer = utils.get_optimizer_verb(optimizer_select,
+                                         cnn_features, verb_features)
 
     if not os.path.exists(args.output_dir):
         os.mkdir(args.output_dir)
 
+    torch.manual_seed(1234)
     if args.gpuid >= 0:
         #print('GPU enabled')
         model.cuda()
+        torch.cuda.manual_seed(1234)
+        torch.backends.cudnn.deterministic = True
 
     optimizer = torch.optim.Adamax([{'params': cnn_features, 'lr': 5e-5},
-                                    {'params': role_features}],
+                                    {'params': verb_features}],
                                    lr=1e-3)
 
     #optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
@@ -363,8 +294,8 @@ def main():
     if args.evaluate:
         top1, top5, val_loss = eval(model, dev_loader, encoder, args.gpuid, write_to_file = True)
 
-        top1_avg = top1.get_average_results_nouns()
-        top5_avg = top5.get_average_results_nouns()
+        top1_avg = top1.get_average_results()
+        top5_avg = top5.get_average_results()
 
         avg_score = top1_avg["verb"] + top1_avg["value"] + top1_avg["value-all"] + top5_avg["verb"] + \
                     top5_avg["value"] + top5_avg["value-all"] + top5_avg["value*"] + top5_avg["value-all*"]
@@ -376,25 +307,30 @@ def main():
 
         #write results to csv file
         role_dict = top1.role_dict
-        fail_val_all = top1.value_all_dict
-        pass_val_dict = top1.vall_all_correct
+        fail_agent = top1.fail_agent
+        #print('roles :', role_dict)
+        #fail_val_all = top1.value_all_dict
+        #pass_val_dict = top1.vall_all_correct
 
         with open('role_pred_data.json', 'w') as fp:
             json.dump(role_dict, fp, indent=4)
 
-        with open('fail_val_all.json', 'w') as fp:
+        with open('fail_agent.json', 'w') as fp:
+            json.dump(fail_agent, fp, indent=4)
+
+        '''with open('fail_val_all.json', 'w') as fp:
             json.dump(fail_val_all, fp, indent=4)
 
         with open('pass_val_all.json', 'w') as fp:
-            json.dump(pass_val_dict, fp, indent=4)
+            json.dump(pass_val_dict, fp, indent=4)'''
 
         print('Writing predictions to file completed !')
 
     elif args.test:
         top1, top5, val_loss = eval(model, test_loader, encoder, args.gpuid, write_to_file = True)
 
-        top1_avg = top1.get_average_results_nouns()
-        top5_avg = top5.get_average_results_nouns()
+        top1_avg = top1.get_average_results()
+        top5_avg = top5.get_average_results()
 
         avg_score = top1_avg["verb"] + top1_avg["value"] + top1_avg["value-all"] + top5_avg["verb"] + \
                     top5_avg["value"] + top5_avg["value-all"] + top5_avg["value*"] + top5_avg["value-all*"]
@@ -413,16 +349,8 @@ def main():
 
 
 
-
-
 if __name__ == "__main__":
     main()
-
-
-
-
-
-
 
 
 
