@@ -139,7 +139,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 max_score = max(dev_score_list)
 
                 if max_score == dev_score_list[-1]:
-                    torch.save(model.state_dict(), model_dir + "/{}_self_supervised_vgg_imsitu.model".format( model_name))
+                    torch.save(model.state_dict(), model_dir + "/{}_self_supervised_vgg_imsitu_pretrain.model".format( model_name))
                     print ('New best model saved! {0}'.format(max_score))
 
                 #eval on the trainset
@@ -322,7 +322,7 @@ def main():
         #print('GPU enabled')
         model.cuda()
 
-    optimizer = torch.optim.Adamax([{'params': cnn_features, 'lr': 1e-4},
+    optimizer = torch.optim.Adamax([{'params': cnn_features, 'lr': 1e-3},
                                     {'params': role_features}],
                                    lr=1e-3)
 

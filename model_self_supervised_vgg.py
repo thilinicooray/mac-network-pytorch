@@ -8,7 +8,7 @@ import numpy as np
 class vgg16_modified(nn.Module):
     def __init__(self):
         super(vgg16_modified, self).__init__()
-        vgg = tv.models.vgg16(pretrained=False)
+        vgg = tv.models.vgg16(pretrained=True)
         self.vgg_features = vgg.features
         self.out_features = vgg.classifier[6].in_features
         features = list(vgg.classifier.children())[:-1] # Remove last layer
