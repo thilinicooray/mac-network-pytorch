@@ -119,7 +119,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 max_score = max(dev_score_list)
 
                 if max_score == dev_score_list[-1]:
-                    torch.save(model.state_dict(), model_dir + "/{}_verbmlp_selfsup.model".format(model_name))
+                    torch.save(model.state_dict(), model_dir + "/{}_verbmlp_weightdecay.model".format(model_name))
                     print ('New best model saved! {0}'.format(max_score))
 
                 #eval on the trainset
@@ -265,7 +265,7 @@ def main():
     optimizer_select = 0
     args.train_all = True
     model_name = 'train_full'
-    utils.load_net(args.self_sup_model, [model.conv], ['conv'])
+    #utils.load_net(args.self_sup_model, [model.conv], ['conv'])
 
     '''optimizer = utils.get_optimizer_noun(lr,weight_decay,optimizer_select,
                                          cnn_features, role_features)'''
@@ -283,9 +283,9 @@ def main():
         torch.cuda.manual_seed(1234)
         torch.backends.cudnn.deterministic = True
 
-    optimizer = torch.optim.Adamax([{'params': cnn_features, 'lr': 5e-5},
+    optimizer = torch.optim.Adam([{'params': cnn_features, 'lr': 5e-5},
                                     {'params': verb_features}],
-                                   lr=1e-3)
+                                   lr=1e-3, weight_decay=weight_decay)
 
     #optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     #scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=lr_step, gamma=lr_gamma)
