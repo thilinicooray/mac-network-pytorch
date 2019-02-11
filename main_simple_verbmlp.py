@@ -211,6 +211,7 @@ def main():
     parser.add_argument('--dataset_folder', type=str, default='./imSitu', help='Location of annotations')
     parser.add_argument('--imgset_dir', type=str, default='./resized_256', help='Location of original images')
     parser.add_argument('--frcnn_feat_dir', type=str, help='Location of output from detectron')
+    parser.add_argument('--self_sup_model', type=str, default='', help='pretrained based on selfsupervision module')
     #todo: train role module separately with gt verbs
 
     args = parser.parse_args()
@@ -264,7 +265,7 @@ def main():
     optimizer_select = 0
     args.train_all = True
     model_name = 'train_full'
-    utils.load_net('./trained_models/train_full_self_supervised_vgg_imsitu.model', [model.conv], ['conv'])
+    utils.load_net(args.self_sup_model, [model.conv], ['conv'])
 
     '''optimizer = utils.get_optimizer_noun(lr,weight_decay,optimizer_select,
                                          cnn_features, role_features)'''
