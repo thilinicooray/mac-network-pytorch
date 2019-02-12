@@ -737,6 +737,44 @@ class imsitu_scorer():
 
             self.score_cards.append(new_card)
 
+    def add_point_multi_verb_avg(self, img_id, verb_predict, gt_verbs):
+        #encoded predictions should be batch x verbs x values #assumes the are the same order as the references
+        #encoded reference should be batch x 1+ references*roles,values (sorted)
+
+        batch_size = verb_predict.size()[0]
+        for i in range(batch_size):
+            verb_pred = verb_predict[i]
+            gt_verb = gt_verbs[i]
+            current_id = img_id[i]
+
+            new_card = {"verb":0.0, "value":0.0, "value*":0.0, "n_value":0.0, "value-all":0.0, "value-all*":0.0}
+
+            for r in range(0,verb_pred.size(0)):
+                sorted_idx = torch.sort(verb_pred[r], 0, True)[1]
+
+                verb_found = (torch.sum(sorted_idx[0:self.topk] == gt_verb) == 1)
+
+                if self.write_to_file:
+                    sorted_logits = torch.sort(verb_pred[r], 0, True)[0]
+                    cur_v = self.encoder.verb_list[sorted_idx[0]]
+                    if current_id not in self.all_res:
+                        self.all_res[current_id] = {'gtv': gt_verb.item(),'found':-1, 'verbs':[sorted_idx[0].item()],
+                                                    'logits':[sorted_logits[0].item()]}
+                    else:
+                        self.all_res[current_id]['verbs'].append(sorted_idx[0].item())
+                        self.all_res[current_id]['logits'].append(sorted_logits[0].item())
+
+                if verb_found:
+                    if self.write_to_file:
+                        self.pass_list.append(current_id)
+                        self.all_res[current_id]['found'] = r
+                    new_card["verb"] += 1
+                    #break
+
+            new_card["verb"] /= verb_pred.size(0)
+
+            self.score_cards.append(new_card)
+
     def add_point_multi_verb_beam(self, img_id, verb_predict, gt_verbs):
         #encoded predictions should be batch x verbs x values #assumes the are the same order as the references
         #encoded reference should be batch x 1+ references*roles,values (sorted)
