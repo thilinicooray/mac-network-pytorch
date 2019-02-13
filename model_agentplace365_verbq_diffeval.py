@@ -183,9 +183,11 @@ class BaseModel(nn.Module):
 
         q_word_idx = self.encoder.get_qword_idx_for_agentq_top1(current_agent)
         verbq = self.encoder.common_q_idx
+        places = self.encoder.get_places_batch(img_id)
         if self.gpu_mode >= 0:
             q_word_idx = q_word_idx.to(torch.device('cuda'))
             verbq = verbq.to(torch.device('cuda'))
+            places = places.to(torch.device('cuda'))
 
 
         verbq = verbq.unsqueeze(0)
@@ -193,8 +195,6 @@ class BaseModel(nn.Module):
         verbq = verbq.view(batch_size, -1)
 
         q_word_idx = q_word_idx.view(batch_size, -1)
-
-        places = self.encoder.get_places_batch(img_id)
 
         verb_q = torch.cat([self.w_emb(verbq[:,:3]), self.w_emb(q_word_idx), self.w_emb(verbq[:,4:-1]), self.w_emb(places).unsqueeze(1)], 1)
 
