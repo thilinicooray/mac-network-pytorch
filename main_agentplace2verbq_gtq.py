@@ -205,8 +205,8 @@ def eval(model, dev_loader, encoder, gpu_mode, write_to_file = False):
             verb_predict = model(img, img_id)
             '''loss = model.calculate_eval_loss(verb_predict, verb, role_predict, labels)
             val_loss += loss.item()'''
-            top1.add_point_multi_verb_avg(img_id, verb_predict, verb)
-            top5.add_point_multi_verb_avg(img_id, verb_predict, verb)
+            top1.add_point_multi_verb(img_id, verb_predict, verb)
+            top5.add_point_multi_verb(img_id, verb_predict, verb)
 
             del verb_predict, img, verb
             #break
@@ -337,7 +337,7 @@ def main():
         #print('GPU enabled')
         model.cuda()
 
-    optimizer = torch.optim.Adamax([{'params': cnn_features, 'lr': 5e-5},
+    optimizer = torch.optim.Adam([{'params': cnn_features, 'lr': 5e-5},
                                     {'params': role_features}],
                                    lr=1e-3)
 
