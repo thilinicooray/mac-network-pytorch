@@ -110,9 +110,9 @@ class BaseModel(nn.Module):
         self.n_verbs = self.encoder.get_num_verbs()
         self.vocab_size = self.encoder.get_num_labels()
 
-        self.agent_label_lookup = nn.Embedding(self.vocab_size, embed_hidden)
+
         self.q_word_count = len(self.encoder.question_words)
-        self.w_emb = nn.Embedding(self.q_word_count, embed_hidden)
+
 
         self.conv_agent = vgg16_modified()
         self.conv_verb = vgg16_modified_feat()
@@ -126,7 +126,8 @@ class BaseModel(nn.Module):
         )
 
         self.verb = TopDown()
-
+        self.w_emb = nn.Embedding(self.q_word_count, embed_hidden)
+        self.agent_label_lookup = nn.Embedding(self.vocab_size, embed_hidden)
         self.q_net = FCNet([mlp_hidden, mlp_hidden])
         self.v_net = FCNet([mlp_hidden, mlp_hidden])
 

@@ -1,6 +1,6 @@
 import torch
 from imsitu_encoder_sameverbq import imsitu_encoder
-from imsitu_loader import imsitu_loader_agentverbq
+from imsitu_loader import imsitu_loader_agent2verbqpure
 from imsitu_scorer_updated import imsitu_scorer
 import json
 import model_agent2verbq
@@ -12,7 +12,7 @@ import torchvision as tv
 
 
 
-def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler, max_epoch, model_dir, encoder, gpu_mode, clip_norm, lr_max, model_name, args,eval_frequency=4000):
+def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler, max_epoch, model_dir, encoder, gpu_mode, clip_norm, lr_max, model_name, args,eval_frequency=2000):
     model.train()
     train_loss = 0
     total_steps = 0
@@ -117,7 +117,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 max_score = max(dev_score_list)
 
                 if max_score == dev_score_list[-1]:
-                    torch.save(model.state_dict(), model_dir + "/{}_agent2verbq_td.model".format(model_name))
+                    torch.save(model.state_dict(), model_dir + "/{}_agent2verbq_td_predagent.model".format(model_name))
                     print ('New best model saved! {0}'.format(max_score))
 
                 #eval on the trainset
@@ -239,20 +239,20 @@ def main():
     #all verb and role feat are under role as it's a single unit
     cnn_agent_features, cnn_verb_features, agent_features, verb_features = utils.group_features_agent2verb(model)
 
-    train_set = imsitu_loader_agentverbq(imgset_folder, train_set, encoder, model.train_preprocess())
+    train_set = imsitu_loader_agent2verbqpure(imgset_folder, train_set, encoder, model.train_preprocess())
 
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=64, shuffle=True, num_workers=n_worker)
 
     dev_set = json.load(open(dataset_folder +"/dev.json"))
-    dev_set = imsitu_loader_agentverbq(imgset_folder, dev_set, encoder, model.dev_preprocess())
+    dev_set = imsitu_loader_agent2verbqpure(imgset_folder, dev_set, encoder, model.dev_preprocess())
     dev_loader = torch.utils.data.DataLoader(dev_set, batch_size=64, shuffle=True, num_workers=n_worker)
 
     test_set = json.load(open(dataset_folder +"/test.json"))
-    test_set = imsitu_loader_agentverbq(imgset_folder, test_set, encoder, model.dev_preprocess())
+    test_set = imsitu_loader_agent2verbqpure(imgset_folder, test_set, encoder, model.dev_preprocess())
     test_loader = torch.utils.data.DataLoader(test_set, batch_size=64, shuffle=True, num_workers=n_worker)
 
     traindev_set = json.load(open(dataset_folder +"/dev.json"))
-    traindev_set = imsitu_loader_agentverbq(imgset_folder, traindev_set, encoder, model.dev_preprocess())
+    traindev_set = imsitu_loader_agent2verbqpure(imgset_folder, traindev_set, encoder, model.dev_preprocess())
     traindev_loader = torch.utils.data.DataLoader(traindev_set, batch_size=8, shuffle=True, num_workers=n_worker)
 
     utils.set_trainable(model, False)
@@ -298,7 +298,7 @@ def main():
         torch.cuda.manual_seed(1234)
         torch.backends.cudnn.deterministic = True
 
-    optimizer = torch.optim.Adamax([{'params': cnn_verb_features, 'lr': 5e-5},
+    optimizer = torch.optim.Adam([{'params': cnn_verb_features, 'lr': 5e-5},
                                     {'params': verb_features}],
                                    lr=1e-3)
 
