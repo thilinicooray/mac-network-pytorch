@@ -311,6 +311,15 @@ def main():
         optimizer_select = 2
         model_name = 'cfx_aft_vtrain'
 
+    elif args.resume_training:
+        print('Resume training from: {}'.format(args.resume_model))
+        args.train_all = True
+        if len(args.resume_model) == 0:
+            raise Exception('[pretrained verb module] not specified')
+        utils.load_net(args.resume_model, [model])
+        optimizer_select = 0
+        model_name = 'resume_all'
+
     else:
         print('Training from the scratch.')
         optimizer_select = 0
