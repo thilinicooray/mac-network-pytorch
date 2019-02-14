@@ -359,6 +359,15 @@ def get_optimizer_agent2verb(lr, decay, mode, cnn_agent_features,  cnn_verb_feat
     mode 1: cnn fix, v training
     mode 2: cnn fix, verb fine tune, role training
     mode 3: cnn finetune, verb finetune, role training"""
+    if mode == 0:
+        set_trainable_param(cnn_agent_features, True)
+        set_trainable_param(agent_features, True)
+        set_trainable_param(verb_features, True)
+        set_trainable_param(cnn_verb_features, True)
+        optimizer = torch.optim.Adam([
+            {'params': cnn_verb_features, 'lr': 5e-5},
+            {'params': verb_features},
+        ], lr=1e-3)
     if mode == 1:
         set_trainable_param(verb_features, True)
         set_trainable_param(cnn_verb_features, True)
