@@ -771,7 +771,7 @@ class imsitu_scorer():
                     self.pass_list.append(current_id)
                     self.all_res[current_id]['found'] = 0
                 new_card["verb"] += 1
-                break
+                
 
 
 
