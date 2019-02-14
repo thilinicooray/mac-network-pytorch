@@ -205,8 +205,8 @@ def eval(model, dev_loader, encoder, gpu_mode, write_to_file = False):
             verb_predict = model.forward_eval(img, img_id)
             '''loss = model.calculate_eval_loss(verb_predict, verb, role_predict, labels)
             val_loss += loss.item()'''
-            top1.add_point_multi_verb(img_id, verb_predict, verb)
-            top5.add_point_multi_verb(img_id, verb_predict, verb)
+            top1.add_point_multi_verb_sum(img_id, verb_predict, verb)
+            top5.add_point_multi_verb_sum(img_id, verb_predict, verb)
 
             del verb_predict, img, verb
             #break
@@ -217,10 +217,10 @@ def eval(model, dev_loader, encoder, gpu_mode, write_to_file = False):
     #fail_val_all = top1.value_all_dict
     #pass_val_dict = top1.vall_all_correct
 
-    with open('all_pred_agplz_new.json', 'w') as fp:
+    with open('all_pred_agplz_sum.json', 'w') as fp:
         json.dump(all, fp, indent=4)
 
-    with open('all_agents_agplz_new.json', 'w') as fp:
+    with open('all_agents_agplz_sum.json', 'w') as fp:
         json.dump(logit_info, fp, indent=4)
 
     return top1, top5, 0
@@ -348,8 +348,8 @@ def main():
     if args.evaluate:
         top1, top5, val_loss = eval(model, dev_loader, encoder, args.gpuid, write_to_file = True)
 
-        top1_avg = top1.get_average_results_nouns()
-        top5_avg = top5.get_average_results_nouns()
+        top1_avg = top1.get_average_results()
+        top5_avg = top5.get_average_results()
 
         avg_score = top1_avg["verb"] + top1_avg["value"] + top1_avg["value-all"] + top5_avg["verb"] + \
                     top5_avg["value"] + top5_avg["value-all"] + top5_avg["value*"] + top5_avg["value-all*"]
@@ -378,8 +378,8 @@ def main():
     elif args.test:
         top1, top5, val_loss = eval(model, test_loader, encoder, args.gpuid, write_to_file = True)
 
-        top1_avg = top1.get_average_results_nouns()
-        top5_avg = top5.get_average_results_nouns()
+        top1_avg = top1.get_average_results()
+        top5_avg = top5.get_average_results()
 
         avg_score = top1_avg["verb"] + top1_avg["value"] + top1_avg["value-all"] + top5_avg["verb"] + \
                     top5_avg["value"] + top5_avg["value-all"] + top5_avg["value*"] + top5_avg["value-all*"]
