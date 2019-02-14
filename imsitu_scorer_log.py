@@ -712,21 +712,23 @@ class imsitu_scorer():
             current_id = img_id[i]
 
             new_card = {"verb":0.0, "value":0.0, "value*":0.0, "n_value":0.0, "value-all":0.0, "value-all*":0.0}
+            logits = []
+            verbs = []
+            for r in range(0,verb_pred.size(0)):
+                sorted_idx = torch.sort(verb_pred[r], 0, True)[1]
+                sorted_logits = torch.sort(verb_pred[r], 0, True)[0]
+                logits.append(sorted_logits[0].item())
+                verbs.append(sorted_idx[0].item())
+
+            if self.write_to_file:
+                self.all_res[current_id] = {'gtv': gt_verb.item(),'found':-1, 'verbs':verbs,
+                                            'logits':logits}
+
 
             for r in range(0,verb_pred.size(0)):
                 sorted_idx = torch.sort(verb_pred[r], 0, True)[1]
 
                 verb_found = (torch.sum(sorted_idx[0:self.topk] == gt_verb) == 1)
-
-                if self.write_to_file:
-                    sorted_logits = torch.sort(verb_pred[r], 0, True)[0]
-                    cur_v = self.encoder.verb_list[sorted_idx[0]]
-                    if current_id not in self.all_res:
-                        self.all_res[current_id] = {'gtv': gt_verb.item(),'found':-1, 'verbs':[sorted_idx[0].item()],
-                                                    'logits':[sorted_logits[0].item()]}
-                    else:
-                        self.all_res[current_id]['verbs'].append(sorted_idx[0].item())
-                        self.all_res[current_id]['logits'].append(sorted_logits[0].item())
 
                 if verb_found:
                     if self.write_to_file:

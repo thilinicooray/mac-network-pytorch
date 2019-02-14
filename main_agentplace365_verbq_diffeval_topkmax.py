@@ -217,10 +217,10 @@ def eval(model, dev_loader, encoder, gpu_mode, write_to_file = False):
     #fail_val_all = top1.value_all_dict
     #pass_val_dict = top1.vall_all_correct
 
-    with open('all_pred_agplz.json', 'w') as fp:
+    with open('all_pred_agplz_new.json', 'w') as fp:
         json.dump(all, fp, indent=4)
 
-    with open('all_agents_agplz.json', 'w') as fp:
+    with open('all_agents_agplz_new.json', 'w') as fp:
         json.dump(logit_info, fp, indent=4)
 
     return top1, top5, 0
