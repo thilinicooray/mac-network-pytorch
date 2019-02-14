@@ -760,8 +760,8 @@ class imsitu_scorer():
 
 
             if self.write_to_file:
-                self.all_res[current_id] = {'gtv': gt_verb.item(),'found':-1, 'verbs':sorted_idx[:5],
-                                            'logits':sorted_logits[:5]}
+                self.all_res[current_id] = {'gtv': gt_verb.item(),'found':-1, 'verbs':sorted_idx[:5].tolist(),
+                                            'logits':sorted_logits[:5].tolist()}
 
 
             verb_found = (torch.sum(sorted_idx[0:self.topk] == gt_verb) == 1)
