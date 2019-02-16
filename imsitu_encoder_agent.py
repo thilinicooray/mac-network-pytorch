@@ -14,7 +14,7 @@ class imsitu_encoder():
         self.role_list = []
         self.max_label_count = 3
         self.label_list = []
-        self.agent_roles = ['agent', 'individuals','brancher', 'agenttype', 'gatherers', 'agents', 'teacher', 'traveler', 'mourner',
+        self.agent_roles = ['individuals','brancher', 'agenttype', 'gatherers', 'agents', 'teacher', 'traveler', 'mourner',
                        'seller', 'boaters', 'blocker', 'farmer']
         label_frequency = {}
         #self.verb_wise_items = {}
@@ -30,6 +30,8 @@ class imsitu_encoder():
             for frame in img['frames']:
                 if agent_found:
                     label = frame['agent']
+                    if len(label) == 0:
+                        label = 'none'
                     if label not in self.label_list:
                         self.label_list.append(label)
 
@@ -39,8 +41,12 @@ class imsitu_encoder():
                         if role in self.agent_roles:
                             if role not in self.verb_list[img['verb']]:
                                 self.verb_list[img['verb']].append(role)
+                            if len(label) == 0:
+                                label = 'none'
                             if label not in self.label_list:
                                 self.label_list.append(label)
+
+        print('agent list :', self.label_list)
 
         print('train set stats: \n\t verb count:', len(self.verb_list), '\n\t role count:',len(self.role_list),
               '\n\t label count:', len(self.label_list) )
@@ -95,6 +101,8 @@ class imsitu_encoder():
 
             if agent_found:
                 label = frame['agent']
+                if len(label) == 0:
+                    label = 'none'
                 if label in self.label_list:
                     label_id = self.label_list.index(label)
                 else:
@@ -104,13 +112,15 @@ class imsitu_encoder():
                 label_id = None
                 for role, label in frame.items():
                     if role in self.agent_roles:
+                        if len(label) == 0:
+                            label = 'none'
                         if label in self.label_list:
                             label_id = self.label_list.index(label)
                         else:
                             label_id = self.label_list.index('#UNK#')
 
                 if label_id is None:
-                    label_id = self.label_list.index('#UNK#')
+                    label_id = self.label_list.index('none')
 
             all_frame_id_list.append(torch.tensor(label_id))
 
