@@ -125,7 +125,7 @@ class BaseModel(nn.Module):
         )
 
         self.w_emb = nn.Embedding(self.q_word_count+1, embed_hidden, padding_idx=self.q_word_count)
-        self.proj_agent = FCNet([mlp_hidden*2 + embed_hidden, embed_hidden])
+        self.proj_agent = nn.Linear(mlp_hidden*2 + embed_hidden, embed_hidden)
         self.verb = TopDown()
 
         self.q_net = FCNet([mlp_hidden, mlp_hidden])
