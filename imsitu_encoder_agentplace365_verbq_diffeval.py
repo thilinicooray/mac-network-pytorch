@@ -32,7 +32,7 @@ class imsitu_encoder():
                 words_all = nltk.word_tokenize(words_no_plz)
 
 
-                if "action" not in question:
+                if "what is the action happening" not in question:
                     words = words_all[:3]
                     words.append(' '.join(words_all[3:-3]))
                     words.extend(words_all[-3:])
@@ -42,7 +42,6 @@ class imsitu_encoder():
 
 
                 words.append(words_org[-1])
-                #print(words)
 
 
                 if len(words) > self.max_q_word_count:
@@ -120,7 +119,7 @@ class imsitu_encoder():
                 words_org = question.split()
                 words_no_plz = ' '.join(words_org[:-1])
                 words_all = nltk.word_tokenize(words_no_plz)
-                if "action" not in question:
+                if "what is the action happening" not in question:
                     words = words_all[:3]
                     words.append(' '.join(words_all[3:-3]))
                     words.extend(words_all[-3:])
