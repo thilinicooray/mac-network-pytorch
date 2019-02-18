@@ -110,6 +110,14 @@ class imsitu_encoder():
         #assuming labels are also in order of roles in encoder
         return verb, roles,role_qs, q_len, labels
 
+    def encode_verb(self, item):
+        verb = self.verb_list.index(item['verb'])
+        labels = self.get_label_ids(item['frames'])
+
+        #print('item encoding size : v r l', verb.size(), roles.size(), labels.size())
+        #assuming labels are also in order of roles in encoder
+        return verb, labels
+
     def get_verb2role_encoding(self):
         verb2role_embedding_list = []
 
