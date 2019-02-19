@@ -658,6 +658,9 @@ class imsitu_scorer():
 
 
             new_card = {"verb":0.0, "value":0.0, "value*":0.0, "n_value":0.0, "value-all":0.0, "value-all*":0.0}
+            if self.write_to_file:
+                self.all_res[current_id] = {'gtv': gt_verb.item(),'found':-1, 'verbs':sorted_idx[:5].tolist(),
+                                            }
 
 
             score_card = new_card
@@ -667,6 +670,7 @@ class imsitu_scorer():
                 score_card["verb"] += 1
                 if self.write_to_file:
                     self.pass_list.append(current_id)
+                    self.all_res[current_id]['found'] = 0
 
             self.score_cards.append(score_card)
 

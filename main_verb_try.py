@@ -151,7 +151,7 @@ def eval(model, dev_loader, encoder, gpu_mode, write_to_file = False):
 
     print ('evaluating model...')
     top1 = imsitu_scorer(encoder, 1, 3, write_to_file)
-    top5 = imsitu_scorer(encoder, 10, 3)
+    top5 = imsitu_scorer(encoder, 5, 3)
     with torch.no_grad():
         mx = len(dev_loader)
         for i, (id, img, verb) in enumerate(dev_loader):
@@ -176,8 +176,8 @@ def eval(model, dev_loader, encoder, gpu_mode, write_to_file = False):
             verb_predict = model(img)
             '''loss = model.calculate_eval_loss(verb_predict, verb, role_predict, labels)
             val_loss += loss.item()'''
-            top1.add_point_verb_only(verb_predict, verb)
-            top5.add_point_verb_only(verb_predict, verb)
+            top1.add_point_verb_only_eval(id, verb_predict, verb)
+            top5.add_point_verb_only_eval(id, verb_predict, verb)
 
             del img, verb
             #break
@@ -316,13 +316,13 @@ def main():
     scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.9)'''
 
     optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=15, gamma=0.1)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
 
     if args.evaluate:
         top1, top5, val_loss = eval(model, dev_loader, encoder, args.gpuid, write_to_file = True)
 
-        top1_avg = top1.get_average_results_nouns()
-        top5_avg = top5.get_average_results_nouns()
+        top1_avg = top1.get_average_results()
+        top5_avg = top5.get_average_results()
 
         avg_score = top1_avg["verb"] + top1_avg["value"] + top1_avg["value-all"] + top5_avg["verb"] + \
                     top5_avg["value"] + top5_avg["value-all"] + top5_avg["value*"] + top5_avg["value-all*"]
@@ -332,24 +332,10 @@ def main():
                                                    utils.format_dict(top1_avg,'{:.2f}', '1-'),
                                                    utils.format_dict(top5_avg, '{:.2f}', '5-')))
 
-        #write results to csv file
-        '''role_dict = top1.role_dict
-        fail_agent = top1.fail_agent
-        #print('roles :', role_dict)
-        #fail_val_all = top1.value_all_dict
-        #pass_val_dict = top1.vall_all_correct
+        all = top1.all_res
 
-        with open('role_pred_data.json', 'w') as fp:
-            json.dump(role_dict, fp, indent=4)
-
-        with open('fail_agent.json', 'w') as fp:
-            json.dump(fail_agent, fp, indent=4)'''
-
-        '''with open('fail_val_all.json', 'w') as fp:
-            json.dump(fail_val_all, fp, indent=4)
-
-        with open('pass_val_all.json', 'w') as fp:
-            json.dump(pass_val_dict, fp, indent=4)'''
+        with open('all_pred_verbfreezefeat.json', 'w') as fp:
+            json.dump(all, fp, indent=4)
 
         print('Writing predictions to file completed !')
 
