@@ -101,9 +101,9 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 top5_avg = top5.get_average_results()
                 #todo : top 5
 
-                '''avg_score = top1_avg["verb"] + top1_avg["value"] + top1_avg["value-all"] + top5_avg["verb"] + \
-                            top5_avg["value"] + top5_avg["value-all"] + top5_avg["value*"] + top5_avg["value-all*"]'''
-                avg_score = top1_avg["value*"]
+                avg_score = top1_avg["verb"] + top1_avg["value"] + top1_avg["value-all"] + top5_avg["verb"] + \
+                            top5_avg["value"] + top5_avg["value-all"] + top5_avg["value*"] + top5_avg["value-all*"]
+                #avg_score = top1_avg["value*"]
                 #avg_score /= 3
 
                 print ('Dev {} average :{:.2f} {} {}'.format(total_steps-1, avg_score*100,
@@ -316,7 +316,7 @@ def main():
     scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.9)'''
 
     optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.1)
 
     if args.evaluate:
         top1, top5, val_loss = eval(model, dev_loader, encoder, args.gpuid, write_to_file = True)
