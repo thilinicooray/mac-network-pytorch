@@ -68,5 +68,4 @@ class BaseModel(nn.Module):
             if self.gpu_mode >= 0:
                 torch.cuda.empty_cache()
 
-        print('verbs and roles :', verbs.size(), role_pred_topk.size())
         return verbs, role_pred_topk
