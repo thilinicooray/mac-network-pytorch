@@ -3,7 +3,7 @@ from imsitu_encoder_roleq_updated import imsitu_encoder
 from imsitu_loader import imsitu_loader_roleq_updated
 from imsitu_scorer_log import imsitu_scorer
 import json
-import model_roles_independent
+import model_roles_independent_cnnbn
 import os
 import utils
 import time
@@ -148,7 +148,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 max_score = max(dev_score_list)
 
                 if max_score == dev_score_list[-1]:
-                    torch.save(model.state_dict(), model_dir + "/{}_roles_independent_sgd20.model".format( model_name))
+                    torch.save(model.state_dict(), model_dir + "/{}_roles_independent_sgd20_bn.model".format( model_name))
                     print ('New best model saved! {0}'.format(max_score))
 
                 #eval on the trainset
@@ -267,7 +267,7 @@ def main():
     imsitu_roleq = json.load(open("imsitu_data/imsitu_questions_prev.json"))
     encoder = imsitu_encoder(train_set, imsitu_roleq)
 
-    model = model_roles_independent.BaseModel(encoder, args.gpuid)
+    model = model_roles_independent_cnnbn.BaseModel(encoder, args.gpuid)
 
     # To group up the features
     cnn_features, role_features = utils.group_features_noun(model)
