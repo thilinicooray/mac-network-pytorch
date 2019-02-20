@@ -183,6 +183,17 @@ def group_features_noun(net_):
 
     return cnn_features, role_features
 
+def group_features_joint_reverb(net_):
+    verb_features = list(net_.verb_module.parameters())
+    verb_feature_len = len(list(net_.verb_module.parameters()))
+    role_ptrtrain_features = list(net_.role_module.parameters())
+    role_ptrtrain_features_len = len(list(net_.role_module.parameters()))
+    cnn_features = list(net_.conv.parameters())
+    cnn_feature_len = len(list(net_.conv.parameters()))
+    new_verb_features = list(net_.parameters())[(verb_feature_len + role_ptrtrain_features_len + cnn_feature_len):]
+
+    return cnn_features, new_verb_features
+
 def group_features_agent2verb(net_):
 
     cnn_agent_features = list(net_.conv_agent.parameters())
