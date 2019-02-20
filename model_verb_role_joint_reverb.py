@@ -54,6 +54,7 @@ class TopDown(nn.Module):
     def forward(self, img, q):
         batch_size = img.size(0)
         w_emb = q
+        self.q_emb.flatten_parameters()
         lstm_out, (h, _) = self.q_emb(w_emb)
         q_emb = h.permute(1, 0, 2).contiguous().view(batch_size, -1)
         q_emb = self.lstm_proj(q_emb)
