@@ -73,6 +73,7 @@ class BaseModel(nn.Module):
     def __init__(self, encoder,
                  gpu_mode,
                  embed_hidden=300,
+                 mlp_hidden = 512
                  ):
         super(BaseModel, self).__init__()
 
@@ -95,6 +96,7 @@ class BaseModel(nn.Module):
 
         self.encoder = encoder
         self.gpu_mode = gpu_mode
+        self.mlp_hidden = mlp_hidden
         self.verbq_word_count = len(self.encoder.verb_q_words)
         self.n_verbs = self.encoder.get_num_verbs()
 
@@ -124,38 +126,67 @@ class BaseModel(nn.Module):
     def dev_preprocess(self, ):
         return self.dev_transform
 
-    def forward(self, img):
+    def forward(self, img, verb, labels):
 
-        verb_pred = self.verb_module(img)
+        if self.training:
+            verb_q_idx_1 = self.encoder.get_verbq_idx(verb, labels[:,0,:]).unsqueeze(1)
+            verb_q_idx_2 = self.encoder.get_verbq_idx(verb, labels[:,1,:]).unsqueeze(1)
+            verb_q_idx_3 = self.encoder.get_verbq_idx(verb, labels[:,2,:]).unsqueeze(1)
+            verb_q_idx = torch.cat([verb_q_idx_1, verb_q_idx_2, verb_q_idx_3], 1)
 
-        sorted_idx = torch.sort(verb_pred, 1, True)[1]
-        verbs = sorted_idx[:,0]
-        role_pred = self.role_module(img, verbs)
-        label_idx = torch.max(role_pred,-1)[1]
+            if self.gpu_mode >= 0:
+                verb_q_idx = verb_q_idx.to(torch.device('cuda'))
 
-        verb_q_idx = self.encoder.get_verbq_idx(verbs, label_idx)
+            img_embd = self.conv(img)
+            batch_size, n_channel, conv_h, conv_w = img_embd.size()
+            img_embd = img_embd.view(batch_size, n_channel, -1)
+            img_embd = img_embd.permute(0, 2, 1)
+            img_embd = img_embd.expand(3,img_embd.size(0), img_embd.size(1), img_embd.size(2))
+            img_embd = img_embd.transpose(0,1)
+            img_embd = img_embd.contiguous().view(batch_size* 3, -1, self.mlp_hidden)
 
-        if self.gpu_mode >= 0:
-            verb_q_idx = verb_q_idx.to(torch.device('cuda'))
+            verb_q_idx = verb_q_idx.view(batch_size*3, -1)
+            q_emb = self.verb_q_emb(verb_q_idx)
 
-        img_embd = self.conv(img)
-        batch_size, n_channel, conv_h, conv_w = img_embd.size()
-        img_embd = img_embd.view(batch_size, n_channel, -1)
-        img_embd = img_embd.permute(0, 2, 1)
+            verb_pred = self.verb_vqa(img_embd, q_emb)
 
-        q_emb = self.verb_q_emb(verb_q_idx)
+            verb_pred = verb_pred.contiguous().view(batch_size, -1, self.n_verbs)
 
-        verb_pred = self.verb_vqa(img_embd, q_emb)
+
+        else:
+            verb_pred = self.verb_module(img)
+
+            sorted_idx = torch.sort(verb_pred, 1, True)[1]
+            verbs = sorted_idx[:,0]
+            role_pred = self.role_module(img, verbs)
+            label_idx = torch.max(role_pred,-1)[1]
+
+            verb_q_idx = self.encoder.get_verbq_idx(verbs, label_idx)
+
+            if self.gpu_mode >= 0:
+                verb_q_idx = verb_q_idx.to(torch.device('cuda'))
+
+            img_embd = self.conv(img)
+            batch_size, n_channel, conv_h, conv_w = img_embd.size()
+            img_embd = img_embd.view(batch_size, n_channel, -1)
+            img_embd = img_embd.permute(0, 2, 1)
+
+            q_emb = self.verb_q_emb(verb_q_idx)
+
+            verb_pred = self.verb_vqa(img_embd, q_emb)
 
         return verb_pred
 
     def calculate_loss(self, verb_pred, gt_verbs):
 
         batch_size = verb_pred.size()[0]
+        verb_ref = verb_pred.size(1)
         loss = 0
         #print('eval pred verbs :', pred_verbs)
         for i in range(batch_size):
-            verb_loss = utils.cross_entropy_loss(verb_pred[i], gt_verbs[i])
+            verb_loss = 0
+            for r in range(verb_ref):
+                verb_loss += utils.cross_entropy_loss(verb_pred[i][r], gt_verbs[i])
             loss += verb_loss
 
 
