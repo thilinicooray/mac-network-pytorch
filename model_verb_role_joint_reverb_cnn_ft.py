@@ -14,7 +14,7 @@ import model_roles_independent
 class vgg16_modified(nn.Module):
     def __init__(self):
         super(vgg16_modified, self).__init__()
-        vgg = tv.models.vgg16(pretrained=True)
+        vgg = tv.models.vgg16_bn(pretrained=True)
         self.vgg_features = vgg.features
 
     def rep_size(self):
