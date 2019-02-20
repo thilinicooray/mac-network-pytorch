@@ -11,6 +11,24 @@ import numpy as np
 import model_verb_directcnn
 import model_roles_independent
 
+class vgg16_modified(nn.Module):
+    def __init__(self):
+        super(vgg16_modified, self).__init__()
+        vgg = tv.models.vgg16(pretrained=True)
+        self.vgg_features = vgg.features
+
+    def rep_size(self):
+        return 1024
+
+    def base_size(self):
+        return 512
+
+    def forward(self,x):
+        #return self.dropout2(self.relu2(self.lin2(self.dropout1(self.relu1(self.lin1(self.vgg_features(x).view(-1, 512*7*7)))))))
+        features = self.vgg_features(x)
+
+        return features
+
 
 class TopDown(nn.Module):
     def __init__(self,
@@ -87,7 +105,9 @@ class BaseModel(nn.Module):
 
         for param in self.role_module.parameters():
             param.require_grad = False
-
+        self.conv = vgg16_modified()
+        for param in self.conv.parameters():
+            param.require_grad = False
         self.verb_vqa = TopDown(self.n_verbs)
         self.verb_q_emb = nn.Embedding(self.verbq_word_count + 1, embed_hidden, padding_idx=self.verbq_word_count)
 
@@ -112,7 +132,7 @@ class BaseModel(nn.Module):
         if self.gpu_mode >= 0:
             verb_q_idx = verb_q_idx.to(torch.device('cuda'))
 
-        img_embd = self.verb_module.conv.vgg_features(img)
+        img_embd = self.conv(img)
         batch_size, n_channel, conv_h, conv_w = img_embd.size()
         img_embd = img_embd.view(batch_size, n_channel, -1)
         img_embd = img_embd.permute(0, 2, 1)
