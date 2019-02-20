@@ -99,15 +99,20 @@ class BaseModel(nn.Module):
 
         self.verb_module = model_verb_directcnn.BaseModel(self.encoder, self.gpu_mode)
         self.role_module = model_roles_independent.BaseModel(self.encoder, self.gpu_mode)
+        self.conv = vgg16_modified()
 
-        for param in self.verb_module.parameters():
+        self.verb_module.eval()
+        self.role_module.eval()
+        self.conv.eval()
+
+        '''for param in self.verb_module.parameters():
             param.require_grad = False
 
         for param in self.role_module.parameters():
             param.require_grad = False
-        self.conv = vgg16_modified()
+        
         for param in self.conv.parameters():
-            param.require_grad = False
+            param.require_grad = False'''
         self.verb_vqa = TopDown(self.n_verbs)
         self.verb_q_emb = nn.Embedding(self.verbq_word_count + 1, embed_hidden, padding_idx=self.verbq_word_count)
 
