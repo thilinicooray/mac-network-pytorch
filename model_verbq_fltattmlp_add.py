@@ -179,7 +179,7 @@ class BaseModel(nn.Module):
 
             q_emb = self.verb_q_emb(verb_q_idx)
 
-            verb_pred = self.verb_vqa(img_embd, q_emb) + verb_pred_prev
+            verb_pred = self.verb_vqa(img_embd, q_emb) * verb_pred_prev
 
         return verb_pred
 
