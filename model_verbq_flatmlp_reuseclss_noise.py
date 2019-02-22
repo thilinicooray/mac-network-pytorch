@@ -140,16 +140,16 @@ class BaseModel(nn.Module):
             verb_q_idx_2 = self.encoder.get_verbq_idx(verb, labels[:,1,:]).unsqueeze(1)
             verb_q_idx_3 = self.encoder.get_verbq_idx(verb, labels[:,2,:]).unsqueeze(1)
 
-            verb_pred_prev = self.verb_module(img)
+            '''verb_pred_prev = self.verb_module(img)
 
             sorted_idx = torch.sort(verb_pred_prev, 1, True)[1]
             verbs = sorted_idx[:,0]
             role_pred = self.role_module(img, verbs)
             label_idx = torch.max(role_pred,-1)[1]
 
-            verb_q_idx_pred = self.encoder.get_verbq_idx(verbs, label_idx).unsqueeze(1)
+            verb_q_idx_pred = self.encoder.get_verbq_idx(verbs, label_idx).unsqueeze(1)'''
 
-            verb_q_idx = torch.cat([verb_q_idx_1, verb_q_idx_2,verb_q_idx_3,verb_q_idx_pred], 1)
+            verb_q_idx = torch.cat([verb_q_idx_1, verb_q_idx_2,verb_q_idx_3], 1)
 
             #print('added noise :', verb_q_idx.size())
 
