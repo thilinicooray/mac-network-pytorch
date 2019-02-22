@@ -49,11 +49,11 @@ class TopDown(nn.Module):
         self.classifier = SimpleClassifier(
             mlp_hidden, 2 * mlp_hidden, self.vocab_size, 0.5)'''
         self.classifier = nn.Sequential(
-            weight_norm(nn.Linear(mlp_hidden * 7 *7 + mlp_hidden, mlp_hidden*8), dim=None),
+            nn.Linear(mlp_hidden * 7 *7 + mlp_hidden, mlp_hidden*8),
             nn.BatchNorm1d(mlp_hidden*8),
             nn.ReLU(inplace=True),
             nn.Dropout(0.5),
-            weight_norm(nn.Linear(mlp_hidden * 8, mlp_hidden*8), dim=None),
+            nn.Linear(mlp_hidden * 8, mlp_hidden*8),
             nn.BatchNorm1d(mlp_hidden*8),
             nn.ReLU(inplace=True),
             nn.Dropout(0.5),
@@ -126,7 +126,7 @@ class BaseModel(nn.Module):
         self.verb_vqa = TopDown(self.n_verbs)
         self.verb_q_emb = nn.Embedding(self.verbq_word_count + 1, embed_hidden, padding_idx=self.verbq_word_count)
         self.last_class = self.verb_module.conv.vgg_classifier[-1]
-        #self.last_class.eval()
+        self.last_class.eval()
 
 
     def train_preprocess(self):
