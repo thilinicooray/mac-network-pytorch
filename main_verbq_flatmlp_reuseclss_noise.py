@@ -269,7 +269,7 @@ def main():
 
     # To group up the features
     #cnn_features, role_features = utils.group_features_noun(model)
-    #cnn_features, role_features = utils.group_features_joint_reverb(model)
+    cnn_features, role_features = utils.group_features_joint_reverb(model)
 
     train_set = imsitu_loader_roleq_updated(imgset_folder, train_set, encoder, model.train_preprocess())
 
@@ -304,9 +304,8 @@ def main():
         torch.backends.cudnn.deterministic = True
 
     optimizer = torch.optim.Adam([
-        {'params': model.conv.parameters(), 'lr': 5e-5},
-        {'params': model.verb_vqa.parameters()},
-        {'params': model.verb_q_emb.parameters()},
+        {'params': cnn_features, 'lr': 5e-5},
+        {'params': role_features}
     ], lr=1e-3)
 
     #optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
