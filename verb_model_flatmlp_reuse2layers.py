@@ -43,16 +43,13 @@ class TopDown(nn.Module):
                              batch_first=True, bidirectional=True)
         self.lstm_proj = nn.Linear(mlp_hidden * 2, mlp_hidden)
         self.verb_transform = nn.Linear(embed_hidden, mlp_hidden)
-        self.v_att = NewAttention(mlp_hidden, mlp_hidden, mlp_hidden)
+        self.v_att = Attention(mlp_hidden, mlp_hidden, mlp_hidden)
         '''self.q_net = FCNet([mlp_hidden, mlp_hidden])
         self.v_net = FCNet([mlp_hidden, mlp_hidden])
         self.classifier = SimpleClassifier(
             mlp_hidden, 2 * mlp_hidden, self.vocab_size, 0.5)'''
         self.classifier = nn.Sequential(
             nn.Linear(mlp_hidden * 7 *7 + mlp_hidden, mlp_hidden*8),
-            nn.ReLU(inplace=True),
-            nn.Dropout(0.5),
-            nn.Linear(mlp_hidden * 8, mlp_hidden*8),
             nn.ReLU(inplace=True),
             nn.Dropout(0.5),
         )
@@ -123,8 +120,13 @@ class BaseModel(nn.Module):
             param.require_grad = False'''
         self.verb_vqa = TopDown(self.n_verbs)
         self.verb_q_emb = nn.Embedding(self.verbq_word_count + 1, embed_hidden, padding_idx=self.verbq_word_count)
+        self.secondlastlayer = self.verb_module.conv.vgg_classifier[-4]
+        self.updater = nn.Sequential(
+                                     nn.ReLU(inplace=True),
+                                     nn.Dropout(0.5),)
         self.last_class = self.verb_module.conv.vgg_classifier[-1]
         self.last_class.eval()
+        self.secondlastlayer.eval()
 
 
     def train_preprocess(self):
@@ -156,6 +158,8 @@ class BaseModel(nn.Module):
             q_emb = self.verb_q_emb(verb_q_idx)
 
             verb_pred = self.verb_vqa(img_embd, q_emb)
+            verb_pred = self.secondlastlayer(verb_pred)
+            verb_pred = self.updater(verb_pred)
             verb_pred = self.last_class(verb_pred)
             verb_pred = verb_pred.contiguous().view(batch_size, -1, self.n_verbs)
 
@@ -181,7 +185,9 @@ class BaseModel(nn.Module):
             q_emb = self.verb_q_emb(verb_q_idx)
 
             verb_pred_logit = self.verb_vqa(img_embd, q_emb)
-            verb_pred = self.last_class(verb_pred_logit)
+            verb_pred = self.secondlastlayer(verb_pred_logit)
+            verb_pred = self.updater(verb_pred)
+            verb_pred = self.last_class(verb_pred)
 
         return verb_pred
 
