@@ -124,7 +124,7 @@ class BaseModel(nn.Module):
         self.verb_vqa = TopDown(self.n_verbs)
         self.verb_q_emb = nn.Embedding(self.verbq_word_count + 1, embed_hidden, padding_idx=self.verbq_word_count)
         self.last_class = self.verb_module.conv.vgg_classifier[-1]
-        #self.last_class.eval()
+        self.last_class.eval()
 
 
     def train_preprocess(self):
