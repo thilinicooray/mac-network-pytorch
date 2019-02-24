@@ -49,10 +49,10 @@ class TopDown(nn.Module):
         self.classifier = SimpleClassifier(
             mlp_hidden, 2 * mlp_hidden, self.vocab_size, 0.5)'''
         self.classifier = nn.Sequential(
-            nn.Linear(mlp_hidden * 7 *7 + mlp_hidden, mlp_hidden*8),
+            nn.Linear(mlp_hidden * 7 *7 + mlp_hidden, mlp_hidden*4),
             nn.ReLU(inplace=True),
             nn.Dropout(0.5),
-            nn.Linear(mlp_hidden * 8, mlp_hidden*8),
+            nn.Linear(mlp_hidden * 4, mlp_hidden*8),
             nn.ReLU(inplace=True),
             nn.Dropout(0.5),
         )
