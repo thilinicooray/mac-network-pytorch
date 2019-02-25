@@ -148,7 +148,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 max_score = max(dev_score_list)
 
                 if max_score == dev_score_list[-1]:
-                    torch.save(model.state_dict(), model_dir + "/{}_verbq_final.model".format( model_name))
+                    torch.save(model.state_dict(), model_dir + "/{}_verbq_final_steplr.model".format( model_name))
                     print ('New best model saved! {0}'.format(max_score))
 
                 #eval on the trainset
@@ -247,7 +247,7 @@ def main():
     lr = 0.0001
     lr_max = 5e-4
     lr_gamma = 0.1
-    lr_step = 25
+    lr_step = 15
     clip_norm = 0.5
     weight_decay = 1e-4
     n_epoch = 500
@@ -309,9 +309,9 @@ def main():
     ], lr=1e-3)
 
     #optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
-    #scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=lr_step, gamma=lr_gamma)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=lr_step, gamma=lr_gamma)
     #gradient clipping, grad check
-    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.9)
+    #scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.9)
 
     if args.evaluate:
         top1, top5, val_loss = eval(model, dev_loader, encoder, args.gpuid, write_to_file = True)
