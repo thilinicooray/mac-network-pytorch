@@ -27,34 +27,6 @@ class vgg16_modified(nn.Module):
 
         return features
 
-class ContextEmbedder(nn.Module):
-    def __init__(self,
-                 embed_hidden=300,
-                 mlp_hidden=512):
-        super(ContextEmbedder, self).__init__()
-
-        self.embed_hidden = embed_hidden
-        self.mlp_hidden = mlp_hidden
-
-        self.q_emb = nn.LSTM(embed_hidden, mlp_hidden,
-                             batch_first=True, bidirectional=True)
-        self.lstm_proj = nn.Linear(mlp_hidden * 2, mlp_hidden)
-        self.v_att_img = Attention(mlp_hidden, mlp_hidden, mlp_hidden)
-
-    def forward(self, img, obj_list):
-        batch_size, n_obj_v, _ = img.size()
-        batch_size, n_obj_det, _ = obj_list.size()
-
-        self.q_emb.flatten_parameters()
-        lstm_out, (h, _) = self.q_emb(obj_list)
-        q_emb = h.permute(1, 0, 2).contiguous().view(batch_size, -1)
-        q_emb = self.lstm_proj(q_emb)
-
-        att = self.v_att_img(img, q_emb)
-        ctx_img = (att * img)
-
-        return ctx_img
-
 
 class TopDown(nn.Module):
     def __init__(self,
@@ -129,10 +101,8 @@ class BaseModel(nn.Module):
         self.det_obj_label_count = self.encoder.total_det_objcount
 
         self.conv = vgg16_modified()
-        #self.verb_lookup = nn.Embedding(self.n_verbs, embed_hidden)
+        self.verb_lookup = nn.Embedding(self.n_verbs, embed_hidden)
         self.w_emb = nn.Embedding(self.n_role_q_vocab + 1, embed_hidden, padding_idx=self.n_role_q_vocab)
-        self.object_label_embd = nn.Embedding(self.det_obj_label_count + 1, embed_hidden, padding_idx=self.det_obj_label_count)
-        self.img_with_context = ContextEmbedder()
         self.roles = TopDown(self.vocab_size)
 
         self.conv_hidden = self.conv.base_size()
@@ -152,21 +122,22 @@ class BaseModel(nn.Module):
         img = img_features.view(batch_size, n_channel, -1)
         img = img.permute(0, 2, 1)
 
-        det_obj_id = self.encoder.get_detobj(img_id)
-        if self.gpu_mode >= 0:
-            det_obj_id = det_obj_id.to(torch.device('cuda'))
-        img_updated = self.img_with_context(img, self.object_label_embd(det_obj_id))
+        img_updated = img
 
         img_updated = img_updated.expand(self.max_role_count,img_updated.size(0), img_updated.size(1), img_updated.size(2))
         img_updated = img_updated.transpose(0,1)
         img_updated = img_updated.contiguous().view(batch_size* self.max_role_count, -1, self.mlp_hidden)
+        verb_embd = self.verb_lookup(verb)
+        verb_embed_expand = verb_embd.expand(self.max_role_count, verb_embd.size(0), verb_embd.size(1))
+        verb_embed_expand = verb_embed_expand.transpose(0,1)
+        verb_embed_expand = verb_embed_expand.contiguous().view(-1, self.embed_hidden)
 
         role_qs, _ = self.encoder.get_role_questions_batch(verb)
         if self.gpu_mode >= 0:
             role_qs = role_qs.to(torch.device('cuda'))
 
         role_qs = role_qs.view(batch_size*self.max_role_count, -1)
-        embed_qs = self.w_emb(role_qs)
+        embed_qs = torch.cat([self.w_emb(role_qs),verb_embed_expand.unsqueeze(1)],1)
 
         logits = self.roles(img_updated, embed_qs)
 
