@@ -36,8 +36,7 @@ class ContextEmbedder(nn.Module):
         self.embed_hidden = embed_hidden
         self.mlp_hidden = mlp_hidden
 
-        self.v_att_obj = Attention(mlp_hidden, embed_hidden, mlp_hidden)
-        self.q_emb = nn.LSTM(embed_hidden+mlp_hidden, mlp_hidden,
+        self.q_emb = nn.LSTM(embed_hidden, mlp_hidden,
                              batch_first=True, bidirectional=True)
         self.lstm_proj = nn.Linear(mlp_hidden * 2, mlp_hidden)
         self.v_att_img = Attention(mlp_hidden, mlp_hidden, mlp_hidden)
@@ -45,18 +44,9 @@ class ContextEmbedder(nn.Module):
     def forward(self, img, obj_list):
         batch_size, n_obj_v, _ = img.size()
         batch_size, n_obj_det, _ = obj_list.size()
-        obj_list_linear = obj_list.view(-1, self.embed_hidden)
 
-        img_updated = img.expand(n_obj_det,img.size(0), img.size(1), img.size(2))
-        img_updated = img_updated.transpose(0,1)
-        img_updated = img_updated.contiguous().view(batch_size* n_obj_det, -1, self.mlp_hidden)
-        obj_att = self.v_att_obj(img_updated, obj_list_linear)
-        obj_v_emb = (obj_att * img_updated).sum(1)
-        obj_v_emb = obj_v_emb.view(batch_size,-1, self.mlp_hidden)
-
-        words_with_objects = torch.cat([obj_list, obj_v_emb], -1)
         self.q_emb.flatten_parameters()
-        lstm_out, (h, _) = self.q_emb(words_with_objects)
+        lstm_out, (h, _) = self.q_emb(obj_list)
         q_emb = h.permute(1, 0, 2).contiguous().view(batch_size, -1)
         q_emb = self.lstm_proj(q_emb)
 
