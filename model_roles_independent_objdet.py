@@ -101,6 +101,7 @@ class BaseModel(nn.Module):
         self.conv = vgg16_modified()
         self.verb_lookup = nn.Embedding(self.n_verbs, embed_hidden)
         self.w_emb = nn.Embedding(self.n_role_q_vocab + 1, embed_hidden, padding_idx=self.n_role_q_vocab)
+        self.det_obj_emb = nn.Embedding(self.det_obj_label_count + 1, embed_hidden, padding_idx=self.det_obj_label_count)
         self.roles = TopDown(self.vocab_size)
 
         self.conv_hidden = self.conv.base_size()
@@ -131,11 +132,18 @@ class BaseModel(nn.Module):
         verb_embed_expand = verb_embed_expand.contiguous().view(-1, self.embed_hidden)
 
         role_qs, _ = self.encoder.get_role_questions_batch(verb)
+        obj_ids = self.encoder.get_detobj(img_id)
         if self.gpu_mode >= 0:
             role_qs = role_qs.to(torch.device('cuda'))
+            obj_ids = obj_ids.to(torch.device('cuda'))
+
+        obj_embd = self.det_obj_emb(obj_ids)
+        obj_embed_expand = obj_embd.expand(self.max_role_count, obj_embd.size(0), obj_embd.size(1),obj_embd.size(2) )
+        obj_embed_expand = obj_embed_expand.transpose(0,1)
+        obj_embed_expand = obj_embed_expand.contiguous().view(-1, obj_embd.size(1), self.embed_hidden)
 
         role_qs = role_qs.view(batch_size*self.max_role_count, -1)
-        embed_qs = torch.cat([self.w_emb(role_qs),verb_embed_expand.unsqueeze(1)],1)
+        embed_qs = torch.cat([obj_embed_expand, self.w_emb(role_qs),verb_embed_expand.unsqueeze(1)],1)
 
         logits = self.roles(img_updated, embed_qs)
 

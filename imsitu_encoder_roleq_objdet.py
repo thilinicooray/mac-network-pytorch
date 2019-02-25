@@ -23,7 +23,7 @@ class imsitu_encoder():
         self.max_q_word_count = 0
         self.vrole_question = {}
         self.obj_det_details = {}
-        self.max_det_objects = 0
+        self.max_det_objects = 5
         self.total_det_objcount = len(next(iter(obj_det.items()))[1])
 
         for verb, values in role_questions.items():
@@ -70,10 +70,6 @@ class imsitu_encoder():
             det_ids = np.where( det > 0 )
             det_ids = det_ids[0].tolist()
             #print(img_id, det_ids)
-
-            if len(det_ids) > self.max_det_objects:
-                self.max_det_objects = len(det_ids)
-
 
             self.obj_det_details[img_id] = det_ids
 
@@ -293,6 +289,8 @@ class imsitu_encoder():
 
         for img_id in img_ids:
             det_obj = self.obj_det_details[img_id]
+            if len(det_obj) > 5:
+                det_obj = det_obj[:5]
             pad_count = self.max_det_objects - len(det_obj)
 
             for i in range(pad_count):
