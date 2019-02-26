@@ -214,7 +214,7 @@ class BaseModel(nn.Module):
 
 
         self.ggnn = GGNN(state_dim=self.mlp_hidden+self.embed_hidden, n_edge_types=1,n_node=self.max_role_count,
-                        n_steps=4)
+                        n_steps=1)
 
         self.classifier = SimpleClassifier(
             mlp_hidden+embed_hidden, 2 * mlp_hidden, self.vocab_size, 0.5)
