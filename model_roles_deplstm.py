@@ -101,7 +101,7 @@ class BaseModel(nn.Module):
         self.roles = TopDown(self.vocab_size)
 
         self.role_mixer = nn.LSTM(mlp_hidden+embed_hidden, mlp_hidden,
-                             num_layers=2, batch_first=True, bidirectional=True)
+                             batch_first=True, bidirectional=True)
         self.mixer_proj = nn.Linear(mlp_hidden * 2, mlp_hidden)
 
         self.classifier = SimpleClassifier(
@@ -149,8 +149,8 @@ class BaseModel(nn.Module):
         lstm_out, (h, _) = self.role_mixer(role_rep_verb)
         role_mixed = self.mixer_proj(lstm_out)
 
-        #role_tot = role_label_rep + role_mixed
-        role_tot = role_mixed
+        role_tot = role_label_rep + role_mixed
+        #role_tot = role_mixed
         role_label_pred = self.classifier(role_tot)
 
 
