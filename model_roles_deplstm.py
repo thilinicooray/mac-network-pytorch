@@ -27,6 +27,19 @@ class vgg16_modified(nn.Module):
 
         return features
 
+class LayerNorm(nn.Module):
+    "Construct a layernorm module (See citation for details)."
+    def __init__(self, features, eps=1e-6):
+        super(LayerNorm, self).__init__()
+        self.a_2 = nn.Parameter(torch.ones(features))
+        self.b_2 = nn.Parameter(torch.zeros(features))
+        self.eps = eps
+
+    def forward(self, x):
+        mean = x.mean(-1, keepdim=True)
+        std = x.std(-1, keepdim=True)
+        return self.a_2 * (x - mean) / (std + self.eps) + self.b_2
+
 class TopDown(nn.Module):
     def __init__(self,
                  vocab_size,
@@ -43,8 +56,6 @@ class TopDown(nn.Module):
         self.v_att = Attention(mlp_hidden, mlp_hidden, mlp_hidden)
         self.q_net = FCNet([mlp_hidden, mlp_hidden])
         self.v_net = FCNet([mlp_hidden, mlp_hidden])
-
-
 
     def forward(self, img, q):
         batch_size = img.size(0)
@@ -103,6 +114,8 @@ class BaseModel(nn.Module):
         self.role_mixer = nn.LSTM(mlp_hidden+embed_hidden, mlp_hidden,
                              batch_first=True, bidirectional=True)
         self.mixer_proj = nn.Linear(mlp_hidden * 2, mlp_hidden)
+        self.layernorm = LayerNorm(mlp_hidden)
+        self.dropout = nn.Dropout(0.3)
 
         self.classifier = SimpleClassifier(
             mlp_hidden, 2 * mlp_hidden, self.vocab_size, 0.5)
@@ -149,7 +162,7 @@ class BaseModel(nn.Module):
         lstm_out, (h, _) = self.role_mixer(role_rep_verb)
         role_mixed = self.mixer_proj(lstm_out)
 
-        role_tot = role_label_rep + role_mixed
+        role_tot = role_label_rep + self.dropout(self.layernorm(role_mixed))
         #role_tot = role_mixed
         role_label_pred = self.classifier(role_tot)
 
