@@ -96,11 +96,11 @@ class BaseModel(nn.Module):
         self.n_role_q_vocab = len(self.encoder.question_words)
 
         self.conv = vgg16_modified()
-        #self.verb_lookup = nn.Embedding(self.n_verbs, embed_hidden)
+        self.verb_lookup = nn.Embedding(self.n_verbs, embed_hidden)
         self.w_emb = nn.Embedding(self.n_role_q_vocab + 1, embed_hidden, padding_idx=self.n_role_q_vocab)
         self.roles = TopDown(self.vocab_size)
 
-        self.role_mixer = nn.LSTM(mlp_hidden, mlp_hidden,
+        self.role_mixer = nn.LSTM(mlp_hidden+embed_hidden, mlp_hidden,
                              batch_first=True, bidirectional=True)
         self.mixer_proj = nn.Linear(mlp_hidden * 2, mlp_hidden)
 
@@ -138,12 +138,20 @@ class BaseModel(nn.Module):
         rep = self.roles(img, embed_qs)
 
         role_label_rep = rep.contiguous().view(batch_size, -1, self.mlp_hidden)
+
+        verb_embd = self.verb_lookup(verb)
+        verb_embed_expand = verb_embd.expand(self.max_role_count, verb_embd.size(0), verb_embd.size(1))
+        verb_embed_expand = verb_embed_expand.transpose(0,1)
+
+        role_rep_verb = torch.cat([role_label_rep, verb_embed_expand],-1)
+
         self.role_mixer.flatten_parameters()
-        lstm_out, (h, _) = self.role_mixer(role_label_rep)
+        lstm_out, (h, _) = self.role_mixer(role_rep_verb)
         role_mixed = self.mixer_proj(lstm_out)
 
-
-        role_label_pred = self.classifier(role_mixed)
+        #role_tot = role_label_rep + role_mixed
+        role_tot = role_mixed
+        role_label_pred = self.classifier(role_tot)
 
 
 
