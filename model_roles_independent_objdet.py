@@ -143,7 +143,7 @@ class BaseModel(nn.Module):
         obj_embed_expand = obj_embed_expand.contiguous().view(-1, obj_embd.size(1), self.embed_hidden)
 
         role_qs = role_qs.view(batch_size*self.max_role_count, -1)
-        embed_qs = torch.cat([obj_embed_expand, self.w_emb(role_qs),verb_embed_expand.unsqueeze(1)],1)
+        embed_qs = torch.cat([ self.w_emb(role_qs),verb_embed_expand.unsqueeze(1), obj_embed_expand],1)
 
         logits = self.roles(img_updated, embed_qs)
 
