@@ -101,7 +101,7 @@ class BaseModel(nn.Module):
         self.roles = TopDown(self.vocab_size)
 
         self.role_mixer = nn.LSTM(mlp_hidden+embed_hidden, mlp_hidden,
-                             batch_first=True, bidirectional=True)
+                             num_layers=2, batch_first=True, bidirectional=True)
         self.mixer_proj = nn.Linear(mlp_hidden * 2, mlp_hidden)
 
         self.classifier = SimpleClassifier(
