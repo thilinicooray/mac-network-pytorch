@@ -212,13 +212,12 @@ class BaseModel(nn.Module):
         self.w_emb = nn.Embedding(self.n_role_q_vocab + 1, embed_hidden, padding_idx=self.n_role_q_vocab)
         self.roles = TopDown(self.vocab_size)
 
-        self.label_proj = nn.Linear(self.embed_hidden+self.mlp_hidden, self.mlp_hidden)
 
-        self.ggnn = GGNN(state_dim=self.mlp_hidden, n_edge_types=1,n_node=self.max_role_count,
-                        n_steps=2)
+        self.ggnn = GGNN(state_dim=self.mlp_hidden+self.embed_hidden, n_edge_types=1,n_node=self.max_role_count,
+                        n_steps=4)
 
         self.classifier = SimpleClassifier(
-            mlp_hidden, 2 * mlp_hidden, self.vocab_size, 0.5)
+            mlp_hidden+embed_hidden, 2 * mlp_hidden, self.vocab_size, 0.5)
 
 
 
@@ -259,8 +258,6 @@ class BaseModel(nn.Module):
         adj = torch.ones([batch_size, self.max_role_count, self.max_role_count], dtype=torch.float)
         if self.gpu_mode >= 0:
             adj = adj.to(torch.device('cuda'))
-
-        role_rep_verb = self.label_proj(role_rep_verb)
 
         updated_nodes = self.ggnn(role_rep_verb, adj)
 
