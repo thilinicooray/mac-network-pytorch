@@ -208,7 +208,7 @@ class BaseModel(nn.Module):
 
         role_rep_verb = torch.cat([role_label_rep, verb_embed_expand],-1)
 
-        adj = torch.ones([batch_size, self.max_role_count, self.max_role_count], dtype=torch.float)
+        adj = self.encoder.get_adj_matrix(verb)
         if self.gpu_mode >= 0:
             adj = adj.to(torch.device('cuda'))
 
