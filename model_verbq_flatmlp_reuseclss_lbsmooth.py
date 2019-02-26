@@ -207,7 +207,7 @@ class BaseModel(nn.Module):
 
 class LabelSmoothing(nn.Module):
     "Implement label smoothing."
-    def __init__(self, size, smoothing=0.1):
+    def __init__(self, size, smoothing=0.2):
         super(LabelSmoothing, self).__init__()
         self.criterion = nn.KLDivLoss(size_average=False)
         self.confidence = 1.0 - smoothing
