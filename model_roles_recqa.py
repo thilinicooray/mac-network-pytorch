@@ -103,6 +103,7 @@ class BaseModel(nn.Module):
                               batch_first=True, bidirectional=True)
         self.lstm_proj2 = nn.Linear(mlp_hidden * 2, mlp_hidden)
         self.roles = TopDown(self.vocab_size)
+        self.rep_proj = nn.Linear(mlp_hidden * 2, mlp_hidden)
         self.classifier = SimpleClassifier(
             mlp_hidden, 2 * mlp_hidden, self.vocab_size, 0.5)
 
@@ -176,7 +177,8 @@ class BaseModel(nn.Module):
 
             rep2 = self.roles(img_updated, q_emb_up)
 
-            rep = rep + self.dropout(rep2)
+            #rep = rep + self.dropout(rep2)
+            rep = self.rep_proj(torch.cat([rep2, rep], -1))
 
         role_label_pred = self.classifier(rep)
         role_label_pred = role_label_pred.contiguous().view(batch_size, -1, self.vocab_size)
