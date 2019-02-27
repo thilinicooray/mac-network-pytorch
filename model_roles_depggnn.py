@@ -211,13 +211,13 @@ class BaseModel(nn.Module):
         self.verb_lookup = nn.Embedding(self.n_verbs, embed_hidden)
         self.w_emb = nn.Embedding(self.n_role_q_vocab + 1, embed_hidden, padding_idx=self.n_role_q_vocab)
         self.roles = TopDown(self.vocab_size)
+        self.mixer_proj = nn.Linear(mlp_hidden +embed_hidden, mlp_hidden)
 
-
-        self.ggnn = GGNN(state_dim=self.mlp_hidden+self.embed_hidden, n_edge_types=1,n_node=self.max_role_count,
-                        n_steps=1)
-
+        self.ggnn = GGNN(state_dim=self.mlp_hidden, n_edge_types=1,n_node=self.max_role_count,
+                        n_steps=2)
+        self.dropout = nn.Dropout(0.3)
         self.classifier = SimpleClassifier(
-            mlp_hidden+embed_hidden, 2 * mlp_hidden, self.vocab_size, 0.5)
+            mlp_hidden, 2 * mlp_hidden, self.vocab_size, 0.5)
 
 
 
@@ -254,14 +254,14 @@ class BaseModel(nn.Module):
         verb_embed_expand = verb_embed_expand.transpose(0,1)
 
         role_rep_verb = torch.cat([role_label_rep, verb_embed_expand],-1)
-
+        role_rep_verb = self.mixer_proj(role_rep_verb)
         adj = torch.ones([batch_size, self.max_role_count, self.max_role_count], dtype=torch.float)
         if self.gpu_mode >= 0:
             adj = adj.to(torch.device('cuda'))
 
         updated_nodes = self.ggnn(role_rep_verb, adj)
 
-        role_tot = updated_nodes
+        role_tot = role_label_rep + self.dropout(updated_nodes)
         role_label_pred = self.classifier(role_tot)
 
 

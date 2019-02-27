@@ -162,7 +162,7 @@ class BaseModel(nn.Module):
         lstm_out, (h, _) = self.role_mixer(role_rep_verb)
         role_mixed = self.mixer_proj(lstm_out)
 
-        role_tot = role_label_rep + self.dropout(self.layernorm(role_mixed))
+        role_tot = role_label_rep + self.dropout(role_mixed)
         #role_tot = role_mixed
         role_label_pred = self.classifier(role_tot)
 
