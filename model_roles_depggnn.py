@@ -120,6 +120,7 @@ class GGNN(nn.Module):
 
         # Propogation Model
         self.propogator = Propogator(self.state_dim, self.n_node, self.n_edge_types)
+        self.dropout = nn.Dropout(0.3)
 
     def forward(self, prop_state, A):
         for i_step in range(self.n_steps):
@@ -133,7 +134,7 @@ class GGNN(nn.Module):
             out_states = torch.stack(out_states).transpose(0, 1).contiguous()
             out_states = out_states.view(-1, self.n_node*self.n_edge_types, self.state_dim)
 
-            prop_state = self.propogator(in_states, out_states, prop_state, A)
+            prop_state = self.dropout(self.propogator(in_states, out_states, prop_state, A))
 
         return prop_state
 
