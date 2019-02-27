@@ -154,7 +154,19 @@ class BaseModel(nn.Module):
             labelrep = rep.contiguous().view(batch_size, -1, self.mlp_hidden)
             labelrep_expand = labelrep.expand(self.max_role_count, labelrep.size(0), labelrep.size(1), labelrep.size(2))
             labelrep_expand = labelrep_expand.transpose(0,1)
-            labelrep_expand = labelrep_expand.contiguous().view(-1, self.max_role_count, self.mlp_hidden)
+            labelrep_expand_new = torch.zeros([batch_size, self.max_role_count, self.max_role_count-1, self.mlp_hidden])
+            for i in range(self.max_role_count):
+                if i == 0:
+                    labelrep_expand_new[:,i] = labelrep_expand[:,i,1:]
+                elif i == self.max_role_count -1:
+                    labelrep_expand_new[:,i] = labelrep_expand[:,i,:i]
+                else:
+                    labelrep_expand_new[:,i] = torch.cat([labelrep_expand[:,i,:i], labelrep_expand[:,i,i+1:]], 1)
+
+            if self.gpu_mode >= 0:
+                labelrep_expand_new = labelrep_expand_new.to(torch.device('cuda'))
+
+            labelrep_expand = labelrep_expand_new.contiguous().view(-1, self.max_role_count-1, self.mlp_hidden)
 
             updated_roleq = torch.cat([labelrep_expand, q_emb.unsqueeze(1)], 1)
             self.q_emb2.flatten_parameters()
