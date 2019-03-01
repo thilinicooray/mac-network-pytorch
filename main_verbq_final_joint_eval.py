@@ -3,7 +3,7 @@ from imsitu_encoder_roleq_verbtemplate import imsitu_encoder
 from imsitu_loader import imsitu_loader_roleq_updated
 from imsitu_scorer_log import imsitu_scorer
 import json
-import model_verbq_final_joint_eval
+import model_verbq_final_joint_beam_eval
 import os
 import utils
 
@@ -40,8 +40,8 @@ def eval(model, dev_loader, encoder, gpu_mode, write_to_file = False):
             verb_predict, role_predict = model(img, verb, labels)
             '''loss = model.calculate_eval_loss(verb_predict, verb, role_predict, labels)
             val_loss += loss.item()'''
-            top1.add_point_eval5_log_sorted(id, verb_predict, verb, role_predict, labels)
-            top5.add_point_eval5_log_sorted(id, verb_predict, verb, role_predict, labels)
+            top1.add_point_eval5_log_sorted_beam(id, verb_predict, verb, role_predict, labels)
+            top5.add_point_eval5_log_sorted_beam(id, verb_predict, verb, role_predict, labels)
 
             del img, verb
             #break
@@ -97,18 +97,18 @@ def main():
     encoder = imsitu_encoder(train_set, imsitu_roleq, verb_templates)
 
 
-    model = model_verbq_final_joint_eval.BaseModel(encoder, args.gpuid)
+    model = model_verbq_final_joint_beam_eval.BaseModel(encoder, args.gpuid)
 
     # To group up the features
     #cnn_features, role_features = utils.group_features_noun(model)
 
     train_set = imsitu_loader_roleq_updated(imgset_folder, train_set, encoder, model.train_preprocess())
 
-    train_loader = torch.utils.data.DataLoader(train_set, batch_size=64, shuffle=True, num_workers=n_worker)
+    train_loader = torch.utils.data.DataLoader(train_set, batch_size=4, shuffle=True, num_workers=n_worker)
 
     dev_set = json.load(open(dataset_folder +"/dev.json"))
     dev_set = imsitu_loader_roleq_updated(imgset_folder, dev_set, encoder, model.dev_preprocess())
-    dev_loader = torch.utils.data.DataLoader(dev_set, batch_size=64, shuffle=True, num_workers=n_worker)
+    dev_loader = torch.utils.data.DataLoader(dev_set, batch_size=4, shuffle=True, num_workers=n_worker)
 
     test_set = json.load(open(dataset_folder +"/test.json"))
     test_set = imsitu_loader_roleq_updated(imgset_folder, test_set, encoder, model.dev_preprocess())
