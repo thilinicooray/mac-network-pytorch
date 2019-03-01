@@ -47,7 +47,7 @@ class BaseModel(nn.Module):
     def dev_preprocess(self, ):
         return self.dev_transform
 
-    def forward(self, img, verb, labels, beam=5, topk=5):
+    def forward(self, img, verb, labels, beam=10, topk=5):
 
         role_pred_topk = None
 
