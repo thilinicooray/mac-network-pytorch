@@ -90,12 +90,10 @@ class BaseModel(nn.Module):
         self.vocab_size = self.encoder.get_num_labels()
         self.max_role_count = self.encoder.get_max_role_count()
         self.n_role_q_vocab = len(self.encoder.question_words)
-        self.det_obj_label_count = self.encoder.total_det_objcount
 
         self.conv = vgg16_modified()
         self.verb_lookup = nn.Embedding(self.n_verbs, embed_hidden)
         self.w_emb = nn.Embedding(self.n_role_q_vocab + 1, embed_hidden, padding_idx=self.n_role_q_vocab)
-        self.det_obj_emb = nn.Embedding(self.det_obj_label_count + 1, embed_hidden, padding_idx=self.det_obj_label_count)
         self.q_emb1 = nn.LSTM(embed_hidden, mlp_hidden,
                               batch_first=True, bidirectional=True)
         self.lstm_proj1 = nn.Linear(mlp_hidden * 2, mlp_hidden)
@@ -111,7 +109,7 @@ class BaseModel(nn.Module):
         self.mlp_hidden = mlp_hidden
         self.embed_hidden = embed_hidden
         self.dropout = nn.Dropout(0.3)
-        self.num_steps = 6
+        self.num_steps = 3
 
     def train_preprocess(self):
         return self.train_transform
@@ -119,7 +117,7 @@ class BaseModel(nn.Module):
     def dev_preprocess(self):
         return self.dev_transform
 
-    def forward(self, img_id, img, verb):
+    def forward(self, img, verb):
 
         img_features = self.conv(img)
         batch_size, n_channel, conv_h, conv_w = img_features.size()
