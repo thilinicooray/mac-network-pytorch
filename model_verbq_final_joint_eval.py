@@ -8,7 +8,7 @@ import torch.nn.functional as F
 import torchvision as tv
 import utils
 import numpy as np
-import model_verbq_final
+import model_verbq_final_addpreveval
 import model_roles_independent
 
 class BaseModel(nn.Module):
@@ -37,7 +37,7 @@ class BaseModel(nn.Module):
         self.encoder = encoder
         self.gpu_mode = gpu_mode
 
-        self.verb_module = model_verbq_final.BaseModel(self.encoder, self.gpu_mode)
+        self.verb_module = model_verbq_final_addpreveval.BaseModel(self.encoder, self.gpu_mode)
         self.role_module = model_roles_independent.BaseModel(self.encoder, self.gpu_mode)
 
 
