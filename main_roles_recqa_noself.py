@@ -72,7 +72,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
             print('=========================================================================')
             print(labels)'''
 
-            role_predict = pmodel(img_id, img, verb)
+            role_predict = pmodel(img, verb)
             #verb_predict, rol1pred, role_predict = pmodel.forward_eval5(img)
             #print ("forward time = {}".format(time.time() - t1))
             t1 = time.time()
@@ -148,7 +148,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 max_score = max(dev_score_list)
 
                 if max_score == dev_score_list[-1]:
-                    torch.save(model.state_dict(), model_dir + "/{}_roles_independent_addverbembd_recqa_noself6.model".format( model_name))
+                    torch.save(model.state_dict(), model_dir + "/{}_roles_recqa_noself.model".format( model_name))
                     print ('New best model saved! {0}'.format(max_score))
 
                 #eval on the trainset
@@ -206,7 +206,7 @@ def eval(model, dev_loader, encoder, gpu_mode, write_to_file = False):
                 verb = torch.autograd.Variable(verb)
                 labels = torch.autograd.Variable(labels)
 
-            role_predict = model(img_id, img, verb)
+            role_predict = model(img, verb)
             '''loss = model.calculate_eval_loss(verb_predict, verb, role_predict, labels)
             val_loss += loss.item()'''
             if write_to_file:
@@ -368,7 +368,7 @@ def main():
                                                    utils.format_dict(top5_avg, '{:.2f}', '5-')))
 
         #write results to csv file
-        role_dict = top1.role_dict
+        '''role_dict = top1.role_dict
         fail_val_all = top1.value_all_dict
         pass_val_dict = top1.vall_all_correct
 
@@ -379,7 +379,12 @@ def main():
             json.dump(fail_val_all, fp, indent=4)
 
         with open('pass_val_all.json', 'w') as fp:
-            json.dump(pass_val_dict, fp, indent=4)
+            json.dump(pass_val_dict, fp, indent=4)'''
+
+        all = top1.all_res
+
+        with open('correct_roles.json', 'w') as fp:
+            json.dump(all, fp, indent=4)
 
         print('Writing predictions to file completed !')
 

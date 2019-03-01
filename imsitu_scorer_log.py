@@ -19,6 +19,7 @@ class imsitu_scorer():
             self.fail_agent = {}
             self.pass_list = []
             self.all_res = {}
+            self.correct_roles = {}
         self.topk_issue = {}
 
     def clear(self):
@@ -251,6 +252,10 @@ class imsitu_scorer():
             gt_role_list = self.encoder.verb2_role_dict[self.encoder.verb_list[gt_v]]
             score_card["n_value"] += gt_role_count
 
+            if self.write_to_file:
+                self.all_res[imgid] = {'gtv': gt_verb.item(),
+                                            'correct_roles':[]}
+
             all_found = True
             pred_situ = []
             for k in range(0, gt_role_count):
@@ -285,6 +290,8 @@ class imsitu_scorer():
                     #######################################################################
 
                     if label_id == gt_label_id:
+                        if self.write_to_file:
+                            self.all_res[imgid]['correct_roles'].append(gt_role_list[k])
                         found = True
                         break
                 if not found:
