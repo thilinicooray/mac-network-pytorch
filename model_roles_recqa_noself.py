@@ -99,7 +99,6 @@ class BaseModel(nn.Module):
         self.q_emb1 = nn.LSTM(embed_hidden, mlp_hidden,
                               batch_first=True, bidirectional=True)
         self.lstm_proj1 = nn.Linear(mlp_hidden * 2, mlp_hidden)
-        self.verb_proj = nn.Linear(embed_hidden, mlp_hidden)
         self.q_emb2 = nn.LSTM(mlp_hidden, mlp_hidden,
                               batch_first=True, bidirectional=True)
         self.lstm_proj2 = nn.Linear(mlp_hidden * 2, mlp_hidden)
@@ -112,7 +111,7 @@ class BaseModel(nn.Module):
         self.mlp_hidden = mlp_hidden
         self.embed_hidden = embed_hidden
         self.dropout = nn.Dropout(0.3)
-        self.num_steps = 3
+        self.num_steps = 5
 
     def train_preprocess(self):
         return self.train_transform
@@ -137,7 +136,6 @@ class BaseModel(nn.Module):
         verb_embed_expand = verb_embed_expand.transpose(0,1)
         verb_embed_expand = verb_embed_expand.contiguous().view(-1, self.embed_hidden)
 
-        verb_embed_big = self.verb_proj(verb_embed_expand)
 
         role_qs, _ = self.encoder.get_role_questions_batch(verb)
         if self.gpu_mode >= 0:
@@ -172,7 +170,7 @@ class BaseModel(nn.Module):
 
             labelrep_expand = labelrep_expand_new.contiguous().view(-1, self.max_role_count-1, self.mlp_hidden)
 
-            updated_roleq = torch.cat([labelrep_expand, q_emb.unsqueeze(1), verb_embed_big.unsqueeze(1)], 1)
+            updated_roleq = torch.cat([labelrep_expand, q_emb.unsqueeze(1)], 1)
             self.q_emb2.flatten_parameters()
             lstm_out, (h, _) = self.q_emb2(updated_roleq)
             q_emb_up = h.permute(1, 0, 2).contiguous().view(batch_size*self.max_role_count, -1)
