@@ -111,7 +111,7 @@ class BaseModel(nn.Module):
         self.mlp_hidden = mlp_hidden
         self.embed_hidden = embed_hidden
         self.dropout = nn.Dropout(0.3)
-        self.num_steps = 5
+        self.num_steps = 6
 
     def train_preprocess(self):
         return self.train_transform
