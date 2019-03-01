@@ -368,7 +368,7 @@ def main():
                                                    utils.format_dict(top5_avg, '{:.2f}', '5-')))
 
         #write results to csv file
-        '''role_dict = top1.role_dict
+        role_dict = top1.role_dict
         fail_val_all = top1.value_all_dict
         pass_val_dict = top1.vall_all_correct
 
@@ -379,7 +379,7 @@ def main():
             json.dump(fail_val_all, fp, indent=4)
 
         with open('pass_val_all.json', 'w') as fp:
-            json.dump(pass_val_dict, fp, indent=4)'''
+            json.dump(pass_val_dict, fp, indent=4)
 
         all = top1.all_res
 
