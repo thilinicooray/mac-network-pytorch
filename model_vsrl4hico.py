@@ -85,8 +85,8 @@ class BaseModel(nn.Module):
                  ):
         super(BaseModel, self).__init__()
 
-        #self.normalize = tv.transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-        self.normalize = tv.transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+        self.normalize = tv.transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        #self.normalize = tv.transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
 
         self.train_transform = tv.transforms.Compose([
             tv.transforms.RandomRotation(10),

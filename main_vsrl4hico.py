@@ -12,7 +12,7 @@ import random
 #from graphviz import Digraph
 
 
-def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler, max_epoch, model_dir, encoder, gpu_mode, clip_norm, lr_max, model_name, args,eval_frequency=2000):
+def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler, max_epoch, model_dir, encoder, gpu_mode, clip_norm, lr_max, model_name, args,eval_frequency=4):
     model.train()
     train_loss = 0
     total_steps = 0
@@ -198,7 +198,7 @@ def eval(model, dev_loader, encoder, gpu_mode, write_to_file = False):
             top1.add_point_hico(verb_predict, verb)
 
             del img, verb
-            #break
+            break
 
     #return top1, top5, val_loss/mx
 
@@ -260,11 +260,11 @@ def main():
 
     train_set = imsitu_loader_hico(imgset_folder +"/train2015",hico_train_set , encoder, model.train_preprocess())
 
-    train_loader = torch.utils.data.DataLoader(train_set, batch_size=64, shuffle=True, num_workers=n_worker)
+    train_loader = torch.utils.data.DataLoader(train_set, batch_size=4, shuffle=True, num_workers=n_worker)
 
     dev_set = json.load(open(dataset_folder +"/hico_test.json"))
     dev_set = imsitu_loader_hico(imgset_folder +"/test2015", dev_set, encoder, model.dev_preprocess())
-    dev_loader = torch.utils.data.DataLoader(dev_set, batch_size=64, shuffle=True, num_workers=n_worker)
+    dev_loader = torch.utils.data.DataLoader(dev_set, batch_size=4, shuffle=True, num_workers=n_worker)
 
     test_set = json.load(open(dataset_folder +"/hico_test.json"))
     test_set = imsitu_loader_hico(imgset_folder+"/test2015", test_set, encoder, model.dev_preprocess())
@@ -293,7 +293,7 @@ def main():
 
     optimizer = torch.optim.Adam([
         {'params': model.classifier.parameters()}
-    ], lr=1e-3)
+    ], lr=1e-5)
 
     #optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     #scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=lr_step, gamma=lr_gamma)
