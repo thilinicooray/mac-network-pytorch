@@ -116,11 +116,15 @@ def cross_entropy_loss(pred, target, ignore_index=None):
     return loss
 
 def binary_cross_entropy(pred, target, p_w=10, n_w=1):
-    loss = -p_w*target*torch.log(pred) - n_w*(1-target)*torch.log(1-pred)
+    #loss = -p_w*target*torch.log(pred) - n_w*(1-target)*torch.log(1-pred)
+    loss = torch.clamp(pred, min=0) - pred * target + (1 + 9*target)*torch.log(1 + torch.exp(-torch.abs(pred)))
 
-    loss = torch.sum(loss)
+    #print(loss.size())
 
-    return loss
+    tot_loss = torch.sum(loss)
+    #print(tot_loss)
+
+    return tot_loss
 
 def likelihood(pred, target, ignore_index=None):
     if target == ignore_index:

@@ -158,7 +158,7 @@ class BaseModel(nn.Module):
 
         verb_pred_logit = self.verb_vqa(img_embd, q_emb)
         verb_pred = self.classifier(verb_pred_logit)
-        verb_pred = F.sigmoid(verb_pred)
+        verb_pred = torch.sigmoid(verb_pred)
 
         return verb_pred
 
