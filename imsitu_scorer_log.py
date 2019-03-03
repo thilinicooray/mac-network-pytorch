@@ -1,6 +1,7 @@
 #original code https://github.com/my89/imSitu/blob/master/imsitu.py
 
 import torch
+import torchnet.meter as meter
 
 class imsitu_scorer():
     def __init__(self, encoder,topk, nref, write_to_file=False):
@@ -8,6 +9,8 @@ class imsitu_scorer():
         self.topk = topk
         self.nref = nref
         self.encoder = encoder
+        self.hico_pred = None
+        self.hico_target = None
         self.write_to_file = write_to_file
         if self.write_to_file:
             self.role_dict = {}
@@ -24,6 +27,27 @@ class imsitu_scorer():
 
     def clear(self):
         self.score_cards = {}
+
+    def add_point_hico(self, verb_predict, gt_verbs):
+        if self.hico_pred is None:
+            self.hico_pred = verb_predict
+        else:
+            self.hico_pred = torch.cat([self.hico_pred.clone(), verb_predict], 0)
+
+        if self.hico_target is None:
+            self.hico_target = gt_verbs
+        else:
+            self.hico_target = torch.cat([self.hico_target.clone(), gt_verbs], 0)
+
+    def get_average_results_hico(self):
+        mtr = meter.mAPMeter()
+        #print('hico scoring :', self.hico_pred.size(), self.hico_target.size())
+        mtr.add(self.hico_pred, self.hico_target)
+
+        map = mtr.value()
+
+        return map
+
 
     def add_point(self, verb_predict, gt_verbs, labels_predict, gt_labels):
         #encoded predictions should be batch x verbs x values #assumes the are the same order as the references
