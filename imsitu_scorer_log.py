@@ -29,6 +29,7 @@ class imsitu_scorer():
         self.score_cards = {}
 
     def add_point_hico(self, verb_predict, gt_verbs):
+        verb_predict = torch.sigmoid(verb_predict)
         if self.hico_pred is None:
             self.hico_pred = verb_predict
         else:
@@ -41,7 +42,7 @@ class imsitu_scorer():
 
     def get_average_results_hico(self):
         mtr = meter.mAPMeter()
-        #print('hico scoring :', self.hico_pred.size(), self.hico_target.size())
+        print('hico scoring :', self.hico_pred[0], self.hico_target[0])
         mtr.add(self.hico_pred, self.hico_target)
 
         map = mtr.value()
