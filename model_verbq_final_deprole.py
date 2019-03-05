@@ -125,6 +125,7 @@ class BaseModel(nn.Module):
             param.require_grad = False'''
         self.verb_vqa = TopDown(self.n_verbs)
         self.verb_q_emb = nn.Embedding(self.verbq_word_count + 1, embed_hidden, padding_idx=self.verbq_word_count)
+        self.last_layer = nn.Linear(self.mlp_hidden*8, self.n_verbs)
 
 
 
@@ -157,7 +158,7 @@ class BaseModel(nn.Module):
             q_emb = self.verb_q_emb(verb_q_idx)
 
             verb_pred = self.verb_vqa(img_embd, q_emb)
-            verb_pred = self.verb_module.conv.vgg_classifier[-1](verb_pred)
+            verb_pred = self.last_layer(verb_pred)
             verb_pred = verb_pred.contiguous().view(batch_size, -1, self.n_verbs)
 
 
@@ -182,7 +183,7 @@ class BaseModel(nn.Module):
             q_emb = self.verb_q_emb(verb_q_idx)
 
             verb_pred_logit = self.verb_vqa(img_embd, q_emb)
-            verb_pred = self.verb_module.conv.vgg_classifier[-1](verb_pred_logit)
+            verb_pred = self.last_layer(verb_pred_logit)
 
         return verb_pred
 
