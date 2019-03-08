@@ -3,7 +3,7 @@ from imsitu_encoder_roleq_objdet import imsitu_encoder
 from imsitu_loader import imsitu_loader_roleq_updated
 from imsitu_scorer_log import imsitu_scorer
 import json
-import model_roles_recqa
+import model_roles_recqa_later
 import os
 import utils
 import time
@@ -148,7 +148,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 max_score = max(dev_score_list)
 
                 if max_score == dev_score_list[-1]:
-                    torch.save(model.state_dict(), model_dir + "/{}_roles_independent_addverbembd_recqa.model".format( model_name))
+                    torch.save(model.state_dict(), model_dir + "/{}_roles_independent_addverbembd_recqa_later.model".format( model_name))
                     print ('New best model saved! {0}'.format(max_score))
 
                 #eval on the trainset
@@ -268,7 +268,7 @@ def main():
     obj_oh_set = json.load(open("imsitu_data/objes_oh.json"))
     encoder = imsitu_encoder(train_set, imsitu_roleq, obj_oh_set)
 
-    model = model_roles_recqa.BaseModel(encoder, args.gpuid)
+    model = model_roles_recqa_later.BaseModel(encoder, args.gpuid)
 
     # To group up the features
     cnn_features, role_features = utils.group_features_noun(model)
