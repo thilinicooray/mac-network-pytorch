@@ -23,7 +23,7 @@ class imsitu_encoder():
         self.verb_question = {}
 
         for img_id, question in role_questions.items():
-             #question = "what is the action happening?"
+             question = "what is the action happening?"
              self.verb_question[img_id] = question
              words = nltk.word_tokenize(question)
              words = words[:-1] #ignore ? mark
@@ -105,6 +105,14 @@ class imsitu_encoder():
         #print('item encoding size : v r l', verb.size(), roles.size(), labels.size())
         #assuming labels are also in order of roles in encoder
         return verb, verb_q, roles, labels
+
+    def encode_verb(self, item):
+        verb = self.verb_list.index(item['verb'])
+        labels = self.get_label_ids(item['frames'])
+
+        #print('item encoding size : v r l', verb.size(), roles.size(), labels.size())
+        #assuming labels are also in order of roles in encoder
+        return verb, labels
 
     def get_verb2role_encoding(self):
         verb2role_embedding_list = []
@@ -252,6 +260,24 @@ class imsitu_encoder():
             vquestion_tokens.append(len(self.question_words))
 
         return torch.tensor(vquestion_tokens)
+
+    def get_common_verbq(self, batch_size):
+        all_q_idx = []
+        for i in range(batch_size):
+            q_idx = []
+            question = 'what is the action happening'
+
+            words = question.split()
+            for word in words:
+                q_idx.append(self.question_words[word])
+            padding_words = self.max_q_word_count - len(q_idx)
+
+            for w in range(padding_words):
+                q_idx.append(len(self.question_words))
+
+            all_q_idx.append(torch.tensor(q_idx))
+
+        return torch.stack(all_q_idx,0)
 
     def get_label_ids(self, frames):
         all_frame_id_list = []
