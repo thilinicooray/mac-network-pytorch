@@ -23,7 +23,7 @@ class imsitu_encoder():
         self.verb_question = {}
 
         for img_id, question in role_questions.items():
-             question = "what is the action happening?"
+             question = "what is the agent doing?"
              self.verb_question[img_id] = question
              words = nltk.word_tokenize(question)
              words = words[:-1] #ignore ? mark
@@ -265,7 +265,7 @@ class imsitu_encoder():
         all_q_idx = []
         for i in range(batch_size):
             q_idx = []
-            question = 'what is the action happening'
+            question = 'what is the agent doing'
 
             words = question.split()
             for word in words:
