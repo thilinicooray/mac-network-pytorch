@@ -3,6 +3,7 @@ import random
 from collections import OrderedDict
 import csv
 import nltk
+import json
 
 #This is the class which encodes training set json in the following structure
 #todo: the structure
@@ -21,6 +22,7 @@ class imsitu_encoder():
         self.question_words = {}
         self.max_q_word_count = 0
         self.verb_question = {}
+        self.q_idx = json.load(open('imsitu_data/commonq.json'))
 
         for img_id, question in role_questions.items():
              question = "what is the agent doing?"
@@ -276,6 +278,15 @@ class imsitu_encoder():
                 q_idx.append(len(self.question_words))
 
             all_q_idx.append(torch.tensor(q_idx))
+
+        return torch.stack(all_q_idx,0)
+
+    def get_common_verbq_encoding(self, batch_size):
+        all_q_idx = []
+
+        for i in range(batch_size):
+
+            all_q_idx.append(torch.tensor(self.q_idx))
 
         return torch.stack(all_q_idx,0)
 
