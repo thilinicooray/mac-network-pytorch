@@ -8,8 +8,8 @@ import torch.nn.functional as F
 import torchvision as tv
 import utils
 import numpy as np
-import model_verb_directcnn
-import model_roles_independent
+import model_verbq_0
+import model_roles_recqa_noself
 
 class vgg16_modified(nn.Module):
     def __init__(self):
@@ -75,7 +75,7 @@ class TopDown(nn.Module):
         v_emb_with_q = torch.cat([v_emb, q_emb], -1)
         logits = self.classifier(v_emb_with_q)
 
-        return logits, q_emb
+        return logits
 
 class BaseModel(nn.Module):
     def __init__(self, encoder,
@@ -105,24 +105,18 @@ class BaseModel(nn.Module):
         self.encoder = encoder
         self.gpu_mode = gpu_mode
         self.mlp_hidden = mlp_hidden
-        self.verbq_word_count = len(self.encoder.verb_question_words)
+        #self.verbq_word_count = len(self.encoder.verb_q_words)
         self.n_verbs = self.encoder.get_num_verbs()
 
+        self.verb_module = model_verbq_0.BaseModel(self.encoder, self.gpu_mode)
+        self.role_module = model_roles_recqa_noself.BaseModel(self.encoder, self.gpu_mode)
+        self.verb_module.eval()
+        self.role_module.eval()
 
-        self.conv = vgg16_modified()
-
-        '''for param in self.verb_module.parameters():
-            param.require_grad = False
-
-        for param in self.role_module.parameters():
-            param.require_grad = False
-        
-        for param in self.conv.parameters():
-            param.require_grad = False'''
-        self.verb_vqa = TopDown(self.n_verbs)
-        self.verb_q_emb = nn.Embedding(self.verbq_word_count + 1, embed_hidden, padding_idx=self.verbq_word_count)
-        self.last_class = nn.Linear(self.mlp_hidden*8, self.n_verbs)
-
+        self.q_emb2 = nn.LSTM(mlp_hidden, mlp_hidden,
+                              batch_first=True, bidirectional=True)
+        self.lstm_proj2 = nn.Linear(mlp_hidden * 2, mlp_hidden)
+        self.dropout = nn.Dropout(0.3)
 
     def train_preprocess(self):
         return self.train_transform
@@ -130,24 +124,48 @@ class BaseModel(nn.Module):
     def dev_preprocess(self, ):
         return self.dev_transform
 
-    def forward(self, img, verbs=None, labels=None):
+    def forward(self, img, verb, labels):
+
+        #i=0
 
         verb_q_idx = self.encoder.get_common_verbq(img.size(0))
 
         if self.gpu_mode >= 0:
             verb_q_idx = verb_q_idx.to(torch.device('cuda'))
 
-        img_embd = self.conv(img)
+        img_embd = self.verb_module.conv(img)
         batch_size, n_channel, conv_h, conv_w = img_embd.size()
         img_embd = img_embd.view(batch_size, n_channel, -1)
         img_embd = img_embd.permute(0, 2, 1)
 
-        q_emb = self.verb_q_emb(verb_q_idx)
+        qw_emb = self.verb_module.verb_q_emb(verb_q_idx)
 
-        verb_pred_logit, q_emb = self.verb_vqa(img_embd, q_emb)
-        verb_pred = self.last_class(verb_pred_logit)
+        verb_pred_logit, q_emb = self.verb_module.verb_vqa(img_embd, qw_emb)
+        verb_pred_prev = self.verb_module.last_class(verb_pred_logit)
 
-        return verb_pred
+        sorted_idx = torch.sort(verb_pred_prev, 1, True)[1]
+        verbs = sorted_idx[:,0]
+        _, pred_rep = self.role_module(img, verbs)
+
+        #i=1
+
+        new_verbq = torch.cat([pred_rep, q_emb.unsqueeze(1)],1)
+        self.q_emb2.flatten_parameters()
+        lstm_out, (h, _) = self.q_emb2(new_verbq)
+        q_emb_up = h.permute(1, 0, 2).contiguous().view(batch_size, -1)
+        q_emb_up = self.lstm_proj2(q_emb_up)
+
+        att = self.verb_module.verb_vqa.v_att(img_embd, q_emb_up)
+        v_emb = (att * img_embd)
+        v_emb = v_emb.permute(0, 2, 1)
+        v_emb = v_emb.contiguous().view(-1, 512*7*7)
+        v_emb_with_q = torch.cat([v_emb, q_emb_up], -1)
+        logits = self.verb_module.verb_vqa.classifier(v_emb_with_q)
+
+        final = verb_pred_logit + self.dropout(logits)
+        verb_pred_new = self.verb_module.last_class(final)
+
+        return verb_pred_new
 
     def calculate_loss(self, verb_pred, gt_verbs):
 

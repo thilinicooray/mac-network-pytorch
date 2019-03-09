@@ -8,6 +8,7 @@ import torch.nn.functional as F
 import torchvision as tv
 import utils
 import numpy as np
+from torch.nn.utils.weight_norm import weight_norm
 
 class vgg16_modified(nn.Module):
     def __init__(self):
@@ -105,6 +106,13 @@ class BaseModel(nn.Module):
         self.classifier = SimpleClassifier(
             mlp_hidden, 2 * mlp_hidden, self.vocab_size, 0.5)
 
+        '''self.classifier = nn.Sequential(
+            weight_norm(nn.Linear(mlp_hidden, 2 * mlp_hidden), dim=None),
+            nn.ReLU(),
+            nn.Dropout(0.5, inplace=True),
+            weight_norm(nn.Linear(2 * mlp_hidden, self.vocab_size), dim=None)
+        )'''
+
         self.conv_hidden = self.conv.base_size()
         self.mlp_hidden = mlp_hidden
         self.embed_hidden = embed_hidden
@@ -135,7 +143,7 @@ class BaseModel(nn.Module):
         verb_embed_expand = verb_embed_expand.contiguous().view(-1, self.embed_hidden)
 
 
-        role_qs, _ = self.encoder.get_role_questions_batch(verb)
+        role_qs = self.encoder.get_role_questions_batch(verb)
         if self.gpu_mode >= 0:
             role_qs = role_qs.to(torch.device('cuda'))
 
@@ -179,11 +187,12 @@ class BaseModel(nn.Module):
             rep = rep + self.dropout(rep2)
             #rep = self.rep_proj(torch.cat([rep2, rep], -1))
 
-        role_label_pred = self.classifier(rep)
+        role_label_pred_rep = self.classifier.main[:-1](rep)
+        role_label_pred = self.classifier.main[-1](role_label_pred_rep)
         role_label_pred = role_label_pred.contiguous().view(batch_size, -1, self.vocab_size)
+        rep = rep.contiguous().view(batch_size, -1, self.mlp_hidden)
 
-
-        return role_label_pred
+        return role_label_pred, rep
 
     def calculate_loss(self, gt_verbs, role_label_pred, gt_labels,args):
 
