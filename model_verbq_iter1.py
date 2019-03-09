@@ -116,7 +116,7 @@ class BaseModel(nn.Module):
         self.q_emb2 = nn.LSTM(mlp_hidden, mlp_hidden,
                               batch_first=True, bidirectional=True)
         self.lstm_proj2 = nn.Linear(mlp_hidden * 2, mlp_hidden)
-        self.dropout = nn.Dropout(0.3)
+        self.dropout = nn.Dropout(0.5)
 
     def train_preprocess(self):
         return self.train_transform
