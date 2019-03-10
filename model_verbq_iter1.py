@@ -116,6 +116,12 @@ class BaseModel(nn.Module):
         self.q_emb2 = nn.LSTM(mlp_hidden, mlp_hidden,
                               batch_first=True, bidirectional=True)
         self.lstm_proj2 = nn.Linear(mlp_hidden * 2, mlp_hidden)
+        self.concat = nn.Sequential(
+            nn.Linear(mlp_hidden * 16, mlp_hidden*8),
+            nn.BatchNorm1d(mlp_hidden*8),
+            nn.ReLU(inplace=True),
+            nn.Dropout(0.5),
+        )
         self.dropout = nn.Dropout(0.5)
 
     def train_preprocess(self):
@@ -162,10 +168,11 @@ class BaseModel(nn.Module):
         v_emb_with_q = torch.cat([v_emb, q_emb_up], -1)
         logits = self.verb_module.verb_vqa.classifier(v_emb_with_q)
 
-        if not self.training:
+        '''if not self.training:
             final = verb_pred_logit + logits
         else:
-            final = logits
+            final = logits'''
+        final = self.concat(torch.cat([logits, verb_pred_logit], -1))
         verb_pred_new = self.verb_module.last_class(final)
 
         return verb_pred_new
