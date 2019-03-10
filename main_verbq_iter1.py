@@ -12,7 +12,7 @@ import random
 #from graphviz import Digraph
 
 
-def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler, max_epoch, model_dir, encoder, gpu_mode, clip_norm, lr_max, model_name, args,eval_frequency=4000):
+def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler, max_epoch, model_dir, encoder, gpu_mode, clip_norm, lr_max, model_name, args,eval_frequency=2000):
     model.train()
     train_loss = 0
     total_steps = 0
@@ -310,8 +310,8 @@ def main():
     optimizer = torch.optim.Adam([
         {'params': model.lstm_proj2.parameters()},
         {'params': model.q_emb2.parameters()},
-        {'params': model.verb_module.verb_vqa.classifier.parameters(), 'lr': 1e-5},
-        {'params': model.verb_module.last_class.parameters(), 'lr': 1e-5},
+        {'params': model.verb_module.verb_vqa.classifier.parameters(), 'lr': 5e-5},
+        {'params': model.verb_module.last_class.parameters(), 'lr': 5e-5},
     ], lr=1e-3)
 
     #optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)

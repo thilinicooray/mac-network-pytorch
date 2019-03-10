@@ -162,7 +162,10 @@ class BaseModel(nn.Module):
         v_emb_with_q = torch.cat([v_emb, q_emb_up], -1)
         logits = self.verb_module.verb_vqa.classifier(v_emb_with_q)
 
-        final = verb_pred_logit + self.dropout(logits)
+        if not self.training:
+            final = verb_pred_logit + logits
+        else:
+            final = logits
         verb_pred_new = self.verb_module.last_class(final)
 
         return verb_pred_new
