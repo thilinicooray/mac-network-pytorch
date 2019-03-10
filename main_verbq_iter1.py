@@ -12,7 +12,7 @@ import random
 #from graphviz import Digraph
 
 
-def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler, max_epoch, model_dir, encoder, gpu_mode, clip_norm, lr_max, model_name, args,eval_frequency=2000):
+def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler, max_epoch, model_dir, encoder, gpu_mode, clip_norm, lr_max, model_name, args,eval_frequency=4000):
     model.train()
     train_loss = 0
     total_steps = 0
@@ -304,6 +304,7 @@ def main():
         torch.backends.cudnn.deterministic = True
 
     utils.set_trainable(model.verb_module.verb_vqa.classifier, True)
+    utils.set_trainable(model.verb_module.verb_vqa.v_att, True)
     utils.set_trainable(model.verb_module.last_class, True)
 
 
@@ -311,6 +312,7 @@ def main():
         {'params': model.lstm_proj2.parameters()},
         {'params': model.q_emb2.parameters()},
         {'params': model.verb_module.verb_vqa.classifier.parameters(), 'lr': 1e-5},
+        {'params': model.verb_module.verb_vqa.v_att.parameters(), 'lr': 1e-5},
         {'params': model.verb_module.last_class.parameters(), 'lr': 1e-5},
     ], lr=1e-3)
 
