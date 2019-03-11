@@ -112,7 +112,8 @@ class BaseModel(nn.Module):
         self.role_module = model_roles_recqa_noself.BaseModel(self.encoder, self.gpu_mode)
         self.verb_module.eval()
         self.role_module.eval()
-        self.role_v_att = Attention(mlp_hidden, mlp_hidden*2, mlp_hidden)
+        self.role_maker = nn.Linear(mlp_hidden*2, mlp_hidden)
+        self.real_comb_concat = nn.Linear(mlp_hidden * 2, mlp_hidden)
 
     def train_preprocess(self):
         return self.train_transform
@@ -156,14 +157,19 @@ class BaseModel(nn.Module):
         pred_rep = pred_rep.contiguous().view(-1, self.mlp_hidden*2)
 
         #i=1
+
+        role_values = self.role_maker(pred_rep).unsqueeze(1)
+
         exp_img = img_embd.expand(self.role_module.max_role_count, img_embd.size(0), img_embd.size(1), img_embd.size(2))
         img_embed_expand = exp_img.transpose(0,1)
         img_embed_expand = img_embed_expand.contiguous().view(-1, img_embd.size(1), self.mlp_hidden)
-        role_based_att = self.role_v_att(img_embed_expand, pred_rep)
-        img_role_emb = (role_based_att * img_embed_expand)
-        img_embd_att = torch.sum(img_role_emb.view(batch_size,self.role_module.max_role_count, img_embd.size(1), self.mlp_hidden),1)
 
-        att = self.verb_module.verb_vqa.v_att(img_embd_att, q_emb)
+        rolewise = role_values * img_embed_expand
+        added_all = torch.sum(rolewise.view(-1,self.role_module.max_role_count, rolewise.size(1), rolewise.size(2) ), 1)
+        joined = torch.cat([added_all, img_embd], 2)
+        combo = self.real_comb_concat(joined)
+
+        att = self.verb_module.verb_vqa.v_att(combo, q_emb)
         v_emb = (att * img_embd)
         v_emb = v_emb.permute(0, 2, 1)
         v_emb = v_emb.contiguous().view(-1, 512*7*7)
