@@ -187,12 +187,12 @@ class BaseModel(nn.Module):
             rep = rep + self.dropout(rep2)
             #rep = self.rep_proj(torch.cat([rep2, rep], -1))
 
-        role_label_pred_rep = self.classifier.main[:-1](rep)
-        role_label_pred = self.classifier.main[-1](role_label_pred_rep)
+        role_label_pred_rep = self.classifier.main[0](rep)
+        role_label_pred = self.classifier.main[1:](role_label_pred_rep)
         role_label_pred = role_label_pred.contiguous().view(batch_size, -1, self.vocab_size)
-        rep = rep.contiguous().view(batch_size, -1, self.mlp_hidden)
+        pred_rep = role_label_pred_rep.contiguous().view(batch_size, -1, self.mlp_hidden)
 
-        return role_label_pred, rep
+        return role_label_pred, pred_rep
 
     def calculate_loss(self, gt_verbs, role_label_pred, gt_labels,args):
 
