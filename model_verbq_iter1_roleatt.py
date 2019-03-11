@@ -10,6 +10,7 @@ import utils
 import numpy as np
 import model_verbq_0
 import model_roles_recqa_noself
+import copy
 
 class vgg16_modified(nn.Module):
     def __init__(self):
@@ -115,6 +116,15 @@ class BaseModel(nn.Module):
         self.verb_vqa = TopDown(self.n_verbs)
         self.verb_q_emb = nn.Embedding(self.verb_module.verbq_word_count + 1, embed_hidden, padding_idx=self.verb_module.verbq_word_count)
         self.last_class = nn.Linear(self.mlp_hidden*8, self.n_verbs)
+
+        weight_verbqa = copy.deepcopy(self.verb_module.verb_vqa.state_dict())
+        weight_emb = copy.deepcopy(self.verb_module.verb_q_emb.state_dict())
+        weight_lastclass = copy.deepcopy(self.verb_module.last_class.state_dict())
+
+        self.verb_vqa.load_state_dict(weight_verbqa)
+        self.verb_q_emb.load_state_dict(weight_emb)
+        self.last_class.load_state_dict(weight_lastclass)
+
         self.role_maker = nn.Linear(mlp_hidden*2, mlp_hidden)
         self.real_comb_concat = nn.Linear(mlp_hidden * 2, mlp_hidden)
 

@@ -36,9 +36,8 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
     top5 = imsitu_scorer(encoder, 5, 3)
 
     '''print('init param data check :')
-    for f in model.parameters():
-        if f.requires_grad:
-            print(f.data.size())'''
+    for f in model.verb_vqa.parameters():
+        print (f.requires_grad)'''
 
 
     for epoch in range(max_epoch):
@@ -316,7 +315,13 @@ def main():
 
 
 
-    optimizer = torch.optim.Adam(model.parameters(),lr=1e-3)
+    optimizer = torch.optim.Adam([
+        {'params': model.real_comb_concat.parameters()},
+        {'params': model.role_maker.parameters()},
+        {'params': model.verb_q_emb.parameters(), 'lr': 1e-5},
+        {'params': model.verb_vqa.parameters(), 'lr': 1e-5},
+        {'params': model.last_class.parameters(), 'lr': 1e-5},
+    ],lr=1e-3)
 
     #optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     #scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=lr_step, gamma=lr_gamma)
