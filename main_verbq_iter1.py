@@ -288,10 +288,21 @@ def main():
     traindev_loader = torch.utils.data.DataLoader(traindev_set, batch_size=8, shuffle=True, num_workers=n_worker)
 
 
-    utils.load_net(args.verb_module, [model.verb_module])
-    utils.load_net(args.role_module, [model.role_module])
-    model_name = 'train_full'
-
+    if args.resume_training:
+        print('Resume training ')
+        args.train_all = True
+        '''if len(args.resume_model) == 0:
+            raise Exception('[pretrained verb module] not specified')'''
+        utils.load_net(args.resume_model, [model])
+        optimizer_select = 0
+        model_name = 'resume_all'
+    else:
+        print('Training from the scratch.')
+        optimizer_select = 0
+        args.train_all = True
+        utils.load_net(args.verb_module, [model.verb_module])
+        utils.load_net(args.role_module, [model.role_module])
+        model_name = 'train_full'
 
     if not os.path.exists(args.output_dir):
         os.mkdir(args.output_dir)
