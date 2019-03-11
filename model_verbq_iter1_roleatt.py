@@ -156,7 +156,7 @@ class BaseModel(nn.Module):
         sorted_idx = torch.sort(verb_pred_prev, 1, True)[1]
         verbs = sorted_idx[:,0]
         _, pred_rep = self.role_module(img, verbs)
-        pred_rep = pred_rep.contiguous().view(-1, self.mlp_hidden*2)
+        pred_rep = pred_rep.contiguous().view(-1, self.mlp_hidden)
 
         #i=1
 
