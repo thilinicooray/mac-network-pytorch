@@ -314,18 +314,9 @@ def main():
         torch.cuda.manual_seed(1234)
         torch.backends.cudnn.deterministic = True
 
-    utils.set_trainable(model.verb_module.verb_vqa.classifier, True)
-    utils.set_trainable(model.verb_module.verb_vqa.v_att, True)
-    utils.set_trainable(model.verb_module.last_class, True)
 
 
-    optimizer = torch.optim.Adam([
-        {'params': model.role_maker.parameters()},
-        {'params': model.real_comb_concat.parameters()},
-        {'params': model.verb_module.verb_vqa.classifier.parameters(), 'lr': 1e-4},
-        {'params': model.verb_module.verb_vqa.v_att.parameters(), 'lr': 1e-4},
-        {'params': model.verb_module.last_class.parameters(), 'lr': 1e-4},
-    ], lr=1e-3)
+    optimizer = torch.optim.Adam(model.parameters(),lr=1e-3)
 
     #optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     #scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=lr_step, gamma=lr_gamma)

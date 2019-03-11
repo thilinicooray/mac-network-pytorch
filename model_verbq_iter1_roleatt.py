@@ -112,6 +112,9 @@ class BaseModel(nn.Module):
         self.role_module = model_roles_recqa_noself.BaseModel(self.encoder, self.gpu_mode)
         self.verb_module.eval()
         self.role_module.eval()
+        self.verb_vqa = TopDown(self.n_verbs)
+        self.verb_q_emb = nn.Embedding(self.verb_module.verbq_word_count + 1, embed_hidden, padding_idx=self.verb_module.verbq_word_count)
+        self.last_class = nn.Linear(self.mlp_hidden*8, self.n_verbs)
         self.role_maker = nn.Linear(mlp_hidden*2, mlp_hidden)
         self.real_comb_concat = nn.Linear(mlp_hidden * 2, mlp_hidden)
 
@@ -137,19 +140,8 @@ class BaseModel(nn.Module):
 
         qw_emb = self.verb_module.verb_q_emb(verb_q_idx)
 
-
-        self.verb_module.verb_vqa.q_emb.flatten_parameters()
-        lstm_out, (h, _) = self.verb_module.verb_vqa.q_emb(qw_emb)
-        q_emb = h.permute(1, 0, 2).contiguous().view(batch_size, -1)
-        q_emb = self.verb_module.verb_vqa.lstm_proj(q_emb)
-
-        att = self.verb_module.verb_vqa.v_att(img_embd, q_emb)
-        v_emb = (att * img_embd)
-        v_emb = v_emb.permute(0, 2, 1)
-        v_emb = v_emb.contiguous().view(-1, 512*7*7)
-        v_emb_with_q = torch.cat([v_emb, q_emb], -1)
-        prev_internal_rep = self.verb_module.verb_vqa.classifier[0](v_emb_with_q)
-        verb_pred_prev = self.verb_module.last_class(self.verb_module.verb_vqa.classifier[1:](prev_internal_rep))
+        verb_pred_logit = self.verb_module.verb_vqa(img_embd, qw_emb)
+        verb_pred_prev = self.verb_module.last_class(verb_pred_logit)
 
         sorted_idx = torch.sort(verb_pred_prev, 1, True)[1]
         verbs = sorted_idx[:,0]
@@ -169,21 +161,12 @@ class BaseModel(nn.Module):
         joined = torch.cat([added_all, img_embd], 2)
         combo = self.real_comb_concat(joined)
 
-        att = self.verb_module.verb_vqa.v_att(combo, q_emb)
-        v_emb = (att * img_embd)
-        v_emb = v_emb.permute(0, 2, 1)
-        v_emb = v_emb.contiguous().view(-1, 512*7*7)
-        v_emb_with_q = torch.cat([v_emb, q_emb], -1)
-        internal_rep = self.verb_module.verb_vqa.classifier[0](v_emb_with_q)
+        qw_emb_i1 = self.verb_q_emb(verb_q_idx)
 
-        '''if self.training:
-            rep = internal_rep
-        else:
-            rep = internal_rep + prev_internal_rep'''
-        rep = internal_rep
-        verb_pred_new = self.verb_module.last_class(self.verb_module.verb_vqa.classifier[1:](rep))
+        verb_pred_logit_i1 = self.verb_vqa(combo, qw_emb_i1)
+        verb_pred_i1 = self.last_class(verb_pred_logit_i1)
 
-        return verb_pred_new
+        return verb_pred_i1
 
     def calculate_loss(self, verb_pred, gt_verbs):
 
