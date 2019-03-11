@@ -176,11 +176,11 @@ class BaseModel(nn.Module):
         v_emb_with_q = torch.cat([v_emb, q_emb], -1)
         internal_rep = self.verb_module.verb_vqa.classifier[0](v_emb_with_q)
 
-        if self.training:
+        '''if self.training:
             rep = internal_rep
         else:
-            rep = internal_rep + prev_internal_rep
-        #final = logits
+            rep = internal_rep + prev_internal_rep'''
+        rep = internal_rep
         verb_pred_new = self.verb_module.last_class(self.verb_module.verb_vqa.classifier[1:](rep))
 
         return verb_pred_new
