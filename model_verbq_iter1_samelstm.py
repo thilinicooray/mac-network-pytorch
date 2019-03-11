@@ -8,8 +8,8 @@ import torch.nn.functional as F
 import torchvision as tv
 import utils
 import numpy as np
-import model_verb_directcnn
-import model_roles_independent
+import model_verbq_0
+import model_roles_recqa_noself
 
 class vgg16_modified(nn.Module):
     def __init__(self):
@@ -105,24 +105,16 @@ class BaseModel(nn.Module):
         self.encoder = encoder
         self.gpu_mode = gpu_mode
         self.mlp_hidden = mlp_hidden
-        self.verbq_word_count = len(self.encoder.verb_question_words)
+        #self.verbq_word_count = len(self.encoder.verb_q_words)
         self.n_verbs = self.encoder.get_num_verbs()
 
+        self.verb_module = model_verbq_0.BaseModel(self.encoder, self.gpu_mode)
+        self.role_module = model_roles_recqa_noself.BaseModel(self.encoder, self.gpu_mode)
+        self.verb_module.eval()
+        self.role_module.eval()
 
-        self.conv = vgg16_modified()
-
-        '''for param in self.verb_module.parameters():
-            param.require_grad = False
-
-        for param in self.role_module.parameters():
-            param.require_grad = False
-        
-        for param in self.conv.parameters():
-            param.require_grad = False'''
-        self.verb_vqa = TopDown(self.n_verbs)
-        self.verb_q_emb = nn.Embedding(self.verbq_word_count + 1, embed_hidden, padding_idx=self.verbq_word_count)
-        self.last_class = nn.Linear(self.mlp_hidden*8, self.n_verbs)
-
+        self.label_small = nn.Linear(mlp_hidden, embed_hidden)
+        self.dropout = nn.Dropout(0.5)
 
     def train_preprocess(self):
         return self.train_transform
@@ -130,24 +122,63 @@ class BaseModel(nn.Module):
     def dev_preprocess(self, ):
         return self.dev_transform
 
-    def forward(self, img, verbs=None, labels=None):
+    def forward(self, img, verb, labels):
+
+        #i=0
 
         verb_q_idx = self.encoder.get_common_verbq(img.size(0))
 
         if self.gpu_mode >= 0:
             verb_q_idx = verb_q_idx.to(torch.device('cuda'))
 
-        img_embd = self.conv(img)
+        img_embd = self.verb_module.conv(img)
         batch_size, n_channel, conv_h, conv_w = img_embd.size()
         img_embd = img_embd.view(batch_size, n_channel, -1)
         img_embd = img_embd.permute(0, 2, 1)
 
-        q_emb = self.verb_q_emb(verb_q_idx)
+        qw_emb = self.verb_module.verb_q_emb(verb_q_idx)
 
-        verb_pred_logit = self.verb_vqa(img_embd, q_emb)
-        verb_pred = self.last_class(verb_pred_logit)
 
-        return verb_pred
+        self.verb_module.verb_vqa.q_emb.flatten_parameters()
+        lstm_out, (h, _) = self.verb_module.verb_vqa.q_emb(qw_emb)
+        q_emb = h.permute(1, 0, 2).contiguous().view(batch_size, -1)
+        q_emb = self.verb_module.verb_vqa.lstm_proj(q_emb)
+
+        att = self.verb_module.verb_vqa.v_att(img_embd, q_emb)
+        v_emb = (att * img_embd)
+        v_emb = v_emb.permute(0, 2, 1)
+        v_emb = v_emb.contiguous().view(-1, 512*7*7)
+        v_emb_with_q = torch.cat([v_emb, q_emb], -1)
+        prev_internal_rep = self.verb_module.verb_vqa.classifier[0](v_emb_with_q)
+        verb_pred_prev = self.verb_module.last_class(self.verb_module.verb_vqa.classifier[1:](prev_internal_rep))
+
+        sorted_idx = torch.sort(verb_pred_prev, 1, True)[1]
+        verbs = sorted_idx[:,0]
+        _, pred_rep = self.role_module(img, verbs)
+
+        #i=1
+
+        new_verbq = torch.cat([self.label_small(pred_rep), qw_emb],1)
+        self.verb_module.verb_vqa.q_emb.flatten_parameters()
+        lstm_out, (h, _) = self.verb_module.verb_vqa.q_emb(new_verbq)
+        q_emb_up = h.permute(1, 0, 2).contiguous().view(batch_size, -1)
+        q_emb_up = self.verb_module.verb_vqa.lstm_proj(q_emb_up)
+
+        att = self.verb_module.verb_vqa.v_att(img_embd, q_emb_up)
+        v_emb = (att * img_embd)
+        v_emb = v_emb.permute(0, 2, 1)
+        v_emb = v_emb.contiguous().view(-1, 512*7*7)
+        v_emb_with_q = torch.cat([v_emb, q_emb_up], -1)
+        internal_rep = self.verb_module.verb_vqa.classifier[0](v_emb_with_q)
+
+        if self.training:
+            rep = internal_rep
+        else:
+            rep = internal_rep + prev_internal_rep
+        #final = logits
+        verb_pred_new = self.verb_module.last_class(self.verb_module.verb_vqa.classifier[1:](rep))
+
+        return verb_pred_new
 
     def calculate_loss(self, verb_pred, gt_verbs):
 
