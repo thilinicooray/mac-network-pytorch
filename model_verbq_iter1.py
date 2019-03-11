@@ -165,7 +165,7 @@ class BaseModel(nn.Module):
         if self.training:
             final = logits
         else:
-            final = verb_pred_logit + logits
+            final = verb_pred_logit * logits
         #final = logits
         verb_pred_new = self.verb_module.last_class(final)
 
