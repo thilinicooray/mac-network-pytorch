@@ -161,10 +161,10 @@ class BaseModel(nn.Module):
         verb_pred_logit_i1 = self.verb_vqa(combo, qw_emb_i1)
         verb_pred_i1 = self.verb_last_class(verb_pred_logit_i1)
 
-        role_label_pred = self.role_classifier(rep).contiguous().view(batch_size, -1, self.vocab_size)
-        return verb_pred_i1, role_label_pred
+        #role_label_pred = self.role_classifier(rep).contiguous().view(batch_size, -1, self.vocab_size)
+        return verb_pred_i1
 
-    def calculate_loss(self, verb_pred, gt_verbs, role_label_pred, gt_labels,args):
+    '''def calculate_loss(self, verb_pred, gt_verbs, role_label_pred, gt_labels,args):
 
         batch_size = verb_pred.size()[0]
         if args.train_all:
@@ -193,6 +193,21 @@ class BaseModel(nn.Module):
                     frame_loss = frame_loss/len(self.encoder.verb2_role_dict[self.encoder.verb_list[gt_verbs[i]]])
                     #print('frame loss', frame_loss, 'verb loss', verb_loss)
                     loss += frame_loss
+
+
+        final_loss = loss/batch_size
+        #print('loss :', final_loss)
+        return final_loss'''
+
+    def calculate_loss(self, verb_pred, gt_verbs):
+
+        batch_size = verb_pred.size()[0]
+        loss = 0
+        #print('eval pred verbs :', pred_verbs)
+        for i in range(batch_size):
+            verb_loss = 0
+            verb_loss += utils.cross_entropy_loss(verb_pred[i], gt_verbs[i])
+            loss += verb_loss
 
 
         final_loss = loss/batch_size
