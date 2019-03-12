@@ -58,7 +58,7 @@ class TopDown(nn.Module):
         v_repr = self.v_net(v_emb)
         joint_repr = q_repr * v_repr
 
-        return joint_repr
+        return joint_repr, v_repr
 
 class BaseModel(nn.Module):
     def __init__(self, encoder,
@@ -155,7 +155,7 @@ class BaseModel(nn.Module):
         q_emb = h.permute(1, 0, 2).contiguous().view(batch_size*self.max_role_count, -1)
         q_emb = self.lstm_proj1(q_emb)
 
-        rep = self.roles(img_updated, q_emb)
+        rep, v_repr = self.roles(img_updated, q_emb)
 
         for i in range(self.num_steps):
 
@@ -182,7 +182,7 @@ class BaseModel(nn.Module):
             q_emb_up = h.permute(1, 0, 2).contiguous().view(batch_size*self.max_role_count, -1)
             q_emb_up = self.lstm_proj2(q_emb_up)
 
-            rep2 = self.roles(img_updated, q_emb_up)
+            rep2, v_repr = self.roles(img_updated, q_emb_up)
 
             rep = rep + self.dropout(rep2)
             #rep = self.rep_proj(torch.cat([rep2, rep], -1))
@@ -190,7 +190,7 @@ class BaseModel(nn.Module):
         role_label_pred_rep = self.classifier.main[0](rep)
         role_label_pred = self.classifier.main[1:](role_label_pred_rep)
         role_label_pred = role_label_pred.contiguous().view(batch_size, -1, self.vocab_size)
-        pred_rep = rep.contiguous().view(batch_size, -1, self.mlp_hidden)
+        pred_rep = v_repr.contiguous().view(batch_size, -1, self.mlp_hidden)
 
         return role_label_pred, pred_rep
 
