@@ -314,6 +314,7 @@ def main():
         optimizer_select = 0
         args.train_all = True
         utils.load_net(args.verb_module, [model.verb_module])
+        utils.load_net(args.verb_module, [model.updated_verb_module])
         utils.load_net(args.role_module, [model.role_module])
         model_name = 'train_full'
 
@@ -327,14 +328,14 @@ def main():
         torch.cuda.manual_seed(1234)
         torch.backends.cudnn.deterministic = True
 
-
+    utils.set_trainable(model.updated_verb_module.conv, False)
 
     optimizer = torch.optim.Adam([
         {'params': model.real_comb_concat.parameters()},
         {'params': model.role_maker.parameters()},
-        {'params': model.verb_q_emb.parameters(), 'lr': 1e-5},
-        {'params': model.verb_vqa.parameters(), 'lr': 1e-5},
-        {'params': model.last_class.parameters(), 'lr': 1e-5},
+        {'params': model.updated_verb_module.verb_q_emb.parameters(), 'lr': 1e-5},
+        {'params': model.updated_verb_module.verb_vqa.parameters(), 'lr': 1e-5},
+        {'params': model.updated_verb_module.last_class.parameters(), 'lr': 1e-5},
     ],lr=1e-3)
 
     #optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
