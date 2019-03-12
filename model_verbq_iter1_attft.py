@@ -162,7 +162,7 @@ class BaseModel(nn.Module):
 
         #i=1
 
-        '''role_values = self.role_maker(pred_rep).unsqueeze(1)
+        role_values = self.role_maker(pred_rep).unsqueeze(1)
 
         exp_img = img_embd.expand(self.role_module.max_role_count, img_embd.size(0), img_embd.size(1), img_embd.size(2))
         img_embed_expand = exp_img.transpose(0,1)
@@ -171,11 +171,11 @@ class BaseModel(nn.Module):
         rolewise = role_values * img_embed_expand
         added_all = torch.sum(rolewise.view(-1,self.role_module.max_role_count, rolewise.size(1), rolewise.size(2) ), 1)
         joined = torch.cat([added_all, img_embd], 2)
-        combo = self.real_comb_concat(joined)'''
+        combo = self.real_comb_concat(joined)
 
         qw_emb_i1 = self.updated_verb_module.verb_q_emb(verb_q_idx)
 
-        verb_pred_logit_i1 = self.updated_verb_module.verb_vqa(img_embd, qw_emb_i1)
+        verb_pred_logit_i1 = self.updated_verb_module.verb_vqa(combo, qw_emb_i1)
         verb_pred_i1 = self.updated_verb_module.last_class(verb_pred_logit_i1)
 
         return verb_pred_i1
