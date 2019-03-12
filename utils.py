@@ -196,11 +196,10 @@ def group_features_noun(net_):
 
 def group_features_verbqiter(net_):
 
-    role_features = list(net_.role_module.parameters())
-    role_feature_len = len(list(net_.role_module.parameters()))
-
     cnn_features = list(net_.conv.parameters())
     cnn_feature_len = len(list(net_.conv.parameters()))
+    role_features = list(net_.role_module.parameters())
+    role_feature_len = len(list(net_.role_module.parameters()))
 
     other_features = list(net_.parameters())[(role_feature_len + cnn_feature_len):]
 
