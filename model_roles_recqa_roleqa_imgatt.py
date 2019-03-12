@@ -115,7 +115,7 @@ class BaseModel(nn.Module):
         self.conv_hidden = self.conv.base_size()
         self.mlp_hidden = mlp_hidden
         self.embed_hidden = embed_hidden
-        self.dropout = nn.Dropout(0.3)
+        self.dropout = nn.Dropout(0.5)
         self.num_steps = 2
 
     def train_preprocess(self):
