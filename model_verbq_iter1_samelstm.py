@@ -114,6 +114,7 @@ class BaseModel(nn.Module):
         self.role_module.eval()
 
         self.label_small = nn.Linear(mlp_hidden, embed_hidden)
+        self.updating_verb_module = model_verbq_0.BaseModel(self.encoder, self.gpu_mode)
         self.dropout = nn.Dropout(0.5)
 
     def train_preprocess(self):
@@ -157,26 +158,26 @@ class BaseModel(nn.Module):
         _, pred_rep = self.role_module(img, verbs)
 
         #i=1
-
-        new_verbq = torch.cat([self.label_small(pred_rep), qw_emb],1)
-        self.verb_module.verb_vqa.q_emb.flatten_parameters()
-        lstm_out, (h, _) = self.verb_module.verb_vqa.q_emb(new_verbq)
+        qw_emb_up = self.updating_verb_module.verb_q_emb(verb_q_idx)
+        new_verbq = torch.cat([self.label_small(pred_rep), qw_emb_up],1)
+        self.updating_verb_module.verb_vqa.q_emb.flatten_parameters()
+        lstm_out, (h, _) = self.updating_verb_module.verb_vqa.q_emb(new_verbq)
         q_emb_up = h.permute(1, 0, 2).contiguous().view(batch_size, -1)
-        q_emb_up = self.verb_module.verb_vqa.lstm_proj(q_emb_up)
+        q_emb_up = self.updating_verb_module.verb_vqa.lstm_proj(q_emb_up)
 
-        att = self.verb_module.verb_vqa.v_att(img_embd, q_emb_up)
+        att = self.updating_verb_module.verb_vqa.v_att(img_embd, q_emb_up)
         v_emb = (att * img_embd)
         v_emb = v_emb.permute(0, 2, 1)
         v_emb = v_emb.contiguous().view(-1, 512*7*7)
         v_emb_with_q = torch.cat([v_emb, q_emb_up], -1)
-        internal_rep = self.verb_module.verb_vqa.classifier[0](v_emb_with_q)
+        internal_rep = self.updating_verb_module.verb_vqa.classifier[0](v_emb_with_q)
 
-        if self.training:
+        '''if self.training:
             rep = internal_rep
         else:
-            rep = internal_rep + prev_internal_rep
-        #final = logits
-        verb_pred_new = self.verb_module.last_class(self.verb_module.verb_vqa.classifier[1:](rep))
+            rep = internal_rep + prev_internal_rep'''
+        rep = internal_rep
+        verb_pred_new = self.updating_verb_module.last_class(self.updating_verb_module.verb_vqa.classifier[1:](rep))
 
         return verb_pred_new
 

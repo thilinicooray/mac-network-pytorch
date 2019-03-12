@@ -301,6 +301,7 @@ def main():
         optimizer_select = 0
         args.train_all = True
         utils.load_net(args.verb_module, [model.verb_module])
+        utils.load_net(args.verb_module, [model.updating_verb_module])
         utils.load_net(args.role_module, [model.role_module])
         model_name = 'train_full'
 
@@ -314,12 +315,13 @@ def main():
         torch.cuda.manual_seed(1234)
         torch.backends.cudnn.deterministic = True
 
-    utils.set_trainable(model.verb_module.last_class, True)
-    utils.set_trainable(model.verb_module.verb_vqa, True)
+    utils.set_trainable(model.updating_verb_module.conv, False)
 
 
     optimizer = torch.optim.Adam([
-        {'params': model.verb_module.verb_vqa.parameters(), 'lr': 1e-5},
+        {'params': model.updating_verb_module.verb_q_emb.parameters(), 'lr': 1e-5},
+        {'params': model.label_small.parameters(), 'lr': 1e-3},
+        {'params': model.updating_verb_module.verb_vqa.parameters(), 'lr': 1e-5},
         {'params': model.verb_module.last_class.parameters(), 'lr': 1e-5},
     ])
 
