@@ -194,6 +194,24 @@ def group_features_noun(net_):
 
     return cnn_features, role_features
 
+def group_features_verbqiter(net_):
+
+    role_features = list(net_.role_module.parameters())
+    role_feature_len = len(list(net_.role_module.parameters()))
+
+    cnn_features = list(net_.conv.parameters())
+    cnn_feature_len = len(list(net_.conv.parameters()))
+
+    other_features = list(net_.parameters())[(role_feature_len + cnn_feature_len):]
+
+    print('Network details :')
+    print('\tcnn features :', cnn_feature_len)
+    print('\trole features :', role_feature_len)
+    print('\tvqa features :', len(other_features))
+
+
+    return cnn_features, role_features, other_features
+
 def group_features_joint_reverb(net_):
     verb_features = list(net_.verb_module.parameters())
     verb_feature_len = len(list(net_.verb_module.parameters()))
