@@ -27,7 +27,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
         pmodel = torch.nn.DataParallel(model, device_ids=device_array)
     else:
         pmodel = model
-    pmodel = model
+    #pmodel = model
 
     '''if scheduler.get_lr()[0] < lr_max:
         scheduler.step()'''
