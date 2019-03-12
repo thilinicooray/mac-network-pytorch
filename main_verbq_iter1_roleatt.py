@@ -12,7 +12,7 @@ import random
 #from graphviz import Digraph
 
 
-def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler, max_epoch, model_dir, encoder, gpu_mode, clip_norm, lr_max, model_name, args,eval_frequency=4000):
+def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler, max_epoch, model_dir, encoder, gpu_mode, clip_norm, lr_max, model_name, args,eval_frequency=4):
     model.train()
     train_loss = 0
     total_steps = 0
@@ -212,7 +212,7 @@ def eval(model, dev_loader, encoder, gpu_mode, write_to_file = False):
             top5.add_point_verb_only_eval(img_id, verb_predict, verb)
 
             del img, verb, labels
-            #break
+            break
 
     #return top1, top5, val_loss/mx
 
@@ -272,11 +272,11 @@ def main():
 
     train_set = imsitu_loader_roleq_updated(imgset_folder, train_set, encoder, model.train_preprocess())
 
-    train_loader = torch.utils.data.DataLoader(train_set, batch_size=64, shuffle=True, num_workers=n_worker)
+    train_loader = torch.utils.data.DataLoader(train_set, batch_size=4, shuffle=True, num_workers=n_worker)
 
     dev_set = json.load(open(dataset_folder +"/dev.json"))
     dev_set = imsitu_loader_roleq_updated(imgset_folder, dev_set, encoder, model.dev_preprocess())
-    dev_loader = torch.utils.data.DataLoader(dev_set, batch_size=64, shuffle=True, num_workers=n_worker)
+    dev_loader = torch.utils.data.DataLoader(dev_set, batch_size=4, shuffle=True, num_workers=n_worker)
 
     test_set = json.load(open(dataset_folder +"/test.json"))
     test_set = imsitu_loader_roleq_updated(imgset_folder, test_set, encoder, model.dev_preprocess())
@@ -318,6 +318,9 @@ def main():
     optimizer = torch.optim.Adam([
         {'params': model.real_comb_concat.parameters()},
         {'params': model.role_maker.parameters()},
+        {'params': model.verb_q_emb.parameters(), 'lr': 1e-5},
+        {'params': model.verb_vqa.parameters(), 'lr': 1e-5},
+        {'params': model.last_class.parameters(), 'lr': 1e-5},
     ],lr=1e-3)
 
     #optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)

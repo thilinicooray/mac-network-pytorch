@@ -117,13 +117,13 @@ class BaseModel(nn.Module):
         self.verb_q_emb = nn.Embedding(self.verb_module.verbq_word_count + 1, embed_hidden, padding_idx=self.verb_module.verbq_word_count)
         self.last_class = nn.Linear(self.mlp_hidden*8, self.n_verbs)
 
-        '''weight_verbqa = copy.deepcopy(self.verb_module.verb_vqa.state_dict())
+        weight_verbqa = copy.deepcopy(self.verb_module.verb_vqa.state_dict())
         weight_emb = copy.deepcopy(self.verb_module.verb_q_emb.state_dict())
         weight_lastclass = copy.deepcopy(self.verb_module.last_class.state_dict())
 
         self.verb_vqa.load_state_dict(weight_verbqa)
         self.verb_q_emb.load_state_dict(weight_emb)
-        self.last_class.load_state_dict(weight_lastclass)'''
+        self.last_class.load_state_dict(weight_lastclass)
 
         self.role_maker = nn.Linear(mlp_hidden, mlp_hidden)
         self.real_comb_concat = nn.Linear(mlp_hidden * 2, mlp_hidden)
@@ -171,10 +171,10 @@ class BaseModel(nn.Module):
         joined = torch.cat([added_all, img_embd], 2)
         combo = self.real_comb_concat(joined)
 
-        qw_emb_i1 = self.verb_module.verb_q_emb(verb_q_idx)
+        qw_emb_i1 = self.verb_q_emb(verb_q_idx)
 
-        verb_pred_logit_i1 = self.verb_module.verb_vqa(combo, qw_emb_i1)
-        verb_pred_i1 = self.verb_module.last_class(verb_pred_logit_i1)
+        verb_pred_logit_i1 = self.verb_vqa(combo, qw_emb_i1)
+        verb_pred_i1 = self.last_class(verb_pred_logit_i1)
 
         return verb_pred_i1
 
