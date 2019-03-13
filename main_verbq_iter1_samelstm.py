@@ -90,7 +90,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
             loss.backward()
             #print ("backward time = {}".format(time.time() - t1))
 
-            torch.nn.utils.clip_grad_norm_(model.parameters(), clip_norm)
+            #torch.nn.utils.clip_grad_norm_(model.parameters(), clip_norm)
 
 
             '''for param in filter(lambda p: p.requires_grad,model.parameters()):
@@ -101,14 +101,16 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
 
 
             optimizer.step()
-            optimizer.zero_grad()
 
             '''print('grad check :')
-            for f in model.parameters():
+            for f in model.updating_verb_module.verb_vqa.parameters():
                 print('data is')
-                print(f.data)
-                print('grad is')
-                print(f.grad)'''
+                print(f.data[0][0])
+                #print('grad is')
+                #print(f.grad)
+                break'''
+
+            optimizer.zero_grad()
 
             train_loss += loss.item()
 
@@ -175,7 +177,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
             del verb_predict, loss, img, verb, labels
             #break
         print('Epoch ', epoch, ' completed!')
-        #scheduler.step()
+        scheduler.step()
         #break
 
 def eval(model, dev_loader, encoder, gpu_mode, write_to_file = False):
@@ -206,7 +208,7 @@ def eval(model, dev_loader, encoder, gpu_mode, write_to_file = False):
                 verb = torch.autograd.Variable(verb)
                 labels = torch.autograd.Variable(labels)
 
-            verb_predict = model(img, verb, labels)
+            verb_predict = model.forward_eval(img, verb, labels)
             '''loss = model.calculate_eval_loss(verb_predict, verb, role_predict, labels)
             val_loss += loss.item()'''
             top1.add_point_verb_only_eval(img_id, verb_predict, verb)
@@ -322,13 +324,13 @@ def main():
         {'params': model.updating_verb_module.verb_q_emb.parameters(), 'lr': 1e-5},
         {'params': model.label_small.parameters(), 'lr': 1e-3},
         {'params': model.updating_verb_module.verb_vqa.parameters(), 'lr': 1e-5},
-        {'params': model.verb_module.last_class.parameters(), 'lr': 1e-5},
+        {'params': model.updating_verb_module.last_class.parameters(), 'lr': 1e-5},
     ])
 
     #optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     #scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=lr_step, gamma=lr_gamma)
     #gradient clipping, grad check
-    #scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.9)
+    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.9)
 
     if args.evaluate:
         top1, top5, val_loss = eval(model, dev_loader, encoder, args.gpuid, write_to_file = True)
@@ -378,7 +380,7 @@ def main():
     else:
 
         print('Model training started!')
-        train(model, train_loader, dev_loader, traindev_loader, optimizer, None, n_epoch, args.output_dir, encoder, args.gpuid, clip_norm, lr_max, model_name, args)
+        train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler, n_epoch, args.output_dir, encoder, args.gpuid, clip_norm, lr_max, model_name, args)
 
 
 

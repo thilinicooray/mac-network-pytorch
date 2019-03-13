@@ -181,6 +181,65 @@ class BaseModel(nn.Module):
 
         return verb_pred_new
 
+    def forward_eval(self, img, verb, labels):
+
+        #i=0
+
+        verb_q_idx = self.encoder.get_common_verbq(img.size(0))
+
+        if self.gpu_mode >= 0:
+            verb_q_idx = verb_q_idx.to(torch.device('cuda'))
+
+        img_embd = self.verb_module.conv(img)
+        batch_size, n_channel, conv_h, conv_w = img_embd.size()
+        img_embd = img_embd.view(batch_size, n_channel, -1)
+        img_embd = img_embd.permute(0, 2, 1)
+
+        qw_emb = self.verb_module.verb_q_emb(verb_q_idx)
+
+
+        self.verb_module.verb_vqa.q_emb.flatten_parameters()
+        lstm_out, (h, _) = self.verb_module.verb_vqa.q_emb(qw_emb)
+        q_emb = h.permute(1, 0, 2).contiguous().view(batch_size, -1)
+        q_emb = self.verb_module.verb_vqa.lstm_proj(q_emb)
+
+        att = self.verb_module.verb_vqa.v_att(img_embd, q_emb)
+        v_emb = (att * img_embd)
+        v_emb = v_emb.permute(0, 2, 1)
+        v_emb = v_emb.contiguous().view(-1, 512*7*7)
+        v_emb_with_q = torch.cat([v_emb, q_emb], -1)
+        prev_internal_rep = self.verb_module.verb_vqa.classifier[0](v_emb_with_q)
+        verb_pred_prev = self.verb_module.last_class(self.verb_module.verb_vqa.classifier[1:](prev_internal_rep))
+
+        sorted_idx = torch.sort(verb_pred_prev, 1, True)[1]
+        verbs = sorted_idx[:,0]
+        _, pred_rep = self.role_module(img, verbs)
+
+        #i=1
+        qw_emb_up = self.updating_verb_module.verb_q_emb(verb_q_idx)
+        new_verbq = torch.cat([self.label_small(pred_rep), qw_emb_up],1)
+        self.updating_verb_module.verb_vqa.q_emb.flatten_parameters()
+        lstm_out, (h, _) = self.updating_verb_module.verb_vqa.q_emb(new_verbq)
+        q_emb_up = h.permute(1, 0, 2).contiguous().view(batch_size, -1)
+        q_emb_up = self.updating_verb_module.verb_vqa.lstm_proj(q_emb_up)
+
+        att = self.updating_verb_module.verb_vqa.v_att(img_embd, q_emb_up)
+        v_emb = (att * img_embd)
+        v_emb = v_emb.permute(0, 2, 1)
+        v_emb = v_emb.contiguous().view(-1, 512*7*7)
+        v_emb_with_q = torch.cat([v_emb, q_emb_up], -1)
+        internal_rep = self.updating_verb_module.verb_vqa.classifier[0](v_emb_with_q)
+
+        '''if self.training:
+            rep = internal_rep
+        else:
+            rep = internal_rep + prev_internal_rep'''
+
+        rep = internal_rep + prev_internal_rep
+        verb_pred_new = self.updating_verb_module.last_class(self.updating_verb_module.verb_vqa.classifier[1:](rep))
+
+        return verb_pred_new
+
     def calculate_loss(self, verb_pred, gt_verbs):
 
         batch_size = verb_pred.size()[0]
