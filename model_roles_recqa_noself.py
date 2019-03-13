@@ -192,7 +192,7 @@ class BaseModel(nn.Module):
         role_label_pred = role_label_pred.contiguous().view(batch_size, -1, self.vocab_size)
         pred_rep = rep.contiguous().view(batch_size, -1, self.mlp_hidden)
 
-        return role_label_pred, pred_rep
+        return role_label_pred
 
     def calculate_loss(self, gt_verbs, role_label_pred, gt_labels,args):
 
