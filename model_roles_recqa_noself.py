@@ -190,7 +190,7 @@ class BaseModel(nn.Module):
         role_label_pred_rep = self.classifier.main[0](rep)
         role_label_pred = self.classifier.main[1:](role_label_pred_rep)
         role_label_pred = role_label_pred.contiguous().view(batch_size, -1, self.vocab_size)
-        pred_rep = v_repr.contiguous().view(batch_size, -1, self.mlp_hidden)
+        pred_rep = rep.contiguous().view(batch_size, -1, self.mlp_hidden)
 
         return role_label_pred, pred_rep
 
