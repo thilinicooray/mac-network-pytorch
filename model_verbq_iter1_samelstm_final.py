@@ -167,7 +167,7 @@ class BaseModel(nn.Module):
 
         qw_emb = self.verb_module.verb_q_emb(verb_q_idx)
 
-        new_verbq = torch.cat([self.label_small(pred_rep), qw_emb],1)
+        new_verbq = torch.cat([ qw_emb, self.label_small(pred_rep)],1)
 
         verb_pred_logit = self.verb_module.verb_vqa(img_embd, new_verbq)
         verb_pred = self.verb_module.last_class(verb_pred_logit)
