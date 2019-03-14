@@ -33,7 +33,6 @@ class vgg16_modified(nn.Module):
 class TopDown(nn.Module):
     def __init__(self,
                  vocab_size,
-                 classifier,
                  embed_hidden=300,
                  mlp_hidden=512):
         super(TopDown, self).__init__()
@@ -49,7 +48,7 @@ class TopDown(nn.Module):
         self.v_net = FCNet([mlp_hidden, mlp_hidden])
         self.classifier = SimpleClassifier(
             mlp_hidden, 2 * mlp_hidden, self.vocab_size, 0.5)'''
-        '''self.classifier = nn.Sequential(
+        self.classifier = nn.Sequential(
             nn.Linear(mlp_hidden * 7 *7 + mlp_hidden, mlp_hidden*8),
             nn.BatchNorm1d(mlp_hidden*8),
             nn.ReLU(inplace=True),
@@ -58,8 +57,7 @@ class TopDown(nn.Module):
             nn.BatchNorm1d(mlp_hidden*8),
             nn.ReLU(inplace=True),
             nn.Dropout(0.5),
-        )'''
-        self.classifier = classifier
+        )
 
 
     def forward(self, img, q):
@@ -127,7 +125,7 @@ class BaseModel(nn.Module):
         
         for param in self.conv.parameters():
             param.require_grad = False'''
-        self.verb_vqa = TopDown(self.n_verbs, self.verb_module.verb_vqa.classifier)
+        self.verb_vqa = TopDown(self.n_verbs)
         self.verb_q_emb = nn.Embedding(self.verbq_word_count + 1, embed_hidden, padding_idx=self.verbq_word_count)
 
 
