@@ -294,11 +294,11 @@ class imsitu_encoder():
                 agent_name = self.label_list[current_labels[agent_idx]]
 
             if len(agent_name) > 0 and len(place_name) > 0:
-                question = 'what is the action the ' + agent_name + ' doing at the ' + place_name
+                question = 'what is the ' + agent_name + ' doing at the ' + place_name
             elif len(place_name) > 0 and len(agent_name) == 0:
                 question = 'what is the action happening at the ' + place_name
             elif len(agent_name) > 0 and len(place_name) == 0:
-                question = 'what is the action the '+ agent_name + ' doing'
+                question = 'what is the '+ agent_name + ' doing'
             else:
                 question = 'what is the action happening'
 

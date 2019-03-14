@@ -262,7 +262,7 @@ def main():
 
     train_set = json.load(open(dataset_folder + "/updated_train_new.json"))
     imsitu_roleq = json.load(open("imsitu_data/imsitu_questions_prev.json"))
-    verb_templates = json.load(open("imsitu_data/verb_questions_template_new1.json"))
+    verb_templates = json.load(open("imsitu_data/verb_questions_template_new.json"))
     encoder = imsitu_encoder(train_set, imsitu_roleq, verb_templates)
 
     model = model_verbq_final_deprole_verbqa0.BaseModel(encoder, args.gpuid)
