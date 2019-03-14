@@ -3,7 +3,7 @@ from imsitu_encoder_roleq_verbtemplate_n_commonq import imsitu_encoder
 from imsitu_loader import imsitu_loader_roleq_updated
 from imsitu_scorer_log import imsitu_scorer
 import json
-import model_verbq_final_deprole_verbqa0
+import model_verbq_final_deprole_verbqa0_eval
 import os
 import utils
 import time
@@ -265,7 +265,7 @@ def main():
     verb_templates = json.load(open("imsitu_data/verb_questions_template.json"))
     encoder = imsitu_encoder(train_set, imsitu_roleq, verb_templates)
 
-    model = model_verbq_final_deprole_verbqa0.BaseModel(encoder, args.gpuid)
+    model = model_verbq_final_deprole_verbqa0_eval.BaseModel(encoder, args.gpuid)
 
     # To group up the features
     #cnn_features, role_features = utils.group_features_noun(model)
@@ -288,9 +288,19 @@ def main():
     traindev_loader = torch.utils.data.DataLoader(traindev_set, batch_size=8, shuffle=True, num_workers=n_worker)
 
 
-    utils.load_net(args.verb_module, [model.verb_module])
-    utils.load_net(args.role_module, [model.role_module])
-    model_name = 'train_full'
+    if args.resume_training:
+        print('Resume training ')
+        args.train_all = True
+        '''if len(args.resume_model) == 0:
+            raise Exception('[pretrained verb module] not specified')'''
+        utils.load_net(args.resume_model, [model])
+        optimizer_select = 0
+        model_name = 'resume_all'
+    else:
+
+        utils.load_net(args.verb_module, [model.verb_module])
+        utils.load_net(args.role_module, [model.role_module])
+        model_name = 'train_full'
 
 
     if not os.path.exists(args.output_dir):

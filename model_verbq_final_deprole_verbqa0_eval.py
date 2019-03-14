@@ -113,7 +113,7 @@ class BaseModel(nn.Module):
         self.verb_module.eval()
         self.role_module.eval()
 
-        #self.conv = vgg16_modified()
+        self.conv = vgg16_modified()
 
         '''for param in self.verb_module.parameters():
             param.require_grad = False
@@ -145,7 +145,7 @@ class BaseModel(nn.Module):
             if self.gpu_mode >= 0:
                 verb_q_idx = verb_q_idx.to(torch.device('cuda'))
 
-            img_embd = self.verb_module.conv(img)
+            img_embd = self.conv(img)
             batch_size, n_channel, conv_h, conv_w = img_embd.size()
             img_embd = img_embd.view(batch_size, n_channel, -1)
             img_embd = img_embd.permute(0, 2, 1)
@@ -162,7 +162,21 @@ class BaseModel(nn.Module):
 
 
         else:
-            verb_pred_prev = self.verb_module(img)
+
+            verb_q_idx = self.encoder.get_common_verbq(img.size(0))
+
+            if self.gpu_mode >= 0:
+                verb_q_idx = verb_q_idx.to(torch.device('cuda'))
+
+            q_emb = self.verb_module.verb_q_emb(verb_q_idx)
+
+            verb_pred_feat = self.verb_module.conv(img)
+            batch_size, n_channel, conv_h, conv_w = verb_pred_feat.size()
+            verb_pred_feat = verb_pred_feat.view(batch_size, n_channel, -1)
+            verb_pred_feat = verb_pred_feat.permute(0, 2, 1)
+
+            verb_b4last = self.verb_module.verb_vqa(verb_pred_feat, q_emb)
+            verb_pred_prev = self.verb_module.last_class(verb_b4last)
 
             sorted_idx = torch.sort(verb_pred_prev, 1, True)[1]
             verbs = sorted_idx[:,0]
@@ -174,7 +188,7 @@ class BaseModel(nn.Module):
             if self.gpu_mode >= 0:
                 verb_q_idx = verb_q_idx.to(torch.device('cuda'))
 
-            img_embd = self.verb_module.conv(img)
+            img_embd = self.conv(img)
             batch_size, n_channel, conv_h, conv_w = img_embd.size()
             img_embd = img_embd.view(batch_size, n_channel, -1)
             img_embd = img_embd.permute(0, 2, 1)
@@ -182,6 +196,12 @@ class BaseModel(nn.Module):
             q_emb = self.verb_q_emb(verb_q_idx)
 
             verb_pred_logit = self.verb_vqa(img_embd, q_emb)
+
+
+            #add with prev
+
+            verb_pred_logit = verb_pred_logit + verb_b4last
+
             verb_pred = self.verb_module.last_class(verb_pred_logit)
 
         return verb_pred
