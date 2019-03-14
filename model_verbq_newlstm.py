@@ -105,7 +105,7 @@ class BaseModel(nn.Module):
         self.encoder = encoder
         self.gpu_mode = gpu_mode
         self.mlp_hidden = mlp_hidden
-        #self.verbq_word_count = len(self.encoder.verb_q_words)
+        self.verbq_word_count = len(self.encoder.verb_question_words)
         self.n_verbs = self.encoder.get_num_verbs()
 
         self.conv = vgg16_modified()
@@ -115,32 +115,22 @@ class BaseModel(nn.Module):
         self.verb_module.eval()
         self.role_module.eval()
 
+        self.verb_q_emb = nn.Embedding(self.verbq_word_count + 1, embed_hidden, padding_idx=self.verbq_word_count)
+
+        self.q_emb_lstm = nn.LSTM(embed_hidden, mlp_hidden,
+                              batch_first=True, bidirectional=True)
+        self.lstm_proj = nn.Linear(mlp_hidden * 2, mlp_hidden)
+
         self.role_proj = nn.Linear(mlp_hidden, mlp_hidden)
+
         self.verb_vqa = TopDown(self.n_verbs)
-        self.commonq_embd = torch.Tensor(self.get_commonq_embd().detach().numpy())
-        self.register_buffer('commonq_embd_cnst', self.commonq_embd)
+
 
     def train_preprocess(self):
         return self.train_transform
 
     def dev_preprocess(self, ):
         return self.dev_transform
-
-    def get_commonq_embd(self):
-        verb_q_idx = self.encoder.get_common_verbq(1)
-
-        '''if self.gpu_mode >= 0:
-            verb_q_idx = verb_q_idx.to(torch.device('cuda'))'''
-
-        qw_emb = self.verb_module.verb_q_emb(verb_q_idx)
-
-        self.verb_module.verb_vqa.q_emb.flatten_parameters()
-        lstm_out, (h, _) = self.verb_module.verb_vqa.q_emb(qw_emb)
-        q_emb = h.permute(1, 0, 2).contiguous().view(1, -1)
-        q_emb = self.verb_module.verb_vqa.lstm_proj(q_emb)
-
-        return q_emb
-
 
     def forward(self, img, verb, labels):
 
@@ -150,16 +140,22 @@ class BaseModel(nn.Module):
 
         img_embd = self.conv(img)
         batch_size, n_channel, conv_h, conv_w = img_embd.size()
-        print(batch_size)
         img_embd = img_embd.view(batch_size, n_channel, -1)
         img_embd = img_embd.permute(0, 2, 1)
 
-        commonq = self.commonq_embd_cnst
-        qembed = commonq.expand(batch_size, commonq.size(0), commonq.size(1))
+        verb_q_idx = self.encoder.get_common_verbq(batch_size)
 
-        new_verbq = torch.cat([pred_rep_proj, qembed],1)
+        if self.gpu_mode >= 0:
+            verb_q_idx = verb_q_idx.to(torch.device('cuda'))
 
-        #print(new_verbq.size())
+        qw_emb = self.verb_q_emb(verb_q_idx)
+
+        self.q_emb_lstm.flatten_parameters()
+        lstm_out, (h, _) = self.q_emb_lstm(qw_emb)
+        q_emb = h.permute(1, 0, 2).contiguous().view(batch_size, -1)
+        commonq = self.lstm_proj(q_emb)
+
+        new_verbq = torch.cat([pred_rep_proj, commonq.unsqueeze(1)],1)
 
         verb_pred_logit = self.verb_vqa(img_embd, new_verbq)
         verb_pred = self.verb_module.last_class(verb_pred_logit)
@@ -182,10 +178,19 @@ class BaseModel(nn.Module):
         img_embd = img_embd.view(batch_size, n_channel, -1)
         img_embd = img_embd.permute(0, 2, 1)
 
-        commonq = self.commonq_embd_cnst
-        qembed = commonq.expand(batch_size, commonq.size(0), commonq.size(1))
+        verb_q_idx = self.encoder.get_common_verbq(batch_size)
 
-        new_verbq = torch.cat([pred_rep_proj, qembed],1)
+        if self.gpu_mode >= 0:
+            verb_q_idx = verb_q_idx.to(torch.device('cuda'))
+
+        qw_emb = self.verb_q_emb(verb_q_idx)
+
+        self.q_emb_lstm.flatten_parameters()
+        lstm_out, (h, _) = self.q_emb_lstm(qw_emb)
+        q_emb = h.permute(1, 0, 2).contiguous().view(batch_size, -1)
+        commonq = self.lstm_proj(q_emb)
+
+        new_verbq = torch.cat([pred_rep_proj, commonq.unsqueeze(1)],1)
 
         verb_pred_logit = self.verb_vqa(img_embd, new_verbq)
         verb_pred = self.verb_module.last_class(verb_pred_logit)
