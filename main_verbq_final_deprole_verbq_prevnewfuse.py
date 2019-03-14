@@ -338,7 +338,7 @@ def main():
     optimizer = torch.optim.Adam([
         {'params': model.verb_vqa.classifier.parameters()},
         {'params': model.last_class.parameters()}
-    ], lr=5e-5)
+    ], lr=1e-4)
 
     #optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     #scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=lr_step, gamma=lr_gamma)
