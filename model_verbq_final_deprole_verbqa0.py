@@ -113,7 +113,7 @@ class BaseModel(nn.Module):
         self.verb_module.eval()
         self.role_module.eval()
 
-        #self.conv = vgg16_modified()
+        self.conv = vgg16_modified()
 
         '''for param in self.verb_module.parameters():
             param.require_grad = False
@@ -125,7 +125,7 @@ class BaseModel(nn.Module):
             param.require_grad = False'''
         self.verb_vqa = TopDown(self.n_verbs)
         self.verb_q_emb = nn.Embedding(self.verbq_word_count + 1, embed_hidden, padding_idx=self.verbq_word_count)
-
+        self.last_class = nn.Linear(self.mlp_hidden*8, self.n_verbs)
 
 
     def train_preprocess(self):
@@ -145,7 +145,7 @@ class BaseModel(nn.Module):
             if self.gpu_mode >= 0:
                 verb_q_idx = verb_q_idx.to(torch.device('cuda'))
 
-            img_embd = self.verb_module.conv(img)
+            img_embd = self.conv(img)
             batch_size, n_channel, conv_h, conv_w = img_embd.size()
             img_embd = img_embd.view(batch_size, n_channel, -1)
             img_embd = img_embd.permute(0, 2, 1)
@@ -157,7 +157,7 @@ class BaseModel(nn.Module):
             q_emb = self.verb_q_emb(verb_q_idx)
 
             verb_pred = self.verb_vqa(img_embd, q_emb)
-            verb_pred = self.verb_module.last_class(verb_pred)
+            verb_pred = self.last_class(verb_pred)
             verb_pred = verb_pred.contiguous().view(batch_size, -1, self.n_verbs)
 
 
@@ -174,7 +174,7 @@ class BaseModel(nn.Module):
             if self.gpu_mode >= 0:
                 verb_q_idx = verb_q_idx.to(torch.device('cuda'))
 
-            img_embd = self.verb_module.conv(img)
+            img_embd = self.conv(img)
             batch_size, n_channel, conv_h, conv_w = img_embd.size()
             img_embd = img_embd.view(batch_size, n_channel, -1)
             img_embd = img_embd.permute(0, 2, 1)
@@ -182,7 +182,7 @@ class BaseModel(nn.Module):
             q_emb = self.verb_q_emb(verb_q_idx)
 
             verb_pred_logit = self.verb_vqa(img_embd, q_emb)
-            verb_pred = self.verb_module.last_class(verb_pred_logit)
+            verb_pred = self.last_class(verb_pred_logit)
 
         return verb_pred
 

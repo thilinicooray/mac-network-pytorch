@@ -268,7 +268,7 @@ def main():
     model = model_verbq_final_deprole_verbqa0.BaseModel(encoder, args.gpuid)
 
     # To group up the features
-    #cnn_features, role_features = utils.group_features_noun(model)
+    cnn_features, role_features = utils.group_features_noun(model)
     #cnn_features, role_features = utils.group_features_joint_reverb(model)
 
     train_set = imsitu_loader_roleq_updated(imgset_folder, train_set, encoder, model.train_preprocess())
@@ -303,11 +303,11 @@ def main():
         torch.cuda.manual_seed(1234)
         torch.backends.cudnn.deterministic = True
 
-    '''optimizer = torch.optim.Adam([
+    optimizer = torch.optim.Adam([
         {'params': cnn_features, 'lr': 5e-5},
         {'params': role_features}
-    ], lr=1e-3)'''
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    ], lr=1e-3)
+    #optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
     #optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     #scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=lr_step, gamma=lr_gamma)
