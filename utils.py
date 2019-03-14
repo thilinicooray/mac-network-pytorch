@@ -616,6 +616,45 @@ def load_net_deproleqa0td(fname, net_list, prefix_list = None):
             pdb.set_trace()
             print ('[Loaded net not complete] Parameter[{}] Size Mismatch...'.format(k))
 
+def load_net_nlpq_fuse_ft(fname, net_list, prefix_list = None):
+    need_modification = False
+    if prefix_list is not None and len(prefix_list) > 0:
+        need_modification = True
+    for i in range(0, len(net_list)):
+        dict = torch.load(fname)
+        try:
+            for k, v in net_list[i].state_dict().items():
+                #print('trying to copy :', k, v.size(), v.type())
+                if need_modification:
+                    k = prefix_list[i] + '.' + k
+
+                if k == 'verb_vqa.classifier':
+                    print('came here ', k)
+                    k = 'verb_module' + '.' + k
+                    #print('new', k)
+                    param = torch.from_numpy(np.asarray(dict[k].cpu()))
+                    v.copy_(param)
+
+                elif k in dict:
+                    #print('came here')
+                    param = torch.from_numpy(np.asarray(dict[k].cpu()))
+                    #print('param size :', param.size(), dict[k].type())
+                    v.copy_(param)
+                    #print('[Copied]: {}'.format(k))
+                elif 'last_class' in k:
+                    #print('loadinggg', k)
+                    k = 'verb_module' + '.' + k
+                    #print('new', k)
+                    param = torch.from_numpy(np.asarray(dict[k].cpu()))
+                    v.copy_(param)
+
+                else:
+                    print('[Missed]: {}'.format(k))
+        except Exception as e:
+            print(e)
+            pdb.set_trace()
+            print ('[Loaded net not complete] Parameter[{}] Size Mismatch...'.format(k))
+
 #optimizer from transformer
 class NoamOpt:
     "Optim wrapper that implements rate."
