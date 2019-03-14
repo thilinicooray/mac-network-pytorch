@@ -148,7 +148,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 max_score = max(dev_score_list)
 
                 if max_score == dev_score_list[-1]:
-                    torch.save(model.state_dict(), model_dir + "/{}_verbq_final_deprole_verbqa0_fxcnn.model".format( model_name))
+                    torch.save(model.state_dict(), model_dir + "/{}_verbq_final_deprole_verbqa0_new.model".format( model_name))
                     print ('New best model saved! {0}'.format(max_score))
 
                 #eval on the trainset
@@ -262,7 +262,7 @@ def main():
 
     train_set = json.load(open(dataset_folder + "/updated_train_new.json"))
     imsitu_roleq = json.load(open("imsitu_data/imsitu_questions_prev.json"))
-    verb_templates = json.load(open("imsitu_data/verb_questions_template.json"))
+    verb_templates = json.load(open("imsitu_data/verb_questions_template_new.json"))
     encoder = imsitu_encoder(train_set, imsitu_roleq, verb_templates)
 
     model = model_verbq_final_deprole_verbqa0.BaseModel(encoder, args.gpuid)
@@ -303,7 +303,7 @@ def main():
         torch.cuda.manual_seed(1234)
         torch.backends.cudnn.deterministic = True
 
-    optimizer = torch.optim.Adam([
+    optimizer = torch.optim.Adamax([
         {'params': cnn_features, 'lr': 5e-5},
         {'params': role_features}
     ], lr=1e-3)
