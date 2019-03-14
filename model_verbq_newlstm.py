@@ -118,6 +118,8 @@ class BaseModel(nn.Module):
         self.role_proj = nn.Linear(mlp_hidden, mlp_hidden)
         self.verb_vqa = TopDown(self.n_verbs)
         self.commonq_embd = torch.Tensor(self.get_commonq_embd().detach().numpy())
+        if self.gpu_mode >= 0:
+            self.commonq_embd = self.commonq_embd.to(torch.device('cuda'))
         self.register_buffer('commonq_embd_cnst', self.commonq_embd)
 
     def train_preprocess(self):
