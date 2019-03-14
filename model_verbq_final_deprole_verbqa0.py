@@ -108,12 +108,14 @@ class BaseModel(nn.Module):
         self.verbq_word_count = len(self.encoder.verb_q_words)
         self.n_verbs = self.encoder.get_num_verbs()
 
+        self.conv = vgg16_modified()
+
         self.verb_module = model_verbq_0.BaseModel(self.encoder, self.gpu_mode)
         self.role_module = model_roles_recqa_noself.BaseModel(self.encoder, self.gpu_mode)
         self.verb_module.eval()
         self.role_module.eval()
 
-        self.conv = vgg16_modified()
+
 
         '''for param in self.verb_module.parameters():
             param.require_grad = False
