@@ -176,7 +176,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
             #break
         print('Epoch ', epoch, ' completed!')
         scheduler.step()
-        break
+        #break
 
 def eval(model, dev_loader, encoder, gpu_mode, write_to_file = False):
     model.eval()
