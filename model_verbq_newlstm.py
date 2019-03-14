@@ -118,8 +118,6 @@ class BaseModel(nn.Module):
         self.role_proj = nn.Linear(mlp_hidden, mlp_hidden)
         self.verb_vqa = TopDown(self.n_verbs)
         self.commonq_embd = torch.Tensor(self.get_commonq_embd().detach().numpy())
-        if self.gpu_mode >= 0:
-            self.commonq_embd = self.commonq_embd.to(torch.device('cuda'))
         self.register_buffer('commonq_embd_cnst', self.commonq_embd)
 
     def train_preprocess(self):
@@ -131,8 +129,8 @@ class BaseModel(nn.Module):
     def get_commonq_embd(self):
         verb_q_idx = self.encoder.get_common_verbq(1)
 
-        if self.gpu_mode >= 0:
-            verb_q_idx = verb_q_idx.to(torch.device('cuda'))
+        '''if self.gpu_mode >= 0:
+            verb_q_idx = verb_q_idx.to(torch.device('cuda'))'''
 
         qw_emb = self.verb_module.verb_q_emb(verb_q_idx)
 
@@ -152,6 +150,7 @@ class BaseModel(nn.Module):
 
         img_embd = self.conv(img)
         batch_size, n_channel, conv_h, conv_w = img_embd.size()
+        print(batch_size)
         img_embd = img_embd.view(batch_size, n_channel, -1)
         img_embd = img_embd.permute(0, 2, 1)
 
