@@ -74,6 +74,8 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
             print(labels)'''
 
             verb_predict, loss = pmodel(img, verb, labels)
+
+            #print('final loss :', loss, loss.mean())
             #verb_predict, rol1pred, role_predict = pmodel.forward_eval5(img)
             #print ("forward time = {}".format(time.time() - t1))
             t1 = time.time()
@@ -85,8 +87,6 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
             #loss = loss_ * random.random() #try random loss
             #print ("loss time = {}".format(time.time() - t1))
             t1 = time.time()
-
-            #loss = loss.mean()
 
             if gpu_mode >= 0 :
                 loss.backward(torch.ones([2,1]).to(torch.device('cuda')))
@@ -143,7 +143,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
 
                 avg_score = top1_avg["verb"] + top1_avg["value"] + top1_avg["value-all"] + top5_avg["verb"] + \
                             top5_avg["value"] + top5_avg["value-all"]
-                avg_score /= 8
+                avg_score = top1_avg["verb"]
 
                 print ('Dev {} average :{:.2f} {} {}'.format(total_steps-1, avg_score*100,
                                                              utils.format_dict(top1_avg,'{:.2f}', '1-'),
