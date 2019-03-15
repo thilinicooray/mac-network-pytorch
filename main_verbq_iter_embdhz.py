@@ -116,9 +116,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
 
             optimizer.zero_grad()
 
-
-
-            train_loss += 0
+            train_loss += loss.mean()
 
             #top1.add_point_eval5(verb_predict, verb, role_predict, labels)
             #top5.add_point_eval5(verb_predict, verb, role_predict, labels)
@@ -281,7 +279,7 @@ def main():
 
     train_set = imsitu_loader_roleq_updated(imgset_folder, train_set, encoder, model.train_preprocess())
 
-    train_loader = torch.utils.data.DataLoader(train_set, batch_size=64, shuffle=True, num_workers=n_worker)
+    train_loader = torch.utils.data.DataLoader(train_set, batch_size=32, shuffle=True, num_workers=n_worker)
 
     dev_set = json.load(open(dataset_folder +"/dev.json"))
     dev_set = imsitu_loader_roleq_updated(imgset_folder, dev_set, encoder, model.dev_preprocess())
