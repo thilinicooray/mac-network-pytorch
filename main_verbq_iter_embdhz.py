@@ -277,11 +277,11 @@ def main():
 
     train_set = imsitu_loader_roleq_updated(imgset_folder, train_set, encoder, model.train_preprocess())
 
-    train_loader = torch.utils.data.DataLoader(train_set, batch_size=32, shuffle=True, num_workers=n_worker)
+    train_loader = torch.utils.data.DataLoader(train_set, batch_size=16, shuffle=True, num_workers=n_worker)
 
     dev_set = json.load(open(dataset_folder +"/dev.json"))
     dev_set = imsitu_loader_roleq_updated(imgset_folder, dev_set, encoder, model.dev_preprocess())
-    dev_loader = torch.utils.data.DataLoader(dev_set, batch_size=32, shuffle=True, num_workers=n_worker)
+    dev_loader = torch.utils.data.DataLoader(dev_set, batch_size=16, shuffle=True, num_workers=n_worker)
 
     test_set = json.load(open(dataset_folder +"/test.json"))
     test_set = imsitu_loader_roleq_updated(imgset_folder, test_set, encoder, model.dev_preprocess())
