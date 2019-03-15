@@ -85,6 +85,9 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
             #loss = loss_ * random.random() #try random loss
             #print ("loss time = {}".format(time.time() - t1))
             t1 = time.time()
+
+            loss = loss.mean()
+
             print('current loss = ', loss)
 
             loss.backward()
