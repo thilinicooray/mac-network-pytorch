@@ -86,11 +86,9 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
             #print ("loss time = {}".format(time.time() - t1))
             t1 = time.time()
 
-            loss = loss.mean()
+            #loss = loss.mean()
 
-            print('current loss = ', loss)
-
-            loss.backward()
+            loss.backward(torch.ones(2))
             #print ("backward time = {}".format(time.time() - t1))
 
             torch.nn.utils.clip_grad_norm_(model.parameters(), clip_norm)
