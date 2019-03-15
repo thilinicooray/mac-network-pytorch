@@ -130,7 +130,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 top5_a = top5.get_average_results()
                 print ("{},{},{}, {} , {}, loss = {:.2f}, avg loss = {:.2f}"
                        .format(total_steps-1,epoch,i, utils.format_dict(top1_a, "{:.2f}", "1-"),
-                               utils.format_dict(top5_a,"{:.2f}","5-"), loss.item(),
+                               utils.format_dict(top5_a,"{:.2f}","5-"), loss.mean().item(),
                                train_loss / ((total_steps-1)%eval_frequency) ))
 
 
