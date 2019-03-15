@@ -181,8 +181,6 @@ class BaseModel(nn.Module):
 
         loss = (loss1 + loss2) /2
 
-        print(loss1, loss2, loss)
-
         return verb_pred, loss
 
     def forward_eval(self, img, verbs=None, labels=None):
