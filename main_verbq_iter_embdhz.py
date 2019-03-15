@@ -118,7 +118,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
 
 
 
-            train_loss += loss.item()
+            train_loss += loss.mean()
 
             #top1.add_point_eval5(verb_predict, verb, role_predict, labels)
             #top5.add_point_eval5(verb_predict, verb, role_predict, labels)
