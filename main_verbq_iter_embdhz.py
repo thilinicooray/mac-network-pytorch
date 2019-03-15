@@ -121,8 +121,8 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
             #top1.add_point_eval5(verb_predict, verb, role_predict, labels)
             #top5.add_point_eval5(verb_predict, verb, role_predict, labels)
 
-            top1.add_point_verb_only_eval(id, verb_predict, verb)
-            top5.add_point_verb_only_eval(id, verb_predict, verb)
+            top1.add_point_multi_verb_avg(id, verb_predict, verb)
+            top5.add_point_multi_verb_avg(id, verb_predict, verb)
 
 
             if total_steps % print_freq == 0:
