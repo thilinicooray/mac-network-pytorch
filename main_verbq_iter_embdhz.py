@@ -25,7 +25,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
         #ngpus = 2
         #device_array = [i for i in range(0,ngpus)]
 
-        pmodel = torch.nn.DataParallel(model, device_ids=[3,4,7])
+        pmodel = torch.nn.DataParallel(model, device_ids=[0,1,2])
     else:
         pmodel = model
     #pmodel = model
