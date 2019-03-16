@@ -42,7 +42,6 @@ class TopDown(nn.Module):
                              batch_first=True, bidirectional=True)
         self.lstm_proj = nn.Linear(mlp_hidden * 2, mlp_hidden)
         self.v_att = NewAttention(mlp_hidden, mlp_hidden, mlp_hidden)
-        self.flatten = nn.Linear(mlp_hidden * 7 *7 + mlp_hidden, mlp_hidden*8)
         '''self.q_net = FCNet([mlp_hidden, mlp_hidden])
         self.v_net = FCNet([mlp_hidden, mlp_hidden])
         self.classifier = SimpleClassifier(
@@ -62,7 +61,7 @@ class TopDown(nn.Module):
         v_emb = (att * img)
         v_emb = v_emb.permute(0, 2, 1)
         v_emb = v_emb.contiguous().view(-1, 512*7*7)
-        v_emb_with_q = self.flatten(torch.cat([v_emb, q_emb], -1))
+        v_emb_with_q = torch.cat([v_emb, q_emb], -1)
 
         return v_emb_with_q
 
@@ -106,16 +105,17 @@ class BaseModel(nn.Module):
         self.verb_q_emb.eval()
         self.role_module = model_roles_recqa_noself.BaseModel(self.encoder, self.gpu_mode)
         self.role_module.eval()
-        #self.concat = nn.Linear(mlp_hidden * 16, mlp_hidden*8)
         self.last_class = nn.Sequential(
+            nn.Linear(mlp_hidden * 7 *7 + mlp_hidden, mlp_hidden*8),
+            nn.BatchNorm1d(mlp_hidden*8),
+            nn.ReLU(inplace=True),
+            nn.Dropout(0.5),
             nn.Linear(mlp_hidden * 8, mlp_hidden*8),
             nn.BatchNorm1d(mlp_hidden*8),
             nn.ReLU(inplace=True),
             nn.Dropout(0.5),
             nn.Linear(self.mlp_hidden*8, self.n_verbs)
         )
-        '''self.last_class = SimpleClassifier(
-            mlp_hidden*8, 2 * mlp_hidden, self.n_verbs, 0.5)'''
 
         self.dropout = nn.Dropout(0.3)
 
@@ -178,8 +178,7 @@ class BaseModel(nn.Module):
         verb_pred_rep_prev = verb_pred_rep_prev.contiguous().view(batch_size* 3, -1)
 
         verb_pred_rep = self.verb_vqa(img_embd, q_emb)
-        #combined = self.concat(torch.cat([verb_pred_rep, verb_pred_rep_prev],-1))
-        combined = self.dropout(verb_pred_rep_prev + verb_pred_rep)
+        combined = verb_pred_rep_prev + self.dropout(verb_pred_rep)
         verb_pred = self.last_class(combined)
 
         verb_pred = verb_pred.contiguous().view(batch_size, -1, self.n_verbs)
@@ -226,10 +225,8 @@ class BaseModel(nn.Module):
 
         q_emb = self.verb_q_emb(verb_q_idx)
 
-        verb_pred_logit = self.verb_vqa(img_embd, q_emb)
-        #combined = self.concat(torch.cat([verb_pred_logit, verb_pred_logit_prev],-1))
-        combined = self.dropout(verb_pred_logit_prev + verb_pred_logit)
-        verb_pred = self.last_class(combined)
+        verb_pred_logit = self.verb_vqa(img_embd, q_emb) + verb_pred_logit_prev
+        verb_pred = self.last_class(verb_pred_logit)
 
         return verb_pred
 
@@ -245,21 +242,4 @@ class BaseModel(nn.Module):
             loss += verb_loss
 
         final_loss = loss/batch_size
-        return final_loss
-
-    def calculate_loss_mul(self, verb_pred, gt_verbs):
-
-        batch_size = verb_pred.size()[0]
-        verb_ref = verb_pred.size(1)
-        loss = 0
-        #print('eval pred verbs :', pred_verbs)
-        for i in range(batch_size):
-            verb_loss = 0
-            for r in range(verb_ref):
-                verb_loss += utils.cross_entropy_loss(verb_pred[i][r], gt_verbs[i])
-            loss += verb_loss
-
-
-        final_loss = loss/batch_size
-        #print('loss :', final_loss)
         return final_loss
