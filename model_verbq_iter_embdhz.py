@@ -42,7 +42,7 @@ class TopDown(nn.Module):
                              batch_first=True, bidirectional=True)
         self.lstm_proj = nn.Linear(mlp_hidden * 2, mlp_hidden)
         self.v_att = NewAttention(mlp_hidden, mlp_hidden, mlp_hidden)
-        self.flatten = nn.Linear(mlp_hidden * 7 *7 + mlp_hidden, mlp_hidden*8),
+        self.flatten = nn.Linear(mlp_hidden * 7 *7 + mlp_hidden, mlp_hidden*8)
         '''self.q_net = FCNet([mlp_hidden, mlp_hidden])
         self.v_net = FCNet([mlp_hidden, mlp_hidden])
         self.classifier = SimpleClassifier(
