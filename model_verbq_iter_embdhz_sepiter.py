@@ -135,6 +135,14 @@ class BaseModel(nn.Module):
     def dev_preprocess(self, ):
         return self.dev_transform
 
+    def forward(self, iter, img, prev_rep, verbs, labels):
+        if iter == 0:
+            rep, pred = self.forward0(img)
+            return rep, pred
+        else:
+            pred = self.forward1(img, prev_rep, verbs, labels)
+            return pred
+
     def forward0(self, img, verbs=None, labels=None):
 
         verb_q_idx = self.encoder.get_common_verbq(img.size(0))
