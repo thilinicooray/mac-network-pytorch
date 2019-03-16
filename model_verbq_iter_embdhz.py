@@ -149,7 +149,7 @@ class BaseModel(nn.Module):
 
         q_emb = self.verb_q_emb(verb_q_idx)
 
-        verb_pred_rep_prev = self.verb_vqa(img_embd, q_emb)
+        verb_pred_rep_prev = self.dropout(self.verb_vqa(img_embd, q_emb))
         verb_pred_prev = self.last_class(verb_pred_rep_prev)
 
         loss1 = self.calculate_loss(verb_pred_prev, verbs)
