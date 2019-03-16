@@ -13,19 +13,19 @@ import numpy as np
 #from graphviz import Digraph
 
 
-def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler, max_epoch, model_dir, encoder, gpu_mode, clip_norm, lr_max, model_name, args,eval_frequency=8000):
+def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler, max_epoch, model_dir, encoder, gpu_mode, clip_norm, lr_max, model_name, args,eval_frequency=4000):
     model.train()
     train_loss = 0
     total_steps = 0
-    print_freq = 800
+    print_freq = 400
     dev_score_list = []
     time_all = time.time()
 
     if model.gpu_mode >= 0 :
-        ngpus = 2
-        device_array = [i for i in range(0,ngpus)]
+        #ngpus = 2
+        #device_array = [i for i in range(0,ngpus)]
 
-        pmodel = torch.nn.DataParallel(model, device_ids=device_array)
+        pmodel = torch.nn.DataParallel(model, device_ids=[3,4,7])
     else:
         pmodel = model
     #pmodel = model
@@ -89,7 +89,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
             t1 = time.time()
 
             if gpu_mode >= 0 :
-                loss.backward(torch.ones([2,1]).to(torch.device('cuda')))
+                loss.backward(torch.ones([3,1]).to(torch.device('cuda')))
             else:
                 loss.backward()
             #print ("backward time = {}".format(time.time() - t1))
@@ -279,7 +279,7 @@ def main():
 
     train_set = imsitu_loader_roleq_updated(imgset_folder, train_set, encoder, model.train_preprocess())
 
-    train_loader = torch.utils.data.DataLoader(train_set, batch_size=32, shuffle=True, num_workers=n_worker)
+    train_loader = torch.utils.data.DataLoader(train_set, batch_size=64, shuffle=True, num_workers=n_worker)
 
     dev_set = json.load(open(dataset_folder +"/dev.json"))
     dev_set = imsitu_loader_roleq_updated(imgset_folder, dev_set, encoder, model.dev_preprocess())
