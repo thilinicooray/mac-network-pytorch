@@ -116,7 +116,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
 
             optimizer.zero_grad()
 
-            train_loss += loss.mean()
+            train_loss += float(loss.mean())
 
             #top1.add_point_eval5(verb_predict, verb, role_predict, labels)
             #top5.add_point_eval5(verb_predict, verb, role_predict, labels)
