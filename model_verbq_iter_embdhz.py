@@ -183,11 +183,12 @@ class BaseModel(nn.Module):
 
         verb_pred = verb_pred.contiguous().view(batch_size, -1, self.n_verbs)
 
-        loss2 = (self.calculate_loss(verb_pred[:,0], verbs) + self.calculate_loss(verb_pred[:,1], verbs) +
-                 self.calculate_loss(verb_pred[:,2], verbs)) /3
+        '''loss2 = (self.calculate_loss(verb_pred[:,0], verbs) + self.calculate_loss(verb_pred[:,1], verbs) +
+                 self.calculate_loss(verb_pred[:,2], verbs)) /3'''
+        loss2 = self.calculate_loss_mul(verb_pred, verbs)
 
-        sum_losses = loss1 + loss2
-        batch_avg_loss = sum_losses / 2
+        #sum_losses = loss1 + loss2
+        batch_avg_loss = 0.25*loss1 + 0.75*loss2
         loss = batch_avg_loss
 
         return verb_pred, loss
@@ -242,4 +243,21 @@ class BaseModel(nn.Module):
             loss += verb_loss
 
         final_loss = loss/batch_size
+        return final_loss
+
+    def calculate_loss_mul(self, verb_pred, gt_verbs):
+
+        batch_size = verb_pred.size()[0]
+        verb_ref = verb_pred.size(1)
+        loss = 0
+        #print('eval pred verbs :', pred_verbs)
+        for i in range(batch_size):
+            verb_loss = 0
+            for r in range(verb_ref):
+                verb_loss += utils.cross_entropy_loss(verb_pred[i][r], gt_verbs[i])
+            loss += verb_loss
+
+
+        final_loss = loss/batch_size
+        #print('loss :', final_loss)
         return final_loss
