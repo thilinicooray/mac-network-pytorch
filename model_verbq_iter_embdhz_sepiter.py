@@ -135,13 +135,18 @@ class BaseModel(nn.Module):
     def dev_preprocess(self, ):
         return self.dev_transform
 
-    def forward(self, iter, img, prev_rep, verbs, labels):
-        if iter == 0:
+    def forward(self, img, verbs, labels):
+        rep, pred0 = self.forward0(img)
+        pred1 = self.forward1(img, rep, verbs, labels)
+
+
+        '''if iter == 0:
             rep, pred = self.forward0(img)
             return rep, pred
         else:
             pred = self.forward1(img, prev_rep, verbs, labels)
-            return pred
+            return pred'''
+        return pred0, pred1
 
     def forward0(self, img, verbs=None, labels=None):
 

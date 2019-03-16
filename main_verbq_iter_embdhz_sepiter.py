@@ -73,10 +73,9 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
             print('=========================================================================')
             print(labels)'''
 
-            verb_predict_rep0, verb_pred0 = pmodel(0, img, None, verb, labels)
-            loss1 = model.calculate_loss_single(verb_predict_rep0, verb)
+            verb_pred0, verb_predict = pmodel(img, verb, labels)
+            loss1 = model.calculate_loss_single(verb_pred0, verb)
 
-            verb_predict = pmodel(1, img, verb_predict_rep0, verb, labels)
             loss2 = model.calculate_loss_mul(verb_predict, verb)
 
             loss = 0.25*loss1 + 0.75*loss2
