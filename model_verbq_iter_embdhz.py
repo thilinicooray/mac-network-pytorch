@@ -42,6 +42,7 @@ class TopDown(nn.Module):
                              batch_first=True, bidirectional=True)
         self.lstm_proj = nn.Linear(mlp_hidden * 2, mlp_hidden)
         self.v_att = NewAttention(mlp_hidden, mlp_hidden, mlp_hidden)
+        self.flatten = nn.Linear(mlp_hidden * 7 *7 + mlp_hidden, mlp_hidden*8),
         '''self.q_net = FCNet([mlp_hidden, mlp_hidden])
         self.v_net = FCNet([mlp_hidden, mlp_hidden])
         self.classifier = SimpleClassifier(
@@ -61,7 +62,7 @@ class TopDown(nn.Module):
         v_emb = (att * img)
         v_emb = v_emb.permute(0, 2, 1)
         v_emb = v_emb.contiguous().view(-1, 512*7*7)
-        v_emb_with_q = torch.cat([v_emb, q_emb], -1)
+        v_emb_with_q = self.flatten(torch.cat([v_emb, q_emb], -1))
 
         return v_emb_with_q
 
@@ -105,7 +106,7 @@ class BaseModel(nn.Module):
         self.verb_q_emb.eval()
         self.role_module = model_roles_recqa_noself.BaseModel(self.encoder, self.gpu_mode)
         self.role_module.eval()
-        self.last_class = nn.Sequential(
+        '''self.last_class = nn.Sequential(
             nn.Linear(mlp_hidden * 7 *7 + mlp_hidden, mlp_hidden*8),
             nn.BatchNorm1d(mlp_hidden*8),
             nn.ReLU(inplace=True),
@@ -115,7 +116,9 @@ class BaseModel(nn.Module):
             nn.ReLU(inplace=True),
             nn.Dropout(0.5),
             nn.Linear(self.mlp_hidden*8, self.n_verbs)
-        )
+        )'''
+        self.last_class = SimpleClassifier(
+            mlp_hidden*8, 2 * mlp_hidden, self.n_verbs, 0.5)
 
         self.dropout = nn.Dropout(0.3)
 
@@ -183,12 +186,11 @@ class BaseModel(nn.Module):
 
         verb_pred = verb_pred.contiguous().view(batch_size, -1, self.n_verbs)
 
-        '''loss2 = (self.calculate_loss(verb_pred[:,0], verbs) + self.calculate_loss(verb_pred[:,1], verbs) +
-                 self.calculate_loss(verb_pred[:,2], verbs)) /3'''
-        loss2 = self.calculate_loss_mul(verb_pred, verbs)
+        loss2 = (self.calculate_loss(verb_pred[:,0], verbs) + self.calculate_loss(verb_pred[:,1], verbs) +
+                 self.calculate_loss(verb_pred[:,2], verbs)) /3
 
-        #sum_losses = loss1 + loss2
-        batch_avg_loss = 0.25*loss1 + 0.75*loss2
+        sum_losses = loss1 + loss2
+        batch_avg_loss = sum_losses / 2
         loss = batch_avg_loss
 
         return verb_pred, loss
