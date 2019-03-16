@@ -178,8 +178,8 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 top1 = imsitu_scorer(encoder, 1, 3)
                 top5 = imsitu_scorer(encoder, 5, 3)
 
-            '''if gpu_mode >= 0:
-                torch.cuda.empty_cache()'''
+            if gpu_mode >= 0:
+                torch.cuda.empty_cache()
             del verb_predict, loss, img, verb, labels
             #break
         print('Epoch ', epoch, ' completed!')
