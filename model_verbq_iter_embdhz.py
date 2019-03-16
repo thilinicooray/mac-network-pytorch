@@ -106,7 +106,7 @@ class BaseModel(nn.Module):
         self.verb_q_emb.eval()
         self.role_module = model_roles_recqa_noself.BaseModel(self.encoder, self.gpu_mode)
         self.role_module.eval()
-        self.concat = nn.Linear(mlp_hidden * 16, mlp_hidden*8)
+        #self.concat = nn.Linear(mlp_hidden * 16, mlp_hidden*8)
         self.last_class = nn.Sequential(
             nn.Linear(mlp_hidden * 8, mlp_hidden*8),
             nn.BatchNorm1d(mlp_hidden*8),
@@ -178,7 +178,8 @@ class BaseModel(nn.Module):
         verb_pred_rep_prev = verb_pred_rep_prev.contiguous().view(batch_size* 3, -1)
 
         verb_pred_rep = self.verb_vqa(img_embd, q_emb)
-        combined = self.concat(torch.cat([verb_pred_rep, verb_pred_rep_prev],-1))
+        #combined = self.concat(torch.cat([verb_pred_rep, verb_pred_rep_prev],-1))
+        combined = self.dropout(verb_pred_rep_prev + verb_pred_rep)
         verb_pred = self.last_class(combined)
 
         verb_pred = verb_pred.contiguous().view(batch_size, -1, self.n_verbs)
@@ -226,7 +227,8 @@ class BaseModel(nn.Module):
         q_emb = self.verb_q_emb(verb_q_idx)
 
         verb_pred_logit = self.verb_vqa(img_embd, q_emb)
-        combined = self.concat(torch.cat([verb_pred_logit, verb_pred_logit_prev],-1))
+        #combined = self.concat(torch.cat([verb_pred_logit, verb_pred_logit_prev],-1))
+        combined = self.dropout(verb_pred_logit_prev + verb_pred_logit)
         verb_pred = self.last_class(combined)
 
         return verb_pred
