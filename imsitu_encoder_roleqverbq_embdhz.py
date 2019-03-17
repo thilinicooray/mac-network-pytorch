@@ -300,6 +300,33 @@ class imsitu_encoder():
 
         return torch.stack(all_q_idx,0)
 
+    def get_agentplace_roleidx(self, verb_ids):
+        batch_size = verb_ids.size(0)
+        all_q_idx = []
+        for i in range(batch_size):
+            q_idx = []
+            curr_verb_id = verb_ids[i]
+            verb_name = self.verb_list[curr_verb_id]
+            verb_details = self.verb_q_templates[verb_name]
+            current_role_list = self.verb2_role_dict[verb_name]
+            plz_idx = 5
+            agent_idx = 5
+            if verb_details['has_place']:
+                plz_idx = current_role_list.index('place')
+            if verb_details['has_agent']:
+                if 'agent' in current_role_list:
+                    agent_idx = current_role_list.index('agent')
+                else:
+                    for a_role in self.other_agent_roles:
+                        if a_role in current_role_list:
+                            agent_idx = current_role_list.index(a_role)
+                            break
+
+            q_idx = [plz_idx, agent_idx]
+            all_q_idx.append(torch.tensor(q_idx))
+
+        return torch.stack(all_q_idx,0)
+
     def get_verbq_partial_idx(self, verb_ids, label_ids):
         batch_size = verb_ids.size(0)
         all_q_idx = []
