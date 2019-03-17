@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from attention import Attention, NewAttention
+from attention import Attention, NewAttention, PropAttention
 from language_model import WordEmbedding, QuestionEmbedding
 from classifier import SimpleClassifier
 from fc import FCNet
@@ -11,13 +11,13 @@ import numpy as np
 import model_roles_recqa_noself_4others
 from torch.nn.init import kaiming_uniform_, xavier_uniform_, normal
 
-def linear(in_dim, out_dim, bias=True):
+'''def linear(in_dim, out_dim, bias=True):
     lin = nn.Linear(in_dim, out_dim, bias=bias)
     xavier_uniform_(lin.weight)
     if bias:
         lin.bias.data.zero_()
 
-    return lin
+    return lin'''
 
 class vgg16_modified(nn.Module):
     def __init__(self):
@@ -47,7 +47,7 @@ class TopDown(nn.Module):
 
         self.vocab_size = vocab_size
 
-        self.v_att = NewAttention(mlp_hidden, mlp_hidden, mlp_hidden)
+        self.v_att = PropAttention(mlp_hidden, mlp_hidden, mlp_hidden)
         '''self.q_net = FCNet([mlp_hidden, mlp_hidden])
         self.v_net = FCNet([mlp_hidden, mlp_hidden])
         self.classifier = SimpleClassifier(
@@ -104,33 +104,33 @@ class BaseModel(nn.Module):
         self.verb_vqa = TopDown(self.n_verbs)
         self.verb_q_emb = nn.Embedding(self.verbq_word_count, embed_hidden)
 
-        xavier_uniform_(self.verb_q_emb.weight)
+        #xavier_uniform_(self.verb_q_emb.weight)
 
         self.role_module = model_roles_recqa_noself_4others.BaseModel(self.encoder, self.gpu_mode)
 
         self.q_emb1 = nn.LSTM(embed_hidden, mlp_hidden,
                               batch_first=True, bidirectional=True)
-        self.lstm_proj1 = linear(mlp_hidden * 2, mlp_hidden)
+        self.lstm_proj1 = nn.Linear(mlp_hidden * 2, mlp_hidden)
 
-        self.role_proj = linear(mlp_hidden, mlp_hidden)
+        self.role_proj = nn.Linear(mlp_hidden, mlp_hidden)
         self.q_emb2 = nn.LSTM(mlp_hidden, mlp_hidden,
                               batch_first=True, bidirectional=True)
-        self.lstm_proj2 = linear(mlp_hidden * 2, mlp_hidden)
+        self.lstm_proj2 = nn.Linear(mlp_hidden * 2, mlp_hidden)
 
-        self.lstm_init(self.lstm_proj1)
-        self.lstm_init(self.lstm_proj2)
+        #self.lstm_init(self.lstm_proj1)
+        #self.lstm_init(self.lstm_proj2)
 
 
         self.last_class = nn.Sequential(
-            linear(mlp_hidden * 7 *7 + mlp_hidden, mlp_hidden*8),
+            nn.Linear(mlp_hidden * 7 *7 + mlp_hidden, mlp_hidden*8),
             nn.BatchNorm1d(mlp_hidden*8),
             nn.ReLU(inplace=True),
             nn.Dropout(0.5),
-            linear(mlp_hidden * 8, mlp_hidden*8),
+            nn.Linear(mlp_hidden * 8, mlp_hidden*8),
             nn.BatchNorm1d(mlp_hidden*8),
             nn.ReLU(inplace=True),
             nn.Dropout(0.5),
-            linear(self.mlp_hidden*8, self.n_verbs)
+            nn.Linear(self.mlp_hidden*8, self.n_verbs)
         )
 
         self.dropout = nn.Dropout(0.3)
