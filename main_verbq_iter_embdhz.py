@@ -22,7 +22,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
     time_all = time.time()
 
     if model.gpu_mode >= 0 :
-        ngpus = 3
+        ngpus = 2
         device_array = [i for i in range(0,ngpus)]
 
         pmodel = torch.nn.DataParallel(model, device_ids=device_array)
@@ -89,7 +89,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
             t1 = time.time()
 
             if gpu_mode >= 0 :
-                loss.backward(torch.ones([3,1]).to(torch.device('cuda')))
+                loss.backward(torch.ones([2,1]).to(torch.device('cuda')))
             else:
                 loss.backward()
             #print ("backward time = {}".format(time.time() - t1))
