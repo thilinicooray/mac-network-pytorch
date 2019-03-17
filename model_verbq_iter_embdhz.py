@@ -101,8 +101,8 @@ class BaseModel(nn.Module):
 
         self.verb_vqa = TopDown(self.n_verbs)
         self.verb_q_emb = nn.Embedding(self.verbq_word_count + 1, embed_hidden, padding_idx=self.verbq_word_count)
-        #self.init_verbq_embd()
-        #self.verb_q_emb.eval()
+        self.init_verbq_embd()
+        self.verb_q_emb.eval()
         self.role_module = model_roles_recqa_noself.BaseModel(self.encoder, self.gpu_mode)
         self.role_module.eval()
         self.last_class = nn.Sequential(

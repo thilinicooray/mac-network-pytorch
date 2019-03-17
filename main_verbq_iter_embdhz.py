@@ -22,7 +22,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
     time_all = time.time()
 
     if model.gpu_mode >= 0 :
-        ngpus = 2
+        ngpus = 3
         device_array = [i for i in range(0,ngpus)]
 
         pmodel = torch.nn.DataParallel(model, device_ids=device_array)
@@ -89,7 +89,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
             t1 = time.time()
 
             if gpu_mode >= 0 :
-                loss.backward(torch.ones([2,1]).to(torch.device('cuda')))
+                loss.backward(torch.ones([3,1]).to(torch.device('cuda')))
             else:
                 loss.backward()
             #print ("backward time = {}".format(time.time() - t1))
@@ -281,7 +281,7 @@ def main():
 
     train_set = imsitu_loader_roleq_updated(imgset_folder, train_set, encoder, model.train_preprocess())
 
-    train_loader = torch.utils.data.DataLoader(train_set, batch_size=48, shuffle=True, num_workers=n_worker)
+    train_loader = torch.utils.data.DataLoader(train_set, batch_size=64, shuffle=True, num_workers=n_worker)
 
     dev_set = json.load(open(dataset_folder +"/dev.json"))
     dev_set = imsitu_loader_roleq_updated(imgset_folder, dev_set, encoder, model.dev_preprocess())
@@ -311,14 +311,12 @@ def main():
 
     #don't train word embedding
     utils.set_trainable(model, False)
-    utils.set_trainable_param(model.verb_q_emb.parameters(), True)
     utils.set_trainable_param(model.conv.parameters(), True)
     utils.set_trainable_param(model.verb_vqa.parameters(), True)
     utils.set_trainable_param(model.last_class.parameters(), True)
 
     optimizer = torch.optim.Adam([
         {'params': cnn_features, 'lr': 5e-5},
-        {'params': model.verb_q_emb.parameters()},
         {'params': model.verb_vqa.parameters()},
         {'params': model.last_class.parameters()},
     ], lr=1e-3)
