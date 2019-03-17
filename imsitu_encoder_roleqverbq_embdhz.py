@@ -300,6 +300,56 @@ class imsitu_encoder():
 
         return torch.stack(all_q_idx,0)
 
+    def get_verbq_partial_idx(self, verb_ids, label_ids):
+        batch_size = verb_ids.size(0)
+        all_q_idx = []
+        max_verbq_count = 9
+        for i in range(batch_size):
+            q_idx = []
+            curr_verb_id = verb_ids[i]
+            current_labels = label_ids[i]
+            verb_name = self.verb_list[curr_verb_id]
+            verb_details = self.verb_q_templates[verb_name]
+            verb_template = verb_details['template']
+            current_role_list = self.verb2_role_dict[verb_name]
+            place_name = ''
+            agent_name = ''
+            if verb_details['has_place']:
+                plz_idx = current_role_list.index('place')
+                place_name = self.label_list[current_labels[plz_idx]]
+            if verb_details['has_agent']:
+                if 'agent' in current_role_list:
+                    agent_idx = current_role_list.index('agent')
+                else:
+                    for a_role in self.other_agent_roles:
+                        if a_role in current_role_list:
+                            agent_idx = current_role_list.index(a_role)
+                            break
+                agent_name = self.label_list[current_labels[agent_idx]]
+
+            if len(agent_name) > 0 and len(place_name) > 0:
+                question = 'AGENT ' + agent_name + ' PLACE ' + place_name + ' what is the action happening'
+            elif len(place_name) > 0 and len(agent_name) == 0:
+                question = 'PLACE ' +place_name+' what is the action happening'
+            elif len(agent_name) > 0 and len(place_name) == 0:
+                question = 'AGENT ' +agent_name+' what is the action happening'
+            else:
+                question = 'what is the action happening'
+
+            #print('question :', question)
+
+            words = question.split()
+            for word in words:
+                q_idx.append(self.verb_q_words.index(word))
+            padding_words = max_verbq_count - len(q_idx)
+
+            for w in range(padding_words):
+                q_idx.append(len(self.verb_q_words))
+
+            all_q_idx.append(torch.tensor(q_idx))
+
+        return torch.stack(all_q_idx,0)
+
     def get_role_ids(self, verb_id):
 
         return self.verb2role_list[verb_id]
