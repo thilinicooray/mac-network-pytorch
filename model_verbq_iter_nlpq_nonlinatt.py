@@ -53,6 +53,9 @@ class TopDown(nn.Module):
             nn.Linear(mlp_hidden*2, mlp_hidden),
             nn.Tanh()
         )
+
+        self.proj_same = nn.Linear(mlp_hidden, mlp_hidden)
+
         self.attn = nn.Linear(mlp_hidden, 1)
 
     def forward(self, img, q):
@@ -66,13 +69,16 @@ class TopDown(nn.Module):
         projected_img = self.img_proj(img)
         projected_q = self.q_proj(q_emb)
 
-        attn = projected_img * projected_q.unsqueeze(1)
+        same_img = self.proj_same(projected_img)
+        same_q = self.proj_same(projected_q)
+
+        attn = same_img * same_q.unsqueeze(1)
         attn = self.attn(attn).squeeze(2)
         attn = F.softmax(attn, 1).unsqueeze(2)
-        v_emb = attn * projected_img
+        v_emb = attn * same_img
         v_emb = v_emb.permute(0, 2, 1)
         v_emb = v_emb.contiguous().view(-1, 512*7*7)
-        v_emb_with_q = torch.cat([v_emb, projected_q], -1)
+        v_emb_with_q = torch.cat([v_emb, same_q], -1)
 
         return v_emb_with_q
 
