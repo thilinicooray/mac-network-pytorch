@@ -313,8 +313,40 @@ def main():
     traindev_loader = torch.utils.data.DataLoader(traindev_set, batch_size=8, shuffle=True, num_workers=n_worker)
 
     #utils.load_net(args.verb_module, [model.verb_module])
-    utils.load_net(args.role_module, [model.role_module])
-    model_name = 'train_full'
+
+    if args.resume_training:
+        print('Resume training ')
+        args.train_all = True
+        '''if len(args.resume_model) == 0:
+            raise Exception('[pretrained verb module] not specified')'''
+        utils.load_net(args.resume_model, [model])
+
+        utils.set_trainable(model, False)
+        utils.set_trainable_param(model.conv.parameters(), True)
+
+        optimizer = torch.optim.Adam([
+            {'params': model.conv.parameters()},
+        ], lr=5e-5)
+
+        optimizer_select = 0
+        model_name = 'resume_all'
+    else:
+        utils.load_net(args.role_module, [model.role_module])
+        model_name = 'train_full'
+
+        #don't train word embedding
+        utils.set_trainable(model, False)
+        utils.set_trainable_param(model.verb_q_emb.parameters(), True)
+        utils.set_trainable_param(model.verb_vqa.parameters(), True)
+        utils.set_trainable_param(model.last_class.parameters(), True)
+
+        optimizer = torch.optim.Adam([
+            {'params': model.verb_q_emb.parameters()},
+            {'params': model.verb_vqa.parameters()},
+            {'params': model.last_class.parameters()},
+        ], lr=1e-3)
+
+
 
     if not os.path.exists(args.output_dir):
         os.mkdir(args.output_dir)
@@ -326,17 +358,7 @@ def main():
         torch.cuda.manual_seed(1234)
         torch.backends.cudnn.deterministic = True
 
-    #don't train word embedding
-    utils.set_trainable(model, False)
-    utils.set_trainable_param(model.verb_q_emb.parameters(), True)
-    utils.set_trainable_param(model.verb_vqa.parameters(), True)
-    utils.set_trainable_param(model.last_class.parameters(), True)
 
-    optimizer = torch.optim.Adam([
-        {'params': model.verb_q_emb.parameters()},
-        {'params': model.verb_vqa.parameters()},
-        {'params': model.last_class.parameters()},
-    ], lr=1e-3)
 
     #optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     #scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=lr_step, gamma=lr_gamma)
