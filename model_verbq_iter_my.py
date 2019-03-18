@@ -216,10 +216,10 @@ class BaseModel(nn.Module):
         if self.gpu_mode >= 0:
             verb_q_idx = verb_q_idx.to(torch.device('cuda'))
 
-        img_embd = self.conv(img)
+        '''img_embd = self.conv(img)
         batch_size, n_channel, conv_h, conv_w = img_embd.size()
         img_embd = img_embd.view(batch_size, n_channel, -1)
-        img_embd = img_embd.permute(0, 2, 1)
+        img_embd = img_embd.permute(0, 2, 1)'''
 
         q_emb = self.verb_q_emb(verb_q_idx)
 

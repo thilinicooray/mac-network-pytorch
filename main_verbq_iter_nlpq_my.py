@@ -21,14 +21,14 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
     dev_score_list = []
     time_all = time.time()
 
-    '''if model.gpu_mode >= 0 :
+    if model.gpu_mode >= 0 :
         ngpus = 2
         device_array = [i for i in range(0,ngpus)]
 
         pmodel = torch.nn.DataParallel(model, device_ids=device_array)
     else:
-        pmodel = model'''
-    pmodel = model
+        pmodel = model
+    #pmodel = model
 
     '''if scheduler.get_lr()[0] < lr_max:
         scheduler.step()'''
@@ -88,11 +88,11 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
             #print ("loss time = {}".format(time.time() - t1))
             t1 = time.time()
 
-            '''if gpu_mode >= 0 :
+            if gpu_mode >= 0 :
                 loss.backward(torch.ones([2,1]).to(torch.device('cuda')))
             else:
-                loss.backward()'''
-            loss.backward()
+                loss.backward()
+            #loss.backward()
             #print ("backward time = {}".format(time.time() - t1))
 
             torch.nn.utils.clip_grad_norm_(model.parameters(), clip_norm)
@@ -171,7 +171,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 max_score = max(dev_score_list)
 
                 if max_score == dev_score_list[-1]:
-                    torch.save(model.state_dict(), model_dir + "/{}_verbq_iter_nlpq_cnnfx.model".format( model_name))
+                    torch.save(model.state_dict(), model_dir + "/{}_verbq_iter_nlpq_all.model".format( model_name))
                     print ('New best model saved! {0}'.format(max_score))
 
                 #eval on the trainset
@@ -336,11 +336,13 @@ def main():
 
         #don't train word embedding
         utils.set_trainable(model, False)
+        utils.set_trainable_param(model.conv.parameters(), True)
         utils.set_trainable_param(model.verb_q_emb.parameters(), True)
         utils.set_trainable_param(model.verb_vqa.parameters(), True)
         utils.set_trainable_param(model.last_class.parameters(), True)
 
         optimizer = torch.optim.Adam([
+            {'params': model.conv.parameters(), 'lr': 5e-5},
             {'params': model.verb_q_emb.parameters()},
             {'params': model.verb_vqa.parameters()},
             {'params': model.last_class.parameters()},
