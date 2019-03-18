@@ -12,32 +12,6 @@ import model_roles_recqa_noself
 
 from torch.nn.init import kaiming_uniform_, xavier_uniform_, normal
 
-class MyAttention(nn.Module):
-    def __init__(self, mlp_hidden):
-        super(MyAttention, self).__init__()
-
-        self.img_proj = nn.Sequential(
-            nn.Linear(mlp_hidden, mlp_hidden),
-            nn.Tanh()
-        )
-        self.q_proj = nn.Sequential(
-            nn.Linear(mlp_hidden, mlp_hidden),
-            nn.Tanh()
-        )
-        self.attn = nn.Linear(mlp_hidden, 1)
-        #self.proj_same = nn.Linear(mlp_hidden, mlp_hidden)
-
-    def forward(self, v, q):
-        projected_img = self.img_proj(v)
-        projected_q = self.q_proj(q)
-
-        #same_img = self.proj_same(projected_img)
-        #same_q = self.proj_same(projected_q)
-
-        attn = projected_img * projected_q.unsqueeze(1)
-        attn = self.attn(attn).squeeze(2)
-        attn = F.softmax(attn, 1).unsqueeze(2)
-        return attn
 
 
 class vgg16_modified(nn.Module):
@@ -62,7 +36,7 @@ class vgg16_modified(nn.Module):
 class TopDown(nn.Module):
     def __init__(self,
                  vocab_size,
-                 embed_hidden=300,
+                 embed_hidden=768,
                  mlp_hidden=512):
         super(TopDown, self).__init__()
 
@@ -71,7 +45,7 @@ class TopDown(nn.Module):
         self.q_emb = nn.LSTM(embed_hidden, mlp_hidden,
                              batch_first=True, bidirectional=True)
         self.lstm_proj = nn.Linear(mlp_hidden * 2, mlp_hidden)
-        self.att = MyAttention(mlp_hidden)
+        self.attn = nn.Linear(mlp_hidden, 1)
 
     def forward(self, img, q):
         batch_size = img.size(0)
@@ -80,8 +54,10 @@ class TopDown(nn.Module):
         lstm_out, (h, _) = self.q_emb(w_emb)
         q_emb = h.permute(1, 0, 2).contiguous().view(batch_size, -1)
         q_emb = self.lstm_proj(q_emb)
-        attn = self.att(img, q_emb)
 
+        attn = img * q_emb.unsqueeze(1)
+        attn = self.attn(attn).squeeze(2)
+        attn = F.softmax(attn, 1).unsqueeze(2)
         v_emb = attn * img
         v_emb = v_emb.permute(0, 2, 1)
         v_emb = v_emb.contiguous().view(-1, 512*7*7)
@@ -92,7 +68,7 @@ class TopDown(nn.Module):
 class BaseModel(nn.Module):
     def __init__(self, encoder,
                  gpu_mode,
-                 embed_hidden=300,
+                 embed_hidden=768,
                  mlp_hidden = 512
                  ):
         super(BaseModel, self).__init__()
@@ -125,9 +101,8 @@ class BaseModel(nn.Module):
 
         self.verb_vqa = TopDown(self.n_verbs)
         self.verb_q_emb = nn.Embedding(self.verbq_word_count + 1, embed_hidden, padding_idx=self.verbq_word_count)
-        #self.init_verbq_embd()
+        self.init_verbq_embd()
         self.role_module = model_roles_recqa_noself.BaseModel(self.encoder, self.gpu_mode)
-
         self.last_class = nn.Sequential(
             nn.Linear(mlp_hidden * 7 *7 + mlp_hidden, mlp_hidden*8),
             nn.BatchNorm1d(mlp_hidden*8),

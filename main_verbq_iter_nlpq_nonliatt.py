@@ -171,7 +171,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 max_score = max(dev_score_list)
 
                 if max_score == dev_score_list[-1]:
-                    torch.save(model.state_dict(), model_dir + "/{}_verbq_iter_nlpq_nonlinatt_same.model".format( model_name))
+                    torch.save(model.state_dict(), model_dir + "/{}_verbq_iter_nlpq_nonlinatt.model".format( model_name))
                     print ('New best model saved! {0}'.format(max_score))
 
                 #eval on the trainset
@@ -336,12 +336,10 @@ def main():
 
         #don't train word embedding
         utils.set_trainable(model, False)
-        utils.set_trainable_param(model.verb_q_emb.parameters(), True)
         utils.set_trainable_param(model.verb_vqa.parameters(), True)
         utils.set_trainable_param(model.last_class.parameters(), True)
 
         optimizer = torch.optim.Adam([
-            {'params': model.verb_q_emb.parameters()},
             {'params': model.verb_vqa.parameters()},
             {'params': model.last_class.parameters()},
         ], lr=1e-3)
