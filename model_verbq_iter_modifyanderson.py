@@ -18,7 +18,7 @@ class GatedLinear(nn.Module):
         super(GatedLinear, self).__init__()
         self.proj_y = weight_norm(nn.Linear(input_dim, out_dim), dim=None)
         self.relu = nn.ReLU()
-        self.dropout = nn.Dropout(0.5)
+        self.dropout = nn.Dropout(0.2)
 
     def forward(self, x):
         y = self.dropout(self.relu(torch.tanh(self.proj_y(x))))
