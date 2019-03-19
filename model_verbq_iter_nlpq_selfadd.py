@@ -33,17 +33,18 @@ class vgg16_modified(nn.Module):
 
         return features
 
-def attention(query, key, value, mask=None, dropout=None):
+def attention(query, value, mask=None, dropout=None):
     "Compute 'Scaled Dot Product Attention'"
     d_k = query.size(-1)
-    scores = torch.matmul(query, key.transpose(-2, -1)) \
+    scores = torch.matmul(query, value.transpose(-2, -1)) \
              / math.sqrt(d_k)
     if mask is not None:
         scores = scores.masked_fill(mask == 0, -1e9)
     p_attn = F.softmax(scores, dim = -1)
     if dropout is not None:
         p_attn = dropout(p_attn)
-    return torch.matmul(p_attn, value)
+    #return torch.matmul(p_attn, value)
+    return p_attn
 
 
 class TopDown(nn.Module):
@@ -58,13 +59,6 @@ class TopDown(nn.Module):
         self.q_emb = nn.LSTM(embed_hidden, mlp_hidden,
                              batch_first=True, bidirectional=True)
         self.lstm_proj = nn.Linear(mlp_hidden * 2, mlp_hidden)
-        self.proj_vq = nn.Sequential(
-            nn.Linear(mlp_hidden*2, mlp_hidden),
-            nn.ReLU()
-        )
-
-        self.q_net = FCNet([mlp_hidden, mlp_hidden])
-        self.v_net = FCNet([mlp_hidden, mlp_hidden])
 
     def forward(self, img, q):
         batch_size = img.size(0)
@@ -74,22 +68,16 @@ class TopDown(nn.Module):
         q_emb = h.permute(1, 0, 2).contiguous().view(batch_size, -1)
         q_emb = self.lstm_proj(q_emb)
 
-        q_emb_exp = q_emb.unsqueeze(1).repeat(1, img.size(1), 1)
-        vq = torch.cat((img, q_emb_exp), 2)
+        q_emb_exp = q_emb.unsqueeze(1)
 
-        projected_vq = self.proj_vq(vq)
-        v_emb = attention(projected_vq, projected_vq, projected_vq)
+        att = attention(img, q_emb_exp)
+        v_emb = att * img
 
-        v_emb = v_emb.sum(1)
+        v_emb = v_emb.permute(0, 2, 1)
+        v_emb = v_emb.contiguous().view(-1, 512*7*7)
+        v_emb_with_q = torch.cat([v_emb, q_emb], -1)
 
-        '''v_emb = v_emb.permute(0, 2, 1)
-        v_emb = v_emb.contiguous().view(-1, 512*7*7)'''
-        #v_emb_with_q = torch.cat([v_emb, q_emb], -1)
-        q_repr = self.q_net(q_emb)
-        v_repr = self.v_net(v_emb)
-        joint_repr = q_repr * v_repr
-
-        return joint_repr
+        return v_emb_with_q
 
 class BaseModel(nn.Module):
     def __init__(self, encoder,
@@ -129,19 +117,17 @@ class BaseModel(nn.Module):
         self.verb_q_emb = nn.Embedding(self.verbq_word_count + 1, embed_hidden, padding_idx=self.verbq_word_count)
         #self.init_verbq_embd()
         self.role_module = model_roles_recqa_noself.BaseModel(self.encoder, self.gpu_mode)
-        '''self.last_class = nn.Sequential(
-            nn.Linear(mlp_hidden*2, mlp_hidden*2),
-            nn.BatchNorm1d(mlp_hidden*2),
+        self.last_class = nn.Sequential(
+            nn.Linear(mlp_hidden * 7 *7 + mlp_hidden, mlp_hidden*8),
+            nn.BatchNorm1d(mlp_hidden*8),
             nn.ReLU(inplace=True),
             nn.Dropout(0.5),
-            nn.Linear(mlp_hidden * 2, mlp_hidden*2),
-            nn.BatchNorm1d(mlp_hidden*2),
+            nn.Linear(mlp_hidden * 8, mlp_hidden*8),
+            nn.BatchNorm1d(mlp_hidden*8),
             nn.ReLU(inplace=True),
             nn.Dropout(0.5),
-            nn.Linear(self.mlp_hidden*2, self.n_verbs)
-        )'''
-        self.last_class = SimpleClassifier(
-            mlp_hidden, 2 * mlp_hidden, self.n_verbs, 0.5)
+            nn.Linear(self.mlp_hidden*8, self.n_verbs)
+        )
 
         self.dropout = nn.Dropout(0.3)
 
