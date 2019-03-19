@@ -16,7 +16,7 @@ from torch.nn.init import kaiming_uniform_, xavier_uniform_, normal
 class GatedLinear(nn.Module):
     def __init__(self, input_dim, out_dim):
         super(GatedLinear, self).__init__()
-        self.proj_y = weight_norm(nn.Linear(input_dim, out_dim), dim=None)
+        self.proj_y = nn.Linear(input_dim, out_dim)
         self.relu = nn.ReLU()
         self.dropout = nn.Dropout(0.2)
 
