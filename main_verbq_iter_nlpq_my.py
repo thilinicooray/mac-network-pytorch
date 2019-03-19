@@ -3,7 +3,7 @@ from imsitu_encoder_roleqverbq_embdhz import imsitu_encoder
 from imsitu_loader import imsitu_loader_roleq_updated
 from imsitu_scorer_log import imsitu_scorer
 import json
-import model_verbq_iter_my
+import model_verbq_iter_nlpq_selfadd
 import os
 import utils
 import time
@@ -171,7 +171,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 max_score = max(dev_score_list)
 
                 if max_score == dev_score_list[-1]:
-                    torch.save(model.state_dict(), model_dir + "/{}_verbq_iter_nlpq_all.model".format( model_name))
+                    torch.save(model.state_dict(), model_dir + "/{}_verbq_iter_nlpq_head1.model".format( model_name))
                     print ('New best model saved! {0}'.format(max_score))
 
                 #eval on the trainset
@@ -290,7 +290,7 @@ def main():
     verb_templates = json.load(open("imsitu_data/verb_questions_template_new.json"))
     encoder = imsitu_encoder(train_set, imsitu_roleq, verb_templates)
 
-    model = model_verbq_iter_my.BaseModel(encoder, args.gpuid)
+    model = model_verbq_iter_nlpq_selfadd.BaseModel(encoder, args.gpuid)
 
     # To group up the features
     #cnn_features, role_features = utils.group_features_noun(model)
