@@ -211,10 +211,11 @@ class NewAttentionmultihead(nn.Module):
         self.q_proj = nn.Sequential(
             nn.Linear(q_dim, num_hid),
         )
-        self.dropout = nn.Dropout(dropout)
-        self.linear = nn.Linear(num_hid, 1)
-        self.h = 1
+
+        self.h = 2
         self.d_k = num_hid // self.h
+        self.linear = nn.Linear(self.d_k, 1)
+        self.dropout = nn.Dropout(dropout)
 
     def forward(self, v, q):
         batch, k, _ = v.size()
