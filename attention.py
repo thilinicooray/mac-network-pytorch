@@ -212,7 +212,7 @@ class NewAttentionmultihead(nn.Module):
             nn.Linear(q_dim, num_hid),
         )
 
-        self.h = 4
+        self.h = 8
         self.d_k = num_hid // self.h
         self.linear = nn.Linear(self.d_k, 1)
         self.dropout = nn.Dropout(dropout)
