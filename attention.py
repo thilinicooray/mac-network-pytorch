@@ -217,15 +217,6 @@ class NewAttentionmultihead(nn.Module):
         self.d_k = num_hid // self.h
 
     def forward(self, v, q):
-        """
-        v: [batch, k, vdim]
-        q: [batch, qdim]
-        """
-        logits = self.logits(v, q)
-        w = nn.functional.softmax(logits, 1)
-        return w
-
-    def logits(self, v, q):
         batch, k, _ = v.size()
         v_proj = self.v_proj(v) # [batch, k, qdim]
         q_proj = self.q_proj(q).unsqueeze(1).repeat(1, k, 1)
@@ -236,11 +227,11 @@ class NewAttentionmultihead(nn.Module):
         joint_repr = v_proj * q_proj
         joint_repr = self.dropout(joint_repr)
         logits = self.linear(joint_repr)
+        p_attn = nn.functional.softmax(logits, dim = -1)
 
-        x = logits * v_proj
+        x = p_attn * v_proj
 
         x = x.transpose(1, 2).contiguous() \
             .view(batch, -1, self.h * self.d_k)
-
 
         return x
