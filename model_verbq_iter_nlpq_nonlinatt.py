@@ -5,6 +5,7 @@ from language_model import WordEmbedding, QuestionEmbedding
 from classifier import SimpleClassifier
 from fc import FCNet
 import torch.nn.functional as F
+import math
 import torchvision as tv
 import utils
 import numpy as np
@@ -32,6 +33,18 @@ class vgg16_modified(nn.Module):
 
         return features
 
+def attention(query, key, value, mask=None, dropout=None):
+    "Compute 'Scaled Dot Product Attention'"
+    d_k = query.size(-1)
+    scores = torch.matmul(query, key.transpose(-2, -1)) \
+             / math.sqrt(d_k)
+    if mask is not None:
+        scores = scores.masked_fill(mask == 0, -1e9)
+    p_attn = F.softmax(scores, dim = -1)
+    if dropout is not None:
+        p_attn = dropout(p_attn)
+    return torch.matmul(p_attn, value)
+
 
 class TopDown(nn.Module):
     def __init__(self,
@@ -45,7 +58,10 @@ class TopDown(nn.Module):
         self.q_emb = nn.LSTM(embed_hidden, mlp_hidden,
                              batch_first=True, bidirectional=True)
         self.lstm_proj = nn.Linear(mlp_hidden * 2, mlp_hidden)
-        self.attn = nn.Linear(mlp_hidden, 1)
+        self.proj_vq = nn.Sequential(
+            nn.Linear(mlp_hidden*2, mlp_hidden),
+            nn.ReLU()
+        )
 
     def forward(self, img, q):
         batch_size = img.size(0)
@@ -55,10 +71,12 @@ class TopDown(nn.Module):
         q_emb = h.permute(1, 0, 2).contiguous().view(batch_size, -1)
         q_emb = self.lstm_proj(q_emb)
 
-        attn = img * q_emb.unsqueeze(1)
-        attn = self.attn(attn).squeeze(2)
-        attn = F.softmax(attn, 1).unsqueeze(2)
-        v_emb = attn * img
+        q_emb_exp = q_emb.unsqueeze(1).repeat(1, img.size(1), 1)
+        vq = torch.cat((img, q_emb_exp), 2)
+
+        projected_vq = self.proj_vq(vq)
+        v_emb = attention(projected_vq, projected_vq, projected_vq)
+
         v_emb = v_emb.permute(0, 2, 1)
         v_emb = v_emb.contiguous().view(-1, 512*7*7)
         v_emb_with_q = torch.cat([v_emb, q_emb], -1)
