@@ -45,6 +45,7 @@ def attention(query, value, mask=None, dropout=None):
     if dropout is not None:
         p_attn = dropout(p_attn)
     #return torch.matmul(p_attn, value)
+    p_attn = p_attn.permute(0,1, 3, 2)
     return p_attn*value
 
 def clones(module, N):
@@ -59,7 +60,8 @@ class MultiHeadedAttention(nn.Module):
         # We assume d_v always equals d_k
         self.d_k = d_model // h
         self.h = h
-        self.linears = clones(nn.Linear(d_model, d_model), 2)
+        self.v_linears = clones(nn.Linear(d_model, d_model), 2)
+        self.q_linears = clones(nn.Linear(d_model, d_model), 2)
         self.attn = None
         self.dropout = nn.Dropout(p=dropout)
 
@@ -71,9 +73,13 @@ class MultiHeadedAttention(nn.Module):
         nbatches = query.size(0)
 
         # 1) Do all the linear projections in batch from d_model => h x d_k
-        query, value = \
+        query, query = \
             [l(x).view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
-             for l, x in zip(self.linears, (query, value))]
+             for l, x in zip(self.q_linears, (query, query))]
+
+        value, value = \
+            [l(x).view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
+             for l, x in zip(self.v_linears, (value, value))]
 
         # 2) Apply attention on all the projected vectors in batch.
         x = attention(query, value, mask=mask,
@@ -81,7 +87,7 @@ class MultiHeadedAttention(nn.Module):
         # 3) "Concat" using a view and apply a final linear.
         x = x.transpose(1, 2).contiguous() \
             .view(nbatches, -1, self.h * self.d_k)
-        return self.linears[-1](x)
+        return self.v_linears[-1](x)
 
 
 class TopDown(nn.Module):
@@ -109,7 +115,7 @@ class TopDown(nn.Module):
 
         q_emb_exp = q_emb.unsqueeze(1)
 
-        v_emb = self.multi_att(img, q_emb_exp)
+        v_emb = self.multi_att(q_emb_exp,img)
 
         v_emb = v_emb.permute(0, 2, 1)
         v_emb = v_emb.contiguous().view(-1, 512*7*7)
