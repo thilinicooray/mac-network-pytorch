@@ -141,7 +141,7 @@ class BaseModel(nn.Module):
             nn.Linear(self.mlp_hidden*2, self.n_verbs)
         )'''
         self.last_class = SimpleClassifier(
-            mlp_hidden, 2 * mlp_hidden, self.vocab_size, 0.5)
+            mlp_hidden, 2 * mlp_hidden, self.n_verbs, 0.5)
 
         self.dropout = nn.Dropout(0.3)
 
