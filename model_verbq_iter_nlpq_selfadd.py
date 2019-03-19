@@ -80,10 +80,10 @@ class TopDown(nn.Module):
         v_emb = v_emb.sum(1)
 
         '''v_emb = v_emb.permute(0, 2, 1)
-        v_emb = v_emb.contiguous().view(-1, 512*7*7)
-        v_emb_with_q = torch.cat([v_emb, q_emb], -1)'''
+        v_emb = v_emb.contiguous().view(-1, 512*7*7)'''
+        v_emb_with_q = torch.cat([v_emb, q_emb], -1)
 
-        return v_emb
+        return v_emb_with_q
 
 class BaseModel(nn.Module):
     def __init__(self, encoder,
@@ -124,7 +124,7 @@ class BaseModel(nn.Module):
         #self.init_verbq_embd()
         self.role_module = model_roles_recqa_noself.BaseModel(self.encoder, self.gpu_mode)
         self.last_class = nn.Sequential(
-            nn.Linear(mlp_hidden, mlp_hidden*2),
+            nn.Linear(mlp_hidden*2, mlp_hidden*2),
             nn.BatchNorm1d(mlp_hidden*2),
             nn.ReLU(inplace=True),
             nn.Dropout(0.5),
