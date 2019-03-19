@@ -16,7 +16,7 @@ class GatedLinear(nn.Module):
     def __init__(self, input_dim, out_dim):
         super(GatedLinear, self).__init__()
         self.proj_y = nn.Linear(input_dim, out_dim)
-        self.relu = nn.ReLU(inplace=True)
+        self.relu = nn.ReLU()
 
     def forward(self, x):
         y = self.relu(torch.tanh(self.proj_y(x)))
