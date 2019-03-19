@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from attention import Attention, NewAttentionjust
+from attention import Attention, NewAttentionjust, NewAttentionmultihead
 from language_model import WordEmbedding, QuestionEmbedding
 from classifier import SimpleClassifier
 from fc import FCNet
@@ -45,7 +45,8 @@ class TopDown(nn.Module):
         self.q_emb = nn.LSTM(embed_hidden, mlp_hidden,
                              batch_first=True, bidirectional=True)
         self.lstm_proj = nn.Linear(mlp_hidden * 2, mlp_hidden)
-        self.v_att = NewAttentionjust(mlp_hidden, mlp_hidden, mlp_hidden)
+        self.v_att = NewAttentionmultihead(mlp_hidden, mlp_hidden, mlp_hidden)
+        self.att_proj = nn.Linear(mlp_hidden, mlp_hidden)
 
     def forward(self, img, q):
         batch_size = img.size(0)
@@ -56,8 +57,8 @@ class TopDown(nn.Module):
         q_emb = self.lstm_proj(q_emb)
 
 
-        att = self.v_att(img, q_emb)
-        v_emb = (att * img)
+        attguided_img = self.v_att(img, q_emb)
+        v_emb = self.att_proj(attguided_img)
         v_emb = v_emb.permute(0, 2, 1)
         v_emb = v_emb.contiguous().view(-1, 512*7*7)
         v_emb_with_q = torch.cat([v_emb, q_emb], -1)
