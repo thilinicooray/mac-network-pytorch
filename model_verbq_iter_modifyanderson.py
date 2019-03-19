@@ -101,7 +101,7 @@ class TopDown(nn.Module):
 
         v_repr = v_repr.permute(0, 2, 1)
         v_repr = v_repr.contiguous().view(-1, 512*7*7)
-        joint_repr = torch.cat([q_repr, v_repr], -1)
+        joint_repr = torch.cat([v_repr, q_repr], -1)
 
         return joint_repr
 
