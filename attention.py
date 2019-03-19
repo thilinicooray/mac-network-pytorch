@@ -219,7 +219,8 @@ class NewAttentionmultihead(nn.Module):
     def forward(self, v, q):
         batch, k, _ = v.size()
         v_proj = self.v_proj(v) # [batch, k, qdim]
-        q_proj = self.q_proj(q).unsqueeze(1).repeat(1, k, 1)
+        q_org = self.q_proj(q)
+        q_proj = q_org.unsqueeze(1).repeat(1, k, 1)
 
         v_proj= v_proj.view(batch, -1, self.h, self.d_k).transpose(1, 2)
         q_proj = q_proj.view(batch, -1, self.h, self.d_k).transpose(1, 2)
@@ -233,5 +234,8 @@ class NewAttentionmultihead(nn.Module):
 
         x = x.transpose(1, 2).contiguous() \
             .view(batch, -1, self.h * self.d_k)
+        v_emb = x.permute(0, 2, 1)
+        v_emb = v_emb.contiguous().view(-1, 512*7*7)
+        v_emb_with_q = torch.cat([v_emb, q_org], -1)
 
-        return x
+        return v_emb_with_q

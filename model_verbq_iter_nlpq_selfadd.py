@@ -57,11 +57,8 @@ class TopDown(nn.Module):
         q_emb = self.lstm_proj(q_emb)
 
 
-        attguided_img = self.v_att(img, q_emb)
-        v_emb = self.att_proj(attguided_img)
-        v_emb = v_emb.permute(0, 2, 1)
-        v_emb = v_emb.contiguous().view(-1, 512*7*7)
-        v_emb_with_q = torch.cat([v_emb, q_emb], -1)
+        v_emb_with_q = self.v_att(img, q_emb)
+
 
         return v_emb_with_q
 
