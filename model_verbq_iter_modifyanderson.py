@@ -9,17 +9,19 @@ import torchvision as tv
 import utils
 import numpy as np
 import model_roles_recqa_noself
+from torch.nn.utils.weight_norm import weight_norm
 
 from torch.nn.init import kaiming_uniform_, xavier_uniform_, normal
 
 class GatedLinear(nn.Module):
     def __init__(self, input_dim, out_dim):
         super(GatedLinear, self).__init__()
-        self.proj_y = nn.Linear(input_dim, out_dim)
+        self.proj_y = weight_norm(nn.Linear(input_dim, out_dim), dim=None)
         self.relu = nn.ReLU()
+        self.dropout = nn.Dropout(0.5)
 
     def forward(self, x):
-        y = self.relu(torch.tanh(self.proj_y(x)))
+        y = self.dropout(self.relu(torch.tanh(self.proj_y(x))))
         return y
 
 class Ander_attention(nn.Module):
@@ -27,13 +29,14 @@ class Ander_attention(nn.Module):
         super(Ander_attention, self).__init__()
         self.nonlinear = GatedLinear(v_dim + q_dim, hidden_dim)
         self.linear = nn.Linear(hidden_dim, 1)
+        self.dropout = nn.Dropout(0.2)
 
     def forward(self, v,q):
         num_objs = v.size(1)
         q = q.unsqueeze(1).repeat(1, num_objs, 1)
         vq = torch.cat((v, q), 2)
         joint_repr = self.nonlinear(vq)
-        logits = self.linear(joint_repr)
+        logits = self.linear(self.dropout(joint_repr))
         w = nn.functional.softmax(logits, 1)
         return w
 
