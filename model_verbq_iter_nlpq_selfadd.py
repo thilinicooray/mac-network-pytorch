@@ -63,6 +63,9 @@ class TopDown(nn.Module):
             nn.ReLU()
         )
 
+        self.q_net = FCNet([mlp_hidden, mlp_hidden])
+        self.v_net = FCNet([mlp_hidden, mlp_hidden])
+
     def forward(self, img, q):
         batch_size = img.size(0)
         w_emb = q
@@ -81,9 +84,12 @@ class TopDown(nn.Module):
 
         '''v_emb = v_emb.permute(0, 2, 1)
         v_emb = v_emb.contiguous().view(-1, 512*7*7)'''
-        v_emb_with_q = torch.cat([v_emb, q_emb], -1)
+        #v_emb_with_q = torch.cat([v_emb, q_emb], -1)
+        q_repr = self.q_net(q_emb)
+        v_repr = self.v_net(v_emb)
+        joint_repr = q_repr * v_repr
 
-        return v_emb_with_q
+        return joint_repr
 
 class BaseModel(nn.Module):
     def __init__(self, encoder,
@@ -123,7 +129,7 @@ class BaseModel(nn.Module):
         self.verb_q_emb = nn.Embedding(self.verbq_word_count + 1, embed_hidden, padding_idx=self.verbq_word_count)
         #self.init_verbq_embd()
         self.role_module = model_roles_recqa_noself.BaseModel(self.encoder, self.gpu_mode)
-        self.last_class = nn.Sequential(
+        '''self.last_class = nn.Sequential(
             nn.Linear(mlp_hidden*2, mlp_hidden*2),
             nn.BatchNorm1d(mlp_hidden*2),
             nn.ReLU(inplace=True),
@@ -133,7 +139,9 @@ class BaseModel(nn.Module):
             nn.ReLU(inplace=True),
             nn.Dropout(0.5),
             nn.Linear(self.mlp_hidden*2, self.n_verbs)
-        )
+        )'''
+        self.last_class = SimpleClassifier(
+            mlp_hidden, 2 * mlp_hidden, self.vocab_size, 0.5)
 
         self.dropout = nn.Dropout(0.3)
 
