@@ -86,7 +86,6 @@ class TopDown(nn.Module):
 
         self.q_proj = GatedLinear(mlp_hidden, mlp_hidden)
         self.v_proj = GatedLinear(mlp_hidden, mlp_hidden)
-        self.concat = nn.Linear(mlp_hidden * 7 *7 + mlp_hidden, mlp_hidden*4)
 
     def forward(self, img, q):
         batch_size = img.size(0)
@@ -104,7 +103,7 @@ class TopDown(nn.Module):
 
         v_repr = v_repr.permute(0, 2, 1)
         v_repr = v_repr.contiguous().view(-1, 512*7*7)
-        joint_repr = self.concat(torch.cat([q_repr, v_repr], -1))
+        joint_repr = torch.cat([q_repr, v_repr], -1)
 
         return joint_repr
 
@@ -146,7 +145,7 @@ class BaseModel(nn.Module):
         self.verb_q_emb = nn.Embedding(self.verbq_word_count + 1, embed_hidden, padding_idx=self.verbq_word_count)
         #self.init_verbq_embd()
         self.role_module = model_roles_recqa_noself.BaseModel(self.encoder, self.gpu_mode)
-        '''self.last_class = nn.Sequential(
+        self.last_class = nn.Sequential(
             nn.Linear(mlp_hidden * 7 *7 + mlp_hidden, mlp_hidden*8),
             nn.BatchNorm1d(mlp_hidden*8),
             nn.ReLU(inplace=True),
@@ -156,9 +155,9 @@ class BaseModel(nn.Module):
             nn.ReLU(inplace=True),
             nn.Dropout(0.5),
             nn.Linear(self.mlp_hidden*8, self.n_verbs)
-        )'''
+        )
 
-        self.last_class = Ander_classifier(mlp_hidden*4, mlp_hidden*8, self.n_verbs)
+        #self.last_class = Ander_classifier(mlp_hidden*4, mlp_hidden*8, self.n_verbs)
 
         self.dropout = nn.Dropout(0.3)
 
