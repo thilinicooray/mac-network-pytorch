@@ -16,12 +16,10 @@ class GatedLinear(nn.Module):
     def __init__(self, input_dim, out_dim):
         super(GatedLinear, self).__init__()
         self.proj_y = nn.Linear(input_dim, out_dim)
-        self.proj_g = nn.Linear(input_dim, out_dim)
+        self.relu = nn.ReLU(inplace=True)
 
     def forward(self, x):
-        y_hat = torch.tanh(self.proj_y(x))
-        g = torch.sigmoid(self.proj_y(x))
-        y = y_hat * g
+        y = self.relu(torch.tanh(self.proj_y(x)))
         return y
 
 class Ander_attention(nn.Module):
