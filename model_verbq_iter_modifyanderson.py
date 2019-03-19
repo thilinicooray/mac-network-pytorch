@@ -148,10 +148,6 @@ class BaseModel(nn.Module):
             nn.BatchNorm1d(mlp_hidden*8),
             nn.ReLU(inplace=True),
             nn.Dropout(0.5),
-            nn.Linear(mlp_hidden * 8, mlp_hidden*8),
-            nn.BatchNorm1d(mlp_hidden*8),
-            nn.ReLU(inplace=True),
-            nn.Dropout(0.5),
             nn.Linear(self.mlp_hidden*8, self.n_verbs)
         )
 
