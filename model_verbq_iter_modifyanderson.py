@@ -86,6 +86,7 @@ class TopDown(nn.Module):
 
         self.q_proj = GatedLinear(mlp_hidden, mlp_hidden)
         self.v_proj = GatedLinear(mlp_hidden, mlp_hidden)
+        self.concat = nn.Linear(mlp_hidden * 7 *7 + mlp_hidden, mlp_hidden*4)
 
     def forward(self, img, q):
         batch_size = img.size(0)
@@ -96,11 +97,14 @@ class TopDown(nn.Module):
         q_emb = self.lstm_proj(q_emb)
 
         att = self.v_att(img, q_emb)
-        v_emb = (att * img).sum(1) # [batch, v_dim]
+        v_emb = (att * img) # [batch, v_dim]
 
         q_repr = self.q_proj(q_emb)
         v_repr = self.v_proj(v_emb)
-        joint_repr = q_repr * v_repr
+
+        v_repr = v_repr.permute(0, 2, 1)
+        v_repr = v_repr.contiguous().view(-1, 512*7*7)
+        joint_repr = self.concat(torch.cat([q_repr, v_repr], -1))
 
         return joint_repr
 
@@ -154,7 +158,7 @@ class BaseModel(nn.Module):
             nn.Linear(self.mlp_hidden*8, self.n_verbs)
         )'''
 
-        self.last_class = Ander_classifier(mlp_hidden, mlp_hidden*2, self.n_verbs)
+        self.last_class = Ander_classifier(mlp_hidden*4, mlp_hidden*8, self.n_verbs)
 
         self.dropout = nn.Dropout(0.3)
 
