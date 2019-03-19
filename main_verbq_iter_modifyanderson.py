@@ -3,7 +3,7 @@ from imsitu_encoder_roleqverbq_embdhz import imsitu_encoder
 from imsitu_loader import imsitu_loader_roleq_updated
 from imsitu_scorer_log import imsitu_scorer
 import json
-import model_verbq_iter_modifyanderson
+import model_verbq_iter01_oldarch
 import os
 import utils
 import time
@@ -171,7 +171,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 max_score = max(dev_score_list)
 
                 if max_score == dev_score_list[-1]:
-                    torch.save(model.state_dict(), model_dir + "/{}_verbq_iter_modifyanderson.model".format( model_name))
+                    torch.save(model.state_dict(), model_dir + "/{}_verbq_iter_01oldarch.model".format( model_name))
                     print ('New best model saved! {0}'.format(max_score))
 
                 #eval on the trainset
@@ -274,7 +274,7 @@ def main():
     lr_gamma = 0.1
     lr_step = 15
     clip_norm = 0.5
-    weight_decay = 1e-4
+    weight_decay = 5e-4
     n_epoch = 500
     n_worker = 3
 
@@ -290,7 +290,7 @@ def main():
     verb_templates = json.load(open("imsitu_data/verb_questions_template_new.json"))
     encoder = imsitu_encoder(train_set, imsitu_roleq, verb_templates)
 
-    model = model_verbq_iter_modifyanderson.BaseModel(encoder, args.gpuid)
+    model = model_verbq_iter01_oldarch.BaseModel(encoder, args.gpuid)
 
     # To group up the features
     #cnn_features, role_features = utils.group_features_noun(model)
@@ -343,9 +343,9 @@ def main():
 
         optimizer = torch.optim.Adam([
             {'params': model.conv.parameters(), 'lr': 5e-5},
-            {'params': model.verb_q_emb.parameters()},
-            {'params': model.verb_vqa.parameters()},
-            {'params': model.last_class.parameters()},
+            {'params': model.verb_q_emb.parameters(), 'weight_decay':weight_decay},
+            {'params': model.verb_vqa.parameters(), 'weight_decay':weight_decay},
+            {'params': model.last_class.parameters(), 'weight_decay':weight_decay},
         ], lr=1e-3)
 
 
