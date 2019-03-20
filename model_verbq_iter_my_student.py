@@ -45,7 +45,7 @@ class TopDown(nn.Module):
         self.q_emb = nn.LSTM(embed_hidden, mlp_hidden,
                              batch_first=True, bidirectional=True)
         self.lstm_proj = nn.Linear(mlp_hidden * 2, mlp_hidden)
-        self.attn = nn.Linear(mlp_hidden, 1)
+        self.v_att = Attention(mlp_hidden, mlp_hidden, mlp_hidden)
 
     def forward(self, img, q):
         batch_size = img.size(0)
@@ -55,10 +55,8 @@ class TopDown(nn.Module):
         q_emb = h.permute(1, 0, 2).contiguous().view(batch_size, -1)
         q_emb = self.lstm_proj(q_emb)
 
-        attn = img * q_emb.unsqueeze(1)
-        attn = self.attn(attn).squeeze(2)
-        attn = F.softmax(attn, 1).unsqueeze(2)
-        v_emb = attn * img
+        att = self.v_att(img, q_emb)
+        v_emb = att * img
         v_emb = v_emb.permute(0, 2, 1)
         v_emb = v_emb.contiguous().view(-1, 512*7*7)
         v_emb_with_q = torch.cat([v_emb, q_emb], -1)
@@ -101,7 +99,7 @@ class BaseModel(nn.Module):
 
         self.verb_vqa = TopDown(self.n_verbs)
         self.verb_q_emb = nn.Embedding(self.verbq_word_count + 1, embed_hidden, padding_idx=self.verbq_word_count)
-        self.init_verbq_embd()
+        #self.init_verbq_embd()
         self.role_module = model_roles_recqa_noself.BaseModel(self.encoder, self.gpu_mode)
         self.last_class = nn.Sequential(
             nn.Linear(mlp_hidden * 7 *7 + mlp_hidden, mlp_hidden*8),
@@ -152,22 +150,37 @@ class BaseModel(nn.Module):
 
         loss1 = self.calculate_loss(verb_pred_prev, verbs)
 
-        sorted_idx = torch.sort(verb_pred_prev, 1, True)[1]
-        verbs = sorted_idx[:,0]
-        role_pred = self.role_module(img, verbs)
-        label_idx = torch.max(role_pred,-1)[1]
-
-        verb_q_idx = self.encoder.get_verbq_idx(verbs, label_idx)
+        verb_q_idx_1 = self.encoder.get_verbq_idx(verbs, labels[:,0,:]).unsqueeze(1)
+        verb_q_idx_2 = self.encoder.get_verbq_idx(verbs, labels[:,1,:]).unsqueeze(1)
+        verb_q_idx_3 = self.encoder.get_verbq_idx(verbs, labels[:,2,:]).unsqueeze(1)
+        verb_q_idx = torch.cat([verb_q_idx_1, verb_q_idx_2, verb_q_idx_3], 1)
 
         if self.gpu_mode >= 0:
             verb_q_idx = verb_q_idx.to(torch.device('cuda'))
 
+        '''img_embd = self.conv(img)
+        batch_size, n_channel, conv_h, conv_w = img_embd.size()
+        img_embd = img_embd.view(batch_size, n_channel, -1)
+        img_embd = img_embd.permute(0, 2, 1)'''
+        img_embd = img_embd.expand(3,img_embd.size(0), img_embd.size(1), img_embd.size(2))
+        img_embd = img_embd.transpose(0,1)
+        img_embd = img_embd.contiguous().view(batch_size* 3, -1, self.mlp_hidden)
+
+        verb_q_idx = verb_q_idx.view(batch_size*3, -1)
         q_emb = self.verb_q_emb(verb_q_idx)
 
-        verb_pred_logit = self.verb_vqa(img_embd, q_emb) + verb_pred_rep_prev
-        verb_pred = self.last_class(verb_pred_logit)
+        verb_pred_rep_prev = verb_pred_rep_prev.expand(3,verb_pred_rep_prev.size(0), verb_pred_rep_prev.size(1))
+        verb_pred_rep_prev = verb_pred_rep_prev.transpose(0,1)
+        verb_pred_rep_prev = verb_pred_rep_prev.contiguous().view(batch_size* 3, -1)
 
-        loss2 = self.calculate_loss(verb_pred, verbs)
+        verb_pred_rep = self.verb_vqa(img_embd, q_emb)
+        combined = verb_pred_rep_prev + self.dropout(verb_pred_rep)
+        verb_pred = self.last_class(combined)
+
+        verb_pred = verb_pred.contiguous().view(batch_size, -1, self.n_verbs)
+
+        loss2 = (self.calculate_loss(verb_pred[:,0], verbs) + self.calculate_loss(verb_pred[:,1], verbs) +
+                 self.calculate_loss(verb_pred[:,2], verbs)) /3
 
         sum_losses = loss1 + loss2
         batch_avg_loss = sum_losses / 2
