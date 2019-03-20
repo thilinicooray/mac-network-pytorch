@@ -43,18 +43,21 @@ class TopDown(nn.Module):
         self.vocab_size = vocab_size
 
         self.v_att = Attention(mlp_hidden, mlp_hidden, mlp_hidden)
+        self.q_net = FCNet([mlp_hidden, mlp_hidden])
+        self.v_net = FCNet([mlp_hidden, mlp_hidden])
 
     def forward(self, img, q):
         batch_size = img.size(0)
         q_emb = q
 
         att = self.v_att(img, q_emb)
-        v_emb = att * img
-        v_emb = v_emb.permute(0, 2, 1)
-        v_emb = v_emb.contiguous().view(-1, 512*7*7)
-        v_emb_with_q = torch.cat([v_emb, q_emb], -1)
+        v_emb = att * img.sum(1) # [batch, v_dim]
 
-        return v_emb_with_q
+        q_repr = self.q_net(q_emb)
+        v_repr = self.v_net(v_emb)
+        joint_repr = q_repr * v_repr
+
+        return joint_repr
 
 class BaseModel(nn.Module):
     def __init__(self, encoder,
@@ -102,7 +105,7 @@ class BaseModel(nn.Module):
         self.lstm_proj2 = nn.Linear(mlp_hidden * 2, mlp_hidden)
 
         self.role_module = model_roles_recqa_noself_4others.BaseModel(self.encoder, self.gpu_mode)
-        self.last_class = nn.Sequential(
+        '''self.last_class = nn.Sequential(
             nn.Linear(mlp_hidden * 7 *7 + mlp_hidden, mlp_hidden*8),
             nn.BatchNorm1d(mlp_hidden*8),
             nn.ReLU(inplace=True),
@@ -112,7 +115,9 @@ class BaseModel(nn.Module):
             nn.ReLU(inplace=True),
             nn.Dropout(0.5),
             nn.Linear(self.mlp_hidden*8, self.n_verbs)
-        )
+        )'''
+        self.last_class = SimpleClassifier(
+            mlp_hidden, 2 * mlp_hidden, self.n_verbs, 0.5)
 
         self.dropout = nn.Dropout(0.3)
 
@@ -160,14 +165,14 @@ class BaseModel(nn.Module):
         verbs = sorted_idx[:,0]
         role_pred, pred_rep = self.role_module(img, verbs)
 
-        '''agentplace_q_idx = self.encoder.get_agentplace_roleidx(verbs)
+        agentplace_q_idx = self.encoder.get_agentplace_roleidx(verbs)
 
         if self.gpu_mode >= 0:
             agentplace_q_idx = agentplace_q_idx.to(torch.device('cuda'))
 
-        place_agent_rep = torch.cat([ torch.index_select(a, 0, i).unsqueeze(0) for a, i in zip(pred_rep, agentplace_q_idx) ])'''
+        place_agent_rep = torch.cat([ torch.index_select(a, 0, i).unsqueeze(0) for a, i in zip(pred_rep, agentplace_q_idx) ])
 
-        updated_roleq = torch.cat([pred_rep, q_emb.unsqueeze(1)], 1)
+        updated_roleq = torch.cat([place_agent_rep, q_emb.unsqueeze(1)], 1)
 
         self.q_emb2.flatten_parameters()
         lstm_out, (h, _) = self.q_emb2(updated_roleq)
@@ -211,14 +216,14 @@ class BaseModel(nn.Module):
         verbs = sorted_idx[:,0]
         role_pred, pred_rep = self.role_module(img, verbs)
 
-        '''agentplace_q_idx = self.encoder.get_agentplace_roleidx(verbs)
+        agentplace_q_idx = self.encoder.get_agentplace_roleidx(verbs)
 
         if self.gpu_mode >= 0:
             agentplace_q_idx = agentplace_q_idx.to(torch.device('cuda'))
 
-        place_agent_rep = torch.cat([ torch.index_select(a, 0, i).unsqueeze(0) for a, i in zip(pred_rep, agentplace_q_idx) ])'''
+        place_agent_rep = torch.cat([ torch.index_select(a, 0, i).unsqueeze(0) for a, i in zip(pred_rep, agentplace_q_idx) ])
 
-        updated_roleq = torch.cat([pred_rep, q_emb.unsqueeze(1)], 1)
+        updated_roleq = torch.cat([place_agent_rep, q_emb.unsqueeze(1)], 1)
 
         self.q_emb2.flatten_parameters()
         lstm_out, (h, _) = self.q_emb2(updated_roleq)
