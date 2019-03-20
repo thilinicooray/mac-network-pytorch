@@ -337,12 +337,20 @@ def main():
         #don't train word embedding
         utils.set_trainable(model, False)
         utils.set_trainable_param(model.conv.parameters(), True)
+        utils.set_trainable_param(model.q_emb1.parameters(), True)
+        utils.set_trainable_param(model.lstm_proj1.parameters(), True)
+        utils.set_trainable_param(model.q_emb2.parameters(), True)
+        utils.set_trainable_param(model.lstm_proj2.parameters(), True)
         utils.set_trainable_param(model.verb_vqa.parameters(), True)
         utils.set_trainable_param(model.verb_q_emb.parameters(), True)
         utils.set_trainable_param(model.last_class.parameters(), True)
 
         optimizer = torch.optim.Adam([
             {'params': model.conv.parameters(), 'lr': 5e-5},
+            {'params': model.q_emb1.parameters()},
+            {'params': model.lstm_proj1.parameters()},
+            {'params': model.q_emb2.parameters()},
+            {'params': model.lstm_proj2.parameters()},
             {'params': model.verb_q_emb.parameters()},
             {'params': model.verb_vqa.parameters()},
             {'params': model.last_class.parameters()},
