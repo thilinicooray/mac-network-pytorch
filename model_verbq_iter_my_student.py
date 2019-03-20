@@ -36,7 +36,7 @@ class vgg16_modified(nn.Module):
 class TopDown(nn.Module):
     def __init__(self,
                  vocab_size,
-                 embed_hidden=300,
+                 embed_hidden=768,
                  mlp_hidden=512):
         super(TopDown, self).__init__()
 
@@ -68,7 +68,7 @@ class TopDown(nn.Module):
 class BaseModel(nn.Module):
     def __init__(self, encoder,
                  gpu_mode,
-                 embed_hidden=300,
+                 embed_hidden=768,
                  mlp_hidden = 512
                  ):
         super(BaseModel, self).__init__()
@@ -101,7 +101,7 @@ class BaseModel(nn.Module):
 
         self.verb_vqa = TopDown(self.n_verbs)
         self.verb_q_emb = nn.Embedding(self.verbq_word_count + 1, embed_hidden, padding_idx=self.verbq_word_count)
-        #self.init_verbq_embd()
+        self.init_verbq_embd()
         self.role_module = model_roles_recqa_noself.BaseModel(self.encoder, self.gpu_mode)
         self.last_class = nn.Sequential(
             nn.Linear(mlp_hidden * 7 *7 + mlp_hidden, mlp_hidden*8),
