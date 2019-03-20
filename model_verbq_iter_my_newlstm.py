@@ -42,7 +42,7 @@ class TopDown(nn.Module):
 
         self.vocab_size = vocab_size
 
-        self.v_att = NewAttention(mlp_hidden, mlp_hidden, mlp_hidden)
+        self.v_att = Attention(mlp_hidden, mlp_hidden, mlp_hidden)
 
     def forward(self, img, q):
         batch_size = img.size(0)
@@ -160,14 +160,14 @@ class BaseModel(nn.Module):
         verbs = sorted_idx[:,0]
         role_pred, pred_rep = self.role_module(img, verbs)
 
-        agentplace_q_idx = self.encoder.get_agentplace_roleidx(verbs)
+        '''agentplace_q_idx = self.encoder.get_agentplace_roleidx(verbs)
 
         if self.gpu_mode >= 0:
             agentplace_q_idx = agentplace_q_idx.to(torch.device('cuda'))
 
-        place_agent_rep = torch.cat([ torch.index_select(a, 0, i).unsqueeze(0) for a, i in zip(pred_rep, agentplace_q_idx) ])
+        place_agent_rep = torch.cat([ torch.index_select(a, 0, i).unsqueeze(0) for a, i in zip(pred_rep, agentplace_q_idx) ])'''
 
-        updated_roleq = torch.cat([place_agent_rep, q_emb.unsqueeze(1)], 1)
+        updated_roleq = torch.cat([pred_rep, q_emb.unsqueeze(1)], 1)
 
         self.q_emb2.flatten_parameters()
         lstm_out, (h, _) = self.q_emb2(updated_roleq)
@@ -211,14 +211,14 @@ class BaseModel(nn.Module):
         verbs = sorted_idx[:,0]
         role_pred, pred_rep = self.role_module(img, verbs)
 
-        agentplace_q_idx = self.encoder.get_agentplace_roleidx(verbs)
+        '''agentplace_q_idx = self.encoder.get_agentplace_roleidx(verbs)
 
         if self.gpu_mode >= 0:
             agentplace_q_idx = agentplace_q_idx.to(torch.device('cuda'))
 
-        place_agent_rep = torch.cat([ torch.index_select(a, 0, i).unsqueeze(0) for a, i in zip(pred_rep, agentplace_q_idx) ])
+        place_agent_rep = torch.cat([ torch.index_select(a, 0, i).unsqueeze(0) for a, i in zip(pred_rep, agentplace_q_idx) ])'''
 
-        updated_roleq = torch.cat([place_agent_rep, q_emb.unsqueeze(1)], 1)
+        updated_roleq = torch.cat([pred_rep, q_emb.unsqueeze(1)], 1)
 
         self.q_emb2.flatten_parameters()
         lstm_out, (h, _) = self.q_emb2(updated_roleq)
