@@ -42,7 +42,7 @@ class TopDown(nn.Module):
 
         self.vocab_size = vocab_size
 
-        self.v_att = Attention(mlp_hidden, mlp_hidden, mlp_hidden)
+        self.v_att = NewAttention(mlp_hidden, mlp_hidden, mlp_hidden)
 
     def forward(self, img, q):
         batch_size = img.size(0)
