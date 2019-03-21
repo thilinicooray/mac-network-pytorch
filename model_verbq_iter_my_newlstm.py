@@ -161,11 +161,11 @@ class BaseModel(nn.Module):
 
         loss1 = self.calculate_loss(verb_pred_prev, verbs_org)
 
-        sorted_idx = torch.sort(verb_pred_prev, 1, True)[1]
-        verbs = sorted_idx[:,0]
-        role_pred, pred_rep = self.role_module(img, verbs)
+        #sorted_idx = torch.sort(verb_pred_prev, 1, True)[1]
+        #verbs = sorted_idx[:,0]
+        role_pred, pred_rep = self.role_module(img, verbs_org)
 
-        agentplace_q_idx = self.encoder.get_agentplace_roleidx(verbs)
+        agentplace_q_idx = self.encoder.get_agentplace_roleidx(verbs_org)
 
         if self.gpu_mode >= 0:
             agentplace_q_idx = agentplace_q_idx.to(torch.device('cuda'))
