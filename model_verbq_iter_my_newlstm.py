@@ -137,7 +137,7 @@ class BaseModel(nn.Module):
     def dev_preprocess(self, ):
         return self.dev_transform
 
-    def forward(self, img, verbs=None, labels=None):
+    def forward(self, img, verbs_org=None, labels=None):
 
         verb_q_idx = self.encoder.get_common_verbq(img.size(0))
 
@@ -159,14 +159,13 @@ class BaseModel(nn.Module):
         verb_pred_rep_prev = self.verb_vqa(img_embd, q_emb)
         verb_pred_prev = self.last_class(verb_pred_rep_prev)
 
-        loss1 = self.calculate_loss(verb_pred_prev, verbs)
+        loss1 = self.calculate_loss(verb_pred_prev, verbs_org)
 
         #sorted_idx = torch.sort(verb_pred_prev, 1, True)[1]
         #verbs = sorted_idx[:,0]
-        #use GT verb to train
-        role_pred, pred_rep = self.role_module(img, verbs)
+        role_pred, pred_rep = self.role_module(img, verbs_org)
 
-        agentplace_q_idx = self.encoder.get_agentplace_roleidx(verbs)
+        agentplace_q_idx = self.encoder.get_agentplace_roleidx(verbs_org)
 
         if self.gpu_mode >= 0:
             agentplace_q_idx = agentplace_q_idx.to(torch.device('cuda'))
@@ -184,7 +183,7 @@ class BaseModel(nn.Module):
         combined = verb_pred_rep_prev + self.dropout(verb_pred_rep)
         verb_pred = self.last_class(combined)
 
-        loss2 = self.calculate_loss(verb_pred, verbs)
+        loss2 = self.calculate_loss(verb_pred, verbs_org)
 
         sum_losses = loss1 + loss2
         batch_avg_loss = sum_losses / 2
