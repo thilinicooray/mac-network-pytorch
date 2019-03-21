@@ -47,7 +47,7 @@ class TopDown(nn.Module):
         self.lstm_proj = nn.Linear(mlp_hidden * 2, mlp_hidden)
         self.v_att = Attention(mlp_hidden, mlp_hidden, mlp_hidden)
         self.q_net = FCNet([mlp_hidden, mlp_hidden])
-        self.v_net = FCNet([mlp_hidden, mlp_hidden])
+        self.v_net = FCNet([512*7*7, mlp_hidden*8])
 
 
     def forward(self, img, q):
@@ -59,10 +59,10 @@ class TopDown(nn.Module):
         q_emb = self.lstm_proj(q_emb)
 
         att = self.v_att(img, q_emb)
-        v_emb = (att * img).sum(1) # [batch, v_dim]
+        v_emb = (att * img) # [batch, v_dim]
 
         q_repr = self.q_net(q_emb)
-        v_repr = self.v_net(v_emb)
+        v_repr = self.v_net(v_emb.contiguous().view(-1, 512*7*7))
         joint_repr = q_repr * v_repr
 
         return joint_repr
@@ -117,7 +117,7 @@ class BaseModel(nn.Module):
             nn.Linear(self.mlp_hidden*8, self.n_verbs)
         )'''
         self.last_class = SimpleClassifier(
-            mlp_hidden, 2 * mlp_hidden, self.n_verbs, 0.5)
+            mlp_hidden*8, mlp_hidden*8, self.n_verbs, 0.5)
 
         self.dropout = nn.Dropout(0.3)
 
