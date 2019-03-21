@@ -46,7 +46,7 @@ class TopDown(nn.Module):
                              batch_first=True, bidirectional=True)
         self.lstm_proj = nn.Linear(mlp_hidden * 2, mlp_hidden)
         self.v_att = Attention(mlp_hidden, mlp_hidden, mlp_hidden)
-        self.q_net = FCNet([mlp_hidden, mlp_hidden])
+        self.q_net = FCNet([mlp_hidden, mlp_hidden*8])
         self.v_net = FCNet([512*7*7, mlp_hidden*8])
 
 
