@@ -51,7 +51,7 @@ class TopDown(nn.Module):
         q_emb = q
 
         att = self.v_att(img, q_emb)
-        v_emb = att * img.sum(1) # [batch, v_dim]
+        v_emb = (att * img).sum(1) # [batch, v_dim]
 
         q_repr = self.q_net(q_emb)
         v_repr = self.v_net(v_emb)
