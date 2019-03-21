@@ -99,6 +99,9 @@ class BaseModel(nn.Module):
                               batch_first=True, bidirectional=True)
         self.lstm_proj1 = nn.Linear(mlp_hidden * 2, mlp_hidden)
         self.roles = TopDown(self.vocab_size)
+        self.q_emb2 = nn.LSTM(mlp_hidden, mlp_hidden,
+                              batch_first=True, bidirectional=True)
+        self.lstm_proj2 = nn.Linear(mlp_hidden * 2, mlp_hidden)
         #self.rep_proj = nn.Linear(mlp_hidden * 2, mlp_hidden)
         self.classifier = SimpleClassifier(
             mlp_hidden, 2 * mlp_hidden, self.vocab_size, 0.5)
@@ -176,6 +179,7 @@ class BaseModel(nn.Module):
                 labelrep_expand_new = labelrep_expand_new.to(torch.device('cuda'))
 
             labelrep_expand = labelrep_expand_new.contiguous().view(-1, self.mlp_hidden)
+            labelrep_expand4q = labelrep_expand_new.contiguous().view(-1, self.max_role_count-1, self.mlp_hidden)
 
             img_updated_new = img_updated_org.expand(self.max_role_count-1,img_updated_org.size(0), img_updated_org.size(1), img_updated_org.size(2))
             img_updated_new = img_updated_new.transpose(0,1)
@@ -188,7 +192,13 @@ class BaseModel(nn.Module):
             joined = torch.cat([added_all, img_updated_org], 2)
             combo = self.real_comb_concat(joined)
 
-            rep2 = self.roles(combo, q_emb)
+            updated_roleq = torch.cat([labelrep_expand4q, q_emb.unsqueeze(1)], 1)
+            self.q_emb2.flatten_parameters()
+            lstm_out, (h, _) = self.q_emb2(updated_roleq)
+            q_emb_up = h.permute(1, 0, 2).contiguous().view(batch_size*self.max_role_count, -1)
+            q_emb_up = self.lstm_proj2(q_emb_up)
+
+            rep2 = self.roles(combo, q_emb_up)
 
             rep = rep + self.dropout(rep2)
             #rep = self.rep_proj(torch.cat([rep2, rep], -1))
