@@ -44,17 +44,17 @@ class TopDown(nn.Module):
 
         self.v_att = Attention(mlp_hidden, mlp_hidden, mlp_hidden)
         self.q_net = FCNet([mlp_hidden, mlp_hidden])
-        self.v_net = FCNet([mlp_hidden, mlp_hidden])
+        self.v_net = FCNet([512*7*7, mlp_hidden])
 
     def forward(self, img, q):
         batch_size = img.size(0)
         q_emb = q
 
         att = self.v_att(img, q_emb)
-        v_emb = (att * img).sum(1) # [batch, v_dim]
+        v_emb = (att * img) # [batch, v_dim]
 
         q_repr = self.q_net(q_emb)
-        v_repr = self.v_net(v_emb)
+        v_repr = self.v_net(v_emb.view(-1, 512*7*7))
         joint_repr = q_repr * v_repr
 
         return joint_repr
