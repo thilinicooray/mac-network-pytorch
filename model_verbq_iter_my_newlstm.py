@@ -161,8 +161,9 @@ class BaseModel(nn.Module):
 
         loss1 = self.calculate_loss(verb_pred_prev, verbs)
 
-        sorted_idx = torch.sort(verb_pred_prev, 1, True)[1]
-        verbs = sorted_idx[:,0]
+        #sorted_idx = torch.sort(verb_pred_prev, 1, True)[1]
+        #verbs = sorted_idx[:,0]
+        #use GT verb to train
         role_pred, pred_rep = self.role_module(img, verbs)
 
         agentplace_q_idx = self.encoder.get_agentplace_roleidx(verbs)
