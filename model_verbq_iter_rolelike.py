@@ -8,7 +8,7 @@ import torch.nn.functional as F
 import torchvision as tv
 import utils
 import numpy as np
-import model_roles_recqa_noself
+import model_roles_recqa_noself_4others
 
 from torch.nn.init import kaiming_uniform_, xavier_uniform_, normal
 
@@ -46,9 +46,6 @@ class TopDown(nn.Module):
                              batch_first=True, bidirectional=True)
         self.lstm_proj = nn.Linear(mlp_hidden * 2, mlp_hidden)
         self.v_att = Attention(mlp_hidden, mlp_hidden, mlp_hidden)
-        self.q_net = FCNet([mlp_hidden, mlp_hidden*8])
-        self.v_net = FCNet([512*7*7, mlp_hidden*8])
-
 
     def forward(self, img, q):
         batch_size = img.size(0)
@@ -59,13 +56,12 @@ class TopDown(nn.Module):
         q_emb = self.lstm_proj(q_emb)
 
         att = self.v_att(img, q_emb)
-        v_emb = (att * img) # [batch, v_dim]
+        v_emb = att * img
+        v_emb = v_emb.permute(0, 2, 1)
+        v_emb = v_emb.contiguous().view(-1, 512*7*7)
+        v_emb_with_q = torch.cat([v_emb, q_emb], -1)
 
-        q_repr = self.q_net(q_emb)
-        v_repr = self.v_net(v_emb.contiguous().view(-1, 512*7*7))
-        joint_repr = q_repr * v_repr
-
-        return joint_repr
+        return v_emb_with_q
 
 class BaseModel(nn.Module):
     def __init__(self, encoder,
@@ -104,8 +100,10 @@ class BaseModel(nn.Module):
         self.verb_vqa = TopDown(self.n_verbs)
         self.verb_q_emb = nn.Embedding(self.verbq_word_count + 1, embed_hidden, padding_idx=self.verbq_word_count)
         #self.init_verbq_embd()
-        self.role_module = model_roles_recqa_noself.BaseModel(self.encoder, self.gpu_mode)
-        '''self.last_class = nn.Sequential(
+        self.role_module = model_roles_recqa_noself_4others.BaseModel(self.encoder, self.gpu_mode)
+        self.role_maker = nn.Linear(mlp_hidden, mlp_hidden)
+        self.real_comb_concat = nn.Linear(mlp_hidden * 2, mlp_hidden)
+        self.last_class = nn.Sequential(
             nn.Linear(mlp_hidden * 7 *7 + mlp_hidden, mlp_hidden*8),
             nn.BatchNorm1d(mlp_hidden*8),
             nn.ReLU(inplace=True),
@@ -115,9 +113,7 @@ class BaseModel(nn.Module):
             nn.ReLU(inplace=True),
             nn.Dropout(0.5),
             nn.Linear(self.mlp_hidden*8, self.n_verbs)
-        )'''
-        self.last_class = SimpleClassifier(
-            mlp_hidden*8, mlp_hidden*8, self.n_verbs, 0.5)
+        )
 
         self.dropout = nn.Dropout(0.3)
 
@@ -179,7 +175,25 @@ class BaseModel(nn.Module):
         verb_pred_rep_prev = verb_pred_rep_prev.transpose(0,1)
         verb_pred_rep_prev = verb_pred_rep_prev.contiguous().view(batch_size* 3, -1)
 
-        verb_pred_rep = self.verb_vqa(img_embd, q_emb)
+        role_pred, pred_rep = self.role_module(img, verbs)
+
+        #make it 3
+        pred_rep = pred_rep.expand(3,pred_rep.size(0), pred_rep.size(1), pred_rep.size(2))
+        pred_rep = pred_rep.transpose(0,1)
+        pred_rep = pred_rep.contiguous().view(-1, self.mlp_hidden)
+
+        role_values = self.role_maker(pred_rep).unsqueeze(1)
+
+        exp_img = img_embd.expand(self.role_module.max_role_count, img_embd.size(0), img_embd.size(1), img_embd.size(2))
+        img_embed_expand = exp_img.transpose(0,1)
+        img_embed_expand = img_embed_expand.contiguous().view(-1, img_embd.size(1), self.mlp_hidden)
+
+        rolewise = role_values * img_embed_expand
+        added_all = torch.sum(rolewise.view(-1,self.role_module.max_role_count, rolewise.size(1), rolewise.size(2) ), 1)
+        joined = torch.cat([added_all, img_embd], 2)
+        combo = self.real_comb_concat(joined)
+
+        verb_pred_rep = self.verb_vqa(combo, q_emb)
         combined = verb_pred_rep_prev + self.dropout(verb_pred_rep)
         verb_pred = self.last_class(combined)
 
@@ -212,7 +226,8 @@ class BaseModel(nn.Module):
 
         sorted_idx = torch.sort(verb_pred_prev, 1, True)[1]
         verbs = sorted_idx[:,0]
-        role_pred = self.role_module(img, verbs)
+        role_pred, pred_rep = self.role_module(img, verbs)
+        pred_rep = pred_rep.view(-1, self.mlp_hidden)
         label_idx = torch.max(role_pred,-1)[1]
 
         verb_q_idx = self.encoder.get_verbq_idx(verbs, label_idx)
@@ -225,9 +240,19 @@ class BaseModel(nn.Module):
         img_embd = img_embd.view(batch_size, n_channel, -1)
         img_embd = img_embd.permute(0, 2, 1)'''
 
+        role_values = self.role_maker(pred_rep).unsqueeze(1)
+
+        exp_img = img_embd.expand(self.role_module.max_role_count, img_embd.size(0), img_embd.size(1), img_embd.size(2))
+        img_embed_expand = exp_img.transpose(0,1)
+        img_embed_expand = img_embed_expand.contiguous().view(-1, img_embd.size(1), self.mlp_hidden)
+        rolewise = role_values * img_embed_expand
+        added_all = torch.sum(rolewise.view(-1,self.role_module.max_role_count, rolewise.size(1), rolewise.size(2) ), 1)
+        joined = torch.cat([added_all, img_embd], 2)
+        combo = self.real_comb_concat(joined)
+
         q_emb = self.verb_q_emb(verb_q_idx)
 
-        verb_pred_logit = self.verb_vqa(img_embd, q_emb) + verb_pred_logit_prev
+        verb_pred_logit = self.verb_vqa(combo, q_emb) + verb_pred_logit_prev
         verb_pred = self.last_class(verb_pred_logit)
 
         return verb_pred
