@@ -54,7 +54,7 @@ class TopDown(nn.Module):
         v_emb = (att * img) # [batch, v_dim]
 
         q_repr = self.q_net(q_emb)
-        v_repr = self.v_net(v_emb.view(-1, 512*7*7))
+        v_repr = self.v_net(v_emb.contiguous().view(-1, 512*7*7))
         joint_repr = q_repr * v_repr
 
         return joint_repr
