@@ -88,7 +88,8 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
             t1 = time.time()
             #print('current loss = ', loss)
             if gpu_mode >= 0 :
-                loss.backward(torch.ones([2,1]).to(torch.device('cuda')))
+                #loss.backward(torch.ones([2,1]).to(torch.device('cuda')))
+                loss.mean().backward()
             else:
                 loss.backward()
             #loss.backward()
