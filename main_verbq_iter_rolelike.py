@@ -93,7 +93,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 loss.backward(torch.ones([2,1]).to(torch.device('cuda')))
             else:
                 loss.backward()'''
-            #loss.backward()
+            loss.backward()
             #print ("backward time = {}".format(time.time() - t1))
 
             torch.nn.utils.clip_grad_norm_(model.parameters(), clip_norm)
