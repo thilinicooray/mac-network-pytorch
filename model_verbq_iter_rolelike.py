@@ -150,7 +150,7 @@ class BaseModel(nn.Module):
         verb_pred_rep_prev = self.dropout(self.verb_vqa(img_embd, q_emb))
         verb_pred_prev = self.last_class(verb_pred_rep_prev)
 
-        loss1 = self.calculate_loss(verb_pred_prev, verbs)
+        #loss1 = self.calculate_loss(verb_pred_prev, verbs)
 
         '''q_emb = self.verb_q_emb(verb_q_idx)
 
@@ -180,7 +180,7 @@ class BaseModel(nn.Module):
         batch_avg_loss = sum_losses / 2
         loss = batch_avg_loss'''
 
-        return verb_pred_prev, loss1
+        return verb_pred_prev
 
     def forward_eval(self, img, verbs=None, labels=None):
         verb_q_idx = self.encoder.get_common_verbq(img.size(0))

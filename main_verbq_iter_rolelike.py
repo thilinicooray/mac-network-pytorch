@@ -73,7 +73,8 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
             print('=========================================================================')
             print(labels)'''
 
-            verb_predict, loss = pmodel(img, verb, labels)
+            verb_predict = pmodel(img, verb, labels)
+            loss = model.calculate_loss(verb_predict, verb)
 
             #print('final loss :', loss, loss.mean())
             #verb_predict, rol1pred, role_predict = pmodel.forward_eval5(img)
@@ -88,10 +89,10 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
             #print ("loss time = {}".format(time.time() - t1))
             t1 = time.time()
 
-            if gpu_mode >= 0 :
+            '''if gpu_mode >= 0 :
                 loss.backward(torch.ones([2,1]).to(torch.device('cuda')))
             else:
-                loss.backward()
+                loss.backward()'''
             #loss.backward()
             #print ("backward time = {}".format(time.time() - t1))
 
