@@ -145,7 +145,9 @@ class BaseModel(nn.Module):
         verb_pred_logit = self.verb_vqa(img_embd, q_emb)
         verb_pred = self.classifier(verb_pred_logit)
 
-        return verb_pred
+        loss = self.calculate_loss(verb_pred, verbs)
+
+        return verb_pred, loss
 
     def calculate_loss(self, verb_pred, gt_verbs):
 
