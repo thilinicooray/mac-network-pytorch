@@ -93,7 +93,7 @@ class BaseModel(nn.Module):
         self.encoder = encoder
         self.gpu_mode = gpu_mode
         self.mlp_hidden = mlp_hidden
-        self.verbq_word_count = len(self.encoder.verb_question_words)
+        self.verbq_word_count = len(self.encoder.verb_q_words)
         self.n_verbs = self.encoder.get_num_verbs()
 
 

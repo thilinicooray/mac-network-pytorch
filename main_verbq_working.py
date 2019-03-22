@@ -1,5 +1,6 @@
 import torch
-from imsitu_encoder_verbq import imsitu_encoder
+#from imsitu_encoder_verbq import imsitu_encoder
+from imsitu_encoder_roleqverbq_embdhz import imsitu_encoder
 from imsitu_loader import imsitu_loader_roleq_updated
 from imsitu_scorer_log import imsitu_scorer
 import json
@@ -269,7 +270,8 @@ def main():
 
     train_set = json.load(open(dataset_folder + "/updated_train_new.json"))
     imsitu_roleq = json.load(open("imsitu_data/imsitu_questions_prev.json"))
-    encoder = imsitu_encoder(train_set, imsitu_roleq)
+    verb_templates = json.load(open("imsitu_data/verb_questions_template_new.json"))
+    encoder = imsitu_encoder(train_set, imsitu_roleq, verb_templates)
 
     model = model_verbq_working.BaseModel(encoder, args.gpuid)
 
