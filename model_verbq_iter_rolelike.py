@@ -152,7 +152,7 @@ class BaseModel(nn.Module):
 
         loss1 = self.calculate_loss(verb_pred_prev, verbs)
 
-        q_emb = self.verb_q_emb(verb_q_idx)
+        '''q_emb = self.verb_q_emb(verb_q_idx)
 
         role_pred, pred_rep = self.role_module(img, verbs)
 
@@ -178,9 +178,9 @@ class BaseModel(nn.Module):
 
         sum_losses = loss1 + loss2
         batch_avg_loss = sum_losses / 2
-        loss = batch_avg_loss
+        loss = batch_avg_loss'''
 
-        return verb_pred, loss
+        return verb_pred_prev, loss1
 
     def forward_eval(self, img, verbs=None, labels=None):
         verb_q_idx = self.encoder.get_common_verbq(img.size(0))
@@ -198,7 +198,7 @@ class BaseModel(nn.Module):
         verb_pred_logit_prev = self.verb_vqa(img_embd, q_emb)
         verb_pred_prev = self.last_class(verb_pred_logit_prev)
 
-        sorted_idx = torch.sort(verb_pred_prev, 1, True)[1]
+        '''sorted_idx = torch.sort(verb_pred_prev, 1, True)[1]
         verbs = sorted_idx[:,0]
         role_pred, pred_rep = self.role_module(img, verbs)
         pred_rep = pred_rep.view(-1, self.mlp_hidden)
@@ -216,9 +216,9 @@ class BaseModel(nn.Module):
         q_emb = self.verb_q_emb(verb_q_idx)
 
         verb_pred_logit = self.verb_vqa(combo, q_emb) + verb_pred_logit_prev
-        verb_pred = self.last_class(verb_pred_logit)
+        verb_pred = self.last_class(verb_pred_logit)'''
 
-        return verb_pred
+        return verb_pred_prev
 
 
     def calculate_loss(self, verb_pred, gt_verbs):
