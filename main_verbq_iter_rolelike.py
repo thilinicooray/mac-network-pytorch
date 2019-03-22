@@ -138,8 +138,8 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
             #top1.add_point_eval5(verb_predict, verb, role_predict, labels)
             #top5.add_point_eval5(verb_predict, verb, role_predict, labels)
 
-            top1.add_point_multi_verb_avg(id, verb_predict, verb)
-            top5.add_point_multi_verb_avg(id, verb_predict, verb)
+            top1.add_point_verb_only_eval(id, verb_predict, verb)
+            top5.add_point_verb_only_eval(id, verb_predict, verb)
 
 
             if total_steps % print_freq == 0:
@@ -171,7 +171,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 max_score = max(dev_score_list)
 
                 if max_score == dev_score_list[-1]:
-                    torch.save(model.state_dict(), model_dir + "/{}_verbq_iter_nlpq_oldwithroleatt.model".format( model_name))
+                    torch.save(model.state_dict(), model_dir + "/{}_verbq_iter_roleatt_only.model".format( model_name))
                     print ('New best model saved! {0}'.format(max_score))
 
                 #eval on the trainset
