@@ -43,10 +43,18 @@ class TopDown(nn.Module):
                              batch_first=True, bidirectional=True)
         self.lstm_proj = nn.Linear(mlp_hidden * 2, mlp_hidden)
         self.v_att = NewAttention(mlp_hidden, mlp_hidden, mlp_hidden)
-        '''self.q_net = FCNet([mlp_hidden, mlp_hidden])
-        self.v_net = FCNet([mlp_hidden, mlp_hidden])
-        self.classifier = SimpleClassifier(
-            mlp_hidden, 2 * mlp_hidden, self.vocab_size, 0.5)'''
+
+        self.classifier = nn.Sequential(
+            nn.Linear(mlp_hidden * 7 *7 + mlp_hidden, mlp_hidden*8),
+            nn.BatchNorm1d(mlp_hidden*8),
+            nn.ReLU(inplace=True),
+            nn.Dropout(0.5),
+            nn.Linear(mlp_hidden * 8, mlp_hidden*8),
+            nn.BatchNorm1d(mlp_hidden*8),
+            nn.ReLU(inplace=True),
+            nn.Dropout(0.5),
+            nn.Linear(mlp_hidden*8, self.vocab_size)
+        )
 
 
     def forward(self, img, q):
@@ -63,7 +71,9 @@ class TopDown(nn.Module):
         v_emb = v_emb.contiguous().view(-1, 512*7*7)
         v_emb_with_q = torch.cat([v_emb, q_emb], -1)
 
-        return v_emb_with_q
+        logits = self.classifier(v_emb_with_q)
+
+        return logits
 
 class BaseModel(nn.Module):
     def __init__(self, encoder,
@@ -109,18 +119,6 @@ class BaseModel(nn.Module):
             param.require_grad = False'''
         self.verb_vqa = TopDown(self.n_verbs)
         self.verb_q_emb = nn.Embedding(self.verbq_word_count + 1, embed_hidden, padding_idx=self.verbq_word_count)
-        self.classifier = nn.Sequential(
-            nn.Linear(mlp_hidden * 7 *7 + mlp_hidden, mlp_hidden*8),
-            nn.BatchNorm1d(mlp_hidden*8),
-            nn.ReLU(inplace=True),
-            nn.Dropout(0.5),
-            nn.Linear(mlp_hidden * 8, mlp_hidden*8),
-            nn.BatchNorm1d(mlp_hidden*8),
-            nn.ReLU(inplace=True),
-            nn.Dropout(0.5),
-            nn.Linear(self.mlp_hidden*8, self.n_verbs)
-        )
-
 
     def train_preprocess(self):
         return self.train_transform
@@ -142,8 +140,7 @@ class BaseModel(nn.Module):
 
         q_emb = self.verb_q_emb(verb_q_idx)
 
-        verb_pred_logit = self.verb_vqa(img_embd, q_emb)
-        verb_pred = self.classifier(verb_pred_logit)
+        verb_pred = self.verb_vqa(img_embd, q_emb)
 
         loss = self.calculate_loss(verb_pred, verbs)
 
