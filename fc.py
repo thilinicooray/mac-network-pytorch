@@ -55,9 +55,9 @@ class FCNet(nn.Module):
             in_dim = dims[i]
             out_dim = dims[i+1]
             layers.append(self.linear(in_dim, out_dim))
-            layers.append(nn.ReLU())
+            layers.append(nn.Tanh())
         layers.append(self.linear(dims[-2], dims[-1]))
-        layers.append(nn.ReLU())
+        layers.append(nn.Tanh())
 
         self.main = nn.Sequential(*layers)
 

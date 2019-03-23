@@ -41,7 +41,7 @@ class TopDown(nn.Module):
         self.lstm_proj = nn.Linear(mlp_hidden * 2, mlp_hidden)'''
         self.q_proj = nn.Sequential(
             nn.Linear(embed_hidden*2, mlp_hidden),
-            nn.ReLU(inplace=True),
+            nn.Tanh(),
         )
         self.v_att = Attention(mlp_hidden, mlp_hidden, mlp_hidden)
         self.q_net = FCNet([mlp_hidden, mlp_hidden])
