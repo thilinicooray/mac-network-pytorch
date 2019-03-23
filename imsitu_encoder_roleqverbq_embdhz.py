@@ -588,7 +588,8 @@ class imsitu_encoder():
         all_q_idx = []
         for i in range(batch_size):
             q_idx = []
-            question = 'what is the action happening'
+            #question = 'what is the action happening'
+            question = 'is the is the'
 
             words = question.split()
             for word in words:
