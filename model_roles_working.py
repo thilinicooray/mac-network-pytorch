@@ -36,13 +36,11 @@ class TopDown(nn.Module):
 
         self.vocab_size = vocab_size
 
-        self.q_emb = nn.LSTM(embed_hidden, mlp_hidden,
+        '''self.q_emb = nn.LSTM(embed_hidden, mlp_hidden,
                              batch_first=True, bidirectional=True)
-        self.q_prep = FCNet([mlp_hidden, mlp_hidden])
-        self.lstm_proj = nn.Linear(mlp_hidden * 2, mlp_hidden)
-        self.verb_transform = nn.Linear(embed_hidden, mlp_hidden)
-        self.v_att = Attention(mlp_hidden, mlp_hidden, mlp_hidden)
-        self.q_net = FCNet([mlp_hidden, mlp_hidden])
+        self.lstm_proj = nn.Linear(mlp_hidden * 2, mlp_hidden)'''
+        self.v_att = Attention(mlp_hidden, embed_hidden*2, mlp_hidden)
+        self.q_net = FCNet([embed_hidden*2, mlp_hidden])
         self.v_net = FCNet([mlp_hidden, mlp_hidden])
         self.classifier = SimpleClassifier(
             mlp_hidden, 2 * mlp_hidden, self.vocab_size, 0.5)
@@ -51,10 +49,11 @@ class TopDown(nn.Module):
     def forward(self, img, q):
         batch_size = img.size(0)
         w_emb = q
-        self.q_emb.flatten_parameters()
+        '''self.q_emb.flatten_parameters()
         lstm_out, (h, _) = self.q_emb(w_emb)
         q_emb = h.permute(1, 0, 2).contiguous().view(batch_size, -1)
-        q_emb = self.lstm_proj(q_emb)
+        q_emb = self.lstm_proj(q_emb)'''
+        q_emb = q
 
         att = self.v_att(img, q_emb)
         v_emb = (att * img).sum(1) # [batch, v_dim]
@@ -137,7 +136,7 @@ class BaseModel(nn.Module):
         verb_embed_expand = verb_embd.expand(self.max_role_count, verb_embd.size(0), verb_embd.size(1))
         verb_embed_expand = verb_embed_expand.transpose(0,1)
         verb_embed_expand = verb_embed_expand.contiguous().view(-1, self.embed_hidden)
-        role_verb = torch.cat([role_embd, verb_embed_expand.unsqueeze(1)],1)
+        role_verb = torch.cat([role_embd.squeeze(), verb_embed_expand],-1)
 
         logits = self.roles(img, role_verb)
 
