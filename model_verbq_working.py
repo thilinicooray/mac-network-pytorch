@@ -142,9 +142,9 @@ class BaseModel(nn.Module):
 
         verb_pred = self.verb_vqa(img_embd, q_emb)
 
-        #loss = self.calculate_loss(verb_pred, verbs)
+        loss = self.calculate_loss(verb_pred, verbs)
 
-        return verb_pred
+        return verb_pred, loss
 
     def calculate_loss(self, verb_pred, gt_verbs):
 

@@ -73,7 +73,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
             print('=========================================================================')
             print(labels)'''
 
-            verb_predict = pmodel(img, verb, labels)
+            verb_predict, loss = pmodel(img, verb, labels)
             #verb_predict, rol1pred, role_predict = pmodel.forward_eval5(img)
             #print ("forward time = {}".format(time.time() - t1))
             t1 = time.time()
@@ -81,18 +81,18 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
             '''g = make_dot(verb_predict, model.state_dict())
             g.view()'''
 
-            loss = model.calculate_loss(verb_predict, verb)
+            #loss = model.calculate_loss(verb_predict, verb)
             #loss = model.calculate_eval_loss_new(verb_predict, verb, rol1pred, labels, args)
             #loss = loss_ * random.random() #try random loss
             #print ("loss time = {}".format(time.time() - t1))
             t1 = time.time()
             #print('current loss = ', loss)
-            '''if gpu_mode >= 0 :
+            if gpu_mode >= 0 :
                 #loss.backward(torch.ones([2,1]).to(torch.device('cuda')))
                 loss.mean().backward()
             else:
-                loss.backward()'''
-            loss.backward()
+                loss.backward()
+            #loss.backward()
             #print ("backward time = {}".format(time.time() - t1))
 
             torch.nn.utils.clip_grad_norm_(model.parameters(), clip_norm)
@@ -215,7 +215,7 @@ def eval(model, dev_loader, encoder, gpu_mode, write_to_file = False):
                 verb = torch.autograd.Variable(verb)
                 labels = torch.autograd.Variable(labels)
 
-            verb_predict= model(img, verb, labels)
+            verb_predict, _= model(img, verb, labels)
             '''loss = model.calculate_eval_loss(verb_predict, verb, role_predict, labels)
             val_loss += loss.item()'''
             top1.add_point_verb_only_eval(img_id, verb_predict, verb)
@@ -312,7 +312,7 @@ def main():
         torch.cuda.manual_seed(1234)
         torch.backends.cudnn.deterministic = True
 
-    optimizer = torch.optim.Adam([
+    optimizer = torch.optim.Adamax([
         {'params': cnn_features, 'lr': 5e-5},
         {'params': role_features}
     ], lr=1e-3)
