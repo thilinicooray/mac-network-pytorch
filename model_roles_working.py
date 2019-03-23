@@ -39,8 +39,9 @@ class TopDown(nn.Module):
         '''self.q_emb = nn.LSTM(embed_hidden, mlp_hidden,
                              batch_first=True, bidirectional=True)
         self.lstm_proj = nn.Linear(mlp_hidden * 2, mlp_hidden)'''
-        self.v_att = Attention(mlp_hidden, embed_hidden*2, mlp_hidden)
-        self.q_net = FCNet([embed_hidden*2, mlp_hidden])
+        self.query_proj = nn.Linear(embed_hidden * 2, mlp_hidden)
+        self.v_att = Attention(mlp_hidden, mlp_hidden, mlp_hidden)
+        self.q_net = FCNet([mlp_hidden, mlp_hidden])
         self.v_net = FCNet([mlp_hidden, mlp_hidden])
         self.classifier = SimpleClassifier(
             mlp_hidden, 2 * mlp_hidden, self.vocab_size, 0.5)
@@ -53,7 +54,7 @@ class TopDown(nn.Module):
         lstm_out, (h, _) = self.q_emb(w_emb)
         q_emb = h.permute(1, 0, 2).contiguous().view(batch_size, -1)
         q_emb = self.lstm_proj(q_emb)'''
-        q_emb = q
+        q_emb = self.query_proj(q)
 
         att = self.v_att(img, q_emb)
         v_emb = (att * img).sum(1) # [batch, v_dim]
