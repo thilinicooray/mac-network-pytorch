@@ -251,7 +251,7 @@ def main():
     lr_max = 5e-4
     lr_gamma = 0.1
     lr_step = 25
-    clip_norm = 0.5
+    clip_norm = 1.0
     weight_decay = 1e-4
     n_epoch = 500
     n_worker = 3
