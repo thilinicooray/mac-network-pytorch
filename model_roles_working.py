@@ -69,7 +69,7 @@ class TopDown(nn.Module):
         if self.gpu_mode >= 0:
             joint_repr = joint_repr.to(torch.device('cuda'))
 
-        for i in range(1):
+        for i in range(3):
 
             labelrep = joint_repr.contiguous().view(batch_size, -1, self.mlp_hidden)
             labelrep_expand = labelrep.expand(self.max_role_count, labelrep.size(0), labelrep.size(1), labelrep.size(2))
