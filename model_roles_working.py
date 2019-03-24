@@ -29,12 +29,16 @@ class vgg16_modified(nn.Module):
 
 class TopDown(nn.Module):
     def __init__(self,
+                 max_role_count,
                  vocab_size,
+                 gpu_mode,
                  embed_hidden=300,
                  mlp_hidden=512):
         super(TopDown, self).__init__()
 
         self.vocab_size = vocab_size
+        self.max_role_count = max_role_count
+        self.gpu_mode = gpu_mode
 
         '''self.q_emb = nn.LSTM(embed_hidden, mlp_hidden,
                              batch_first=True, bidirectional=True)
@@ -49,22 +53,54 @@ class TopDown(nn.Module):
         self.classifier = SimpleClassifier(
             mlp_hidden, 2 * mlp_hidden, self.vocab_size, 0.5)
 
+        self.mlp_hidden= mlp_hidden
+        self.dropout = nn.Dropout(0.2)
 
-    def forward(self, img, q):
-        batch_size = img.size(0)
+
+    def forward(self, img_org, q):
+        batch_size = img_org.size(0) // self.max_role_count
         w_emb = q
         '''self.q_emb.flatten_parameters()
         lstm_out, (h, _) = self.q_emb(w_emb)
         q_emb = h.permute(1, 0, 2).contiguous().view(batch_size, -1)
         q_emb = self.lstm_proj(q_emb)'''
         q_emb = self.q_proj(q)
+        joint_repr = torch.zeros(batch_size * self.max_role_count, self.mlp_hidden)
+        if self.gpu_mode >= 0:
+            joint_repr = joint_repr.to(torch.device('cuda'))
 
-        att = self.v_att(img, q_emb)
-        v_emb = (att * img).sum(1) # [batch, v_dim]
+        for i in range(1):
 
-        q_repr = self.q_net(q_emb)
-        v_repr = self.v_net(v_emb)
-        joint_repr = q_repr * v_repr
+            labelrep = joint_repr.contiguous().view(batch_size, -1, self.mlp_hidden)
+            labelrep_expand = labelrep.expand(self.max_role_count, labelrep.size(0), labelrep.size(1), labelrep.size(2))
+            labelrep_expand = labelrep_expand.transpose(0,1)
+            labelrep_expand_new = torch.zeros([batch_size, self.max_role_count, self.max_role_count-1, self.mlp_hidden])
+            for i in range(self.max_role_count):
+                if i == 0:
+                    labelrep_expand_new[:,i] = labelrep_expand[:,i,1:]
+                elif i == self.max_role_count -1:
+                    labelrep_expand_new[:,i] = labelrep_expand[:,i,:i]
+                else:
+                    labelrep_expand_new[:,i] = torch.cat([labelrep_expand[:,i,:i], labelrep_expand[:,i,i+1:]], 1)
+
+            if self.gpu_mode >= 0:
+                labelrep_expand_new = labelrep_expand_new.to(torch.device('cuda'))
+
+            labelrep_expand = labelrep_expand_new.contiguous().view(-1, self.max_role_count-1, self.mlp_hidden)
+
+            img = torch.cat([img_org,labelrep_expand], 1)
+
+            att = self.v_att(img, q_emb)
+            v_emb = (att * img).sum(1) # [batch, v_dim]
+
+            q_repr = self.q_net(q_emb)
+            v_repr = self.v_net(v_emb)
+            joint_repr_new = q_repr * v_repr
+
+            joint_repr = joint_repr + self.dropout(joint_repr_new)
+
+
+
         logits = self.classifier(joint_repr)
 
         return logits
@@ -106,7 +142,7 @@ class BaseModel(nn.Module):
         self.verb_lookup = nn.Embedding(self.n_verbs, embed_hidden)
         #self.verb_lookup = nn.Embedding(self.n_verbs, embed_hidden)
         #self.w_emb = nn.Embedding(self.n_role_q_vocab + 1, embed_hidden, padding_idx=self.n_role_q_vocab)
-        self.roles = TopDown(self.vocab_size)
+        self.roles = TopDown(self.max_role_count, self.vocab_size, self.gpu_mode)
 
         self.conv_hidden = self.conv.base_size()
         self.mlp_hidden = mlp_hidden
