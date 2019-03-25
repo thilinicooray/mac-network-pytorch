@@ -9,7 +9,7 @@ import torchvision as tv
 import utils
 import numpy as np
 import model_verb_directcnn
-import model_roles_verbrole_only
+import model_roles_verbcatrole2img
 
 class vgg16_modified(nn.Module):
     def __init__(self):
@@ -100,7 +100,7 @@ class BaseModel(nn.Module):
         self.n_verbs = self.encoder.get_num_verbs()
 
         self.verb_module = model_verb_directcnn.BaseModel(self.encoder, self.gpu_mode)
-        self.role_module = model_roles_verbrole_only.BaseModel(self.encoder, self.gpu_mode)
+        self.role_module = model_roles_verbcatrole2img.BaseModel(self.encoder, self.gpu_mode)
 
         self.conv = vgg16_modified()
 
@@ -117,7 +117,7 @@ class BaseModel(nn.Module):
         )'''
 
         self.classifier = nn.Sequential(
-            nn.Linear(mlp_hidden * 6, mlp_hidden*2),
+            nn.Linear(mlp_hidden * 55, mlp_hidden*2),
             nn.ReLU(inplace=True),
             nn.Dropout(0.5),
             nn.Linear(mlp_hidden * 2, self.n_verbs)
@@ -135,16 +135,16 @@ class BaseModel(nn.Module):
 
         if self.training:
 
-            '''img_embd = self.conv(img)
+            img_embd = self.conv(img)
             batch_size, n_channel, conv_h, conv_w = img_embd.size()
             img_embd = img_embd.view(batch_size, n_channel, -1)
-            img_embd = img_embd.permute(0, 2, 1)'''
+            img_embd = img_embd.permute(0, 2, 1)
 
             _, pred_rep = self.role_module(img, verb)
 
-            #contexted_img = torch.cat([img_embd,pred_rep], 1)
+            contexted_img = torch.cat([img_embd,pred_rep], 1)
 
-            verb_pred = self.classifier(pred_rep.contiguous().view(-1, 512*6))
+            verb_pred = self.classifier(contexted_img.contiguous().view(-1, 512*55))
 
         else:
             verb_pred_prev = self.verb_module(img)
@@ -153,16 +153,16 @@ class BaseModel(nn.Module):
             verbs = sorted_idx[:,0]
             _, pred_rep = self.role_module(img, verbs)
 
-            '''img_embd = self.conv(img)
+            img_embd = self.conv(img)
             batch_size, n_channel, conv_h, conv_w = img_embd.size()
             img_embd = img_embd.view(batch_size, n_channel, -1)
-            img_embd = img_embd.permute(0, 2, 1)'''
+            img_embd = img_embd.permute(0, 2, 1)
 
             _, pred_rep = self.role_module(img, verb)
 
-            #contexted_img = torch.cat([img_embd,pred_rep], 1)
+            contexted_img = torch.cat([img_embd,pred_rep], 1)
 
-            verb_pred = self.classifier(pred_rep.contiguous().view(-1, 512*6))
+            verb_pred = self.classifier(contexted_img.contiguous().view(-1, 512*55))
 
         return verb_pred
 
