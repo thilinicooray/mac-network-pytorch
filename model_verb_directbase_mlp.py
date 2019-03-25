@@ -105,7 +105,7 @@ class BaseModel(nn.Module):
         self.conv = vgg16_modified()
 
         self.classifier = nn.Sequential(
-            nn.Linear(mlp_hidden * 55, mlp_hidden*8),
+            nn.Linear(mlp_hidden * 49, mlp_hidden*8),
             nn.BatchNorm1d(mlp_hidden*8),
             nn.ReLU(inplace=True),
             nn.Dropout(0.5),
@@ -133,31 +133,29 @@ class BaseModel(nn.Module):
             img_embd = img_embd.view(batch_size, n_channel, -1)
             img_embd = img_embd.permute(0, 2, 1)
 
-            _, pred_rep = self.role_module(img, verb)
+            #_, pred_rep = self.role_module(img, verb)
 
-            contexted_img = torch.cat([img_embd,pred_rep], 1)
+            #contexted_img = torch.cat([img_embd,pred_rep], 1)
 
-            a = contexted_img.contiguous().view(-1, 512*55)
-
-            verb_pred = self.classifier(a)
+            verb_pred = self.classifier(img_embd.contiguous().view(-1, 512*49))
 
         else:
-            verb_pred_prev = self.verb_module(img)
+            '''verb_pred_prev = self.verb_module(img)
 
             sorted_idx = torch.sort(verb_pred_prev, 1, True)[1]
             verbs = sorted_idx[:,0]
-            _, pred_rep = self.role_module(img, verbs)
+            _, pred_rep = self.role_module(img, verbs)'''
 
             img_embd = self.conv(img)
             batch_size, n_channel, conv_h, conv_w = img_embd.size()
             img_embd = img_embd.view(batch_size, n_channel, -1)
             img_embd = img_embd.permute(0, 2, 1)
 
-            _, pred_rep = self.role_module(img, verb)
+            #_, pred_rep = self.role_module(img, verb)
 
-            contexted_img = torch.cat([img_embd,pred_rep], 1)
+            #contexted_img = torch.cat([img_embd,pred_rep], 1)
 
-            verb_pred = self.classifier(contexted_img.contiguous().view(-1, 512*55))
+            verb_pred = self.classifier(img_embd.contiguous().view(-1, 512*49))
 
         return verb_pred
 
