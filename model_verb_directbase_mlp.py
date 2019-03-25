@@ -101,6 +101,8 @@ class BaseModel(nn.Module):
 
         self.verb_module = model_verb_directcnn.BaseModel(self.encoder, self.gpu_mode)
         self.role_module = model_roles_verbcatrole2img.BaseModel(self.encoder, self.gpu_mode)
+        self.verb_module.eval()
+        self.role_module.eval()
 
         self.conv = vgg16_modified()
 
