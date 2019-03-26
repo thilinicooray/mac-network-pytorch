@@ -103,7 +103,7 @@ class TopDown(nn.Module):
 
         logits = self.classifier(joint_repr)
 
-        return logits, v_repr
+        return logits, joint_repr
 
 class BaseModel(nn.Module):
     def __init__(self, encoder,

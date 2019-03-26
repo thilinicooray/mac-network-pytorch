@@ -47,11 +47,9 @@ class TopDown(nn.Module):
         self.mlp_hidden = mlp_hidden
 
 
-
     def forward(self, img, q):
         batch_size = img.size(0)
         q_emb = q
-        print('sizes :', img.size(), q_emb.size())
         att = self.v_att(img, q_emb)
         v_emb = (att * img).sum(1) # [batch, v_dim]
 
@@ -113,42 +111,23 @@ class BaseModel(nn.Module):
 
     def forward(self, img, verb, labels):
 
-        if self.training:
+        verb_pred_prev = self.verb_module(img)
 
-            img_embd = self.conv(img)
-            batch_size, n_channel, conv_h, conv_w = img_embd.size()
-            img_embd = img_embd.view(batch_size, n_channel, -1)
-            img_embd = img_embd.permute(0, 2, 1)
+        sorted_idx = torch.sort(verb_pred_prev, 1, True)[1]
+        verbs = sorted_idx[:,0]
+        _, pred_rep = self.role_module(img, verbs)
 
+        img_embd = self.conv(img)
+        batch_size, n_channel, conv_h, conv_w = img_embd.size()
+        img_embd = img_embd.view(batch_size, n_channel, -1)
+        img_embd = img_embd.permute(0, 2, 1)
+        img_embd = img_embd.expand(self.role_module.max_role_count,img_embd.size(0), img_embd.size(1), img_embd.size(2))
+        img_embd = img_embd.transpose(0,1)
+        img_embd = img_embd.contiguous().view(batch_size* self.role_module.max_role_count, -1, self.mlp_hidden)
 
-            img_embd = img_embd.expand(self.role_module.max_role_count,img_embd.size(0), img_embd.size(1), img_embd.size(2))
-            img_embd = img_embd.transpose(0,1)
-            img_embd = img_embd.contiguous().view(batch_size* self.role_module.max_role_count, -1, self.mlp_hidden)
+        pred_rep_exp = pred_rep.contiguous().view(batch_size* self.role_module.max_role_count, -1)
 
-            _, pred_rep = self.role_module(img, verb)
-
-            pred_rep_exp = pred_rep.contiguous().view(batch_size* self.role_module.max_role_count, -1)
-
-            verb_pred = self.verbqa(img_embd, pred_rep_exp)
-
-        else:
-            verb_pred_prev = self.verb_module(img)
-
-            sorted_idx = torch.sort(verb_pred_prev, 1, True)[1]
-            verbs = sorted_idx[:,0]
-            _, pred_rep = self.role_module(img, verbs)
-
-            img_embd = self.conv(img)
-            batch_size, n_channel, conv_h, conv_w = img_embd.size()
-            img_embd = img_embd.view(batch_size, n_channel, -1)
-            img_embd = img_embd.permute(0, 2, 1)
-            img_embd = img_embd.expand(self.role_module.max_role_count,img_embd.size(0), img_embd.size(1), img_embd.size(2))
-            img_embd = img_embd.transpose(0,1)
-            img_embd = img_embd.contiguous().view(batch_size* self.role_module.max_role_count, -1, self.mlp_hidden)
-
-            pred_rep_exp = pred_rep.contiguous().view(batch_size* self.role_module.max_role_count, -1)
-
-            verb_pred = self.verbqa(img_embd, pred_rep_exp)
+        verb_pred = self.verbqa(img_embd, pred_rep_exp)
 
         return verb_pred
 
