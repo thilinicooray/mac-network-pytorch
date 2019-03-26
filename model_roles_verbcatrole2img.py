@@ -103,7 +103,7 @@ class TopDown(nn.Module):
 
         logits = self.classifier(joint_repr)
 
-        return logits, joint_repr
+        return logits, v_repr
 
 class BaseModel(nn.Module):
     def __init__(self, encoder,
@@ -178,11 +178,11 @@ class BaseModel(nn.Module):
         verb_embed_expand = verb_embed_expand.contiguous().view(-1, self.embed_hidden)
         role_verb = torch.cat([role_embd.squeeze(), verb_embed_expand], -1)
 
-        logits, joint_repr = self.roles(img, role_verb)
+        logits, v_repr = self.roles(img, role_verb)
 
         role_label_pred = logits.contiguous().view(batch_size, -1, self.vocab_size)
-        joint_repr = joint_repr.contiguous().view(batch_size, -1, self.mlp_hidden)
-        return role_label_pred, joint_repr
+        v_repr = v_repr.contiguous().view(batch_size, -1, self.mlp_hidden)
+        return role_label_pred, v_repr
 
     def calculate_loss(self, gt_verbs, role_label_pred, gt_labels,args):
 
