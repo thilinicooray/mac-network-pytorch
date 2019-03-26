@@ -64,7 +64,7 @@ class TopDown(nn.Module):
         joint_repr = q_repr * v_repr
         logits = self.classifier(joint_repr)
 
-        return logits
+        return logits, joint_repr
 
 class BaseModel(nn.Module):
     def __init__(self, encoder,
@@ -124,17 +124,17 @@ class BaseModel(nn.Module):
         img = img.transpose(0,1)
         img = img.contiguous().view(batch_size* self.max_role_count, -1, self.mlp_hidden)
 
-        role_qs, _ = self.encoder.get_role_questions_batch(verb)
+        role_qs = self.encoder.get_role_questions_batch(verb)
         if self.gpu_mode >= 0:
             role_qs = role_qs.to(torch.device('cuda'))
 
         role_qs = role_qs.view(batch_size*self.max_role_count, -1)
         embed_qs = self.w_emb(role_qs)
 
-        logits = self.roles(img, embed_qs)
+        logits, joint_repr = self.roles(img, embed_qs)
 
         role_label_pred = logits.contiguous().view(batch_size, -1, self.vocab_size)
-        return role_label_pred
+        return role_label_pred, joint_repr
 
     def calculate_loss(self, gt_verbs, role_label_pred, gt_labels,args):
 
