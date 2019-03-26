@@ -133,7 +133,7 @@ class BaseModel(nn.Module):
 
     def forward(self, img, verb, labels):
 
-        if self.training:
+        '''if self.training:
 
             img_embd = self.conv(img)
             batch_size, n_channel, conv_h, conv_w = img_embd.size()
@@ -166,7 +166,24 @@ class BaseModel(nn.Module):
             img_embd = img_embd.contiguous().view(batch_size* 6, -1, self.mlp_hidden)
 
             verb_pred_logit = self.verb_vqa(img_embd, pred_rep)
-            verb_pred = self.last_class(verb_pred_logit)
+            verb_pred = self.last_class(verb_pred_logit)'''
+
+        verb_pred_prev = self.verb_module(img)
+
+        sorted_idx = torch.sort(verb_pred_prev, 1, True)[1]
+        verbs = sorted_idx[:,0]
+        _, pred_rep = self.role_module(img, verbs)
+
+        img_embd = self.conv(img)
+        batch_size, n_channel, conv_h, conv_w = img_embd.size()
+        img_embd = img_embd.view(batch_size, n_channel, -1)
+        img_embd = img_embd.permute(0, 2, 1)
+        img_embd = img_embd.expand(6,img_embd.size(0), img_embd.size(1), img_embd.size(2))
+        img_embd = img_embd.transpose(0,1)
+        img_embd = img_embd.contiguous().view(batch_size* 6, -1, self.mlp_hidden)
+
+        verb_pred_logit = self.verb_vqa(img_embd, pred_rep)
+        verb_pred = self.last_class(verb_pred_logit)
 
         return verb_pred
 
