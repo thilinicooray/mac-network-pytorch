@@ -250,7 +250,7 @@ class imsitu_encoder():
             role_batch_list.append(torch.stack(rquestion_tokens,0))
             q_len_batch.append(torch.tensor(q_len))
 
-        return torch.stack(role_batch_list,0), torch.stack(q_len_batch,0)
+        return torch.stack(role_batch_list,0)
 
     def get_verbq_idx(self, verb_ids, label_ids):
         batch_size = verb_ids.size(0)
