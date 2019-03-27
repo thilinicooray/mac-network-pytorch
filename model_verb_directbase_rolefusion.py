@@ -17,8 +17,8 @@ class vgg16_modified(nn.Module):
         vgg = tv.models.vgg16_bn(pretrained=True)
         self.vgg_features = vgg.features
 
-        for param in self.vgg_features.parameters():
-            param.require_grad = False
+        '''for param in self.vgg_features.parameters():
+            param.require_grad = False'''
 
         self.out_features = vgg.classifier[6].in_features
         features = list(vgg.classifier.children())[:-1] # Remove last layer
