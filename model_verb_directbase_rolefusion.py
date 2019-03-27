@@ -80,7 +80,11 @@ class BaseModel(nn.Module):
 
         self.conv = vgg16_modified(self.n_verbs)
 
-        self.convtry = nn.Conv2d(mlp_hidden*2, mlp_hidden, [1, 1], 1, 0, bias=False)
+        self.convtry = nn.Sequential(
+            nn.Conv2d(mlp_hidden*2, mlp_hidden, [1, 1], 1, 0, bias=False),
+            nn.BatchNorm2d(mlp_hidden),
+            nn.ReLU()
+        )
 
     def train_preprocess(self):
         return self.train_transform
