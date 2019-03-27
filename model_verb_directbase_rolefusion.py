@@ -92,7 +92,7 @@ class BaseModel(nn.Module):
     def dev_preprocess(self, ):
         return self.dev_transform
 
-    def forward(self, img, verb, labels):
+    def forward_a(self, img, verb, labels):
 
         verb_pred_prev = self.verb_module(img)
 
@@ -118,8 +118,7 @@ class BaseModel(nn.Module):
 
         return verb_pred
 
-    def forward_base(self, img, verb, labels):
-
+    def forward(self, img, verb, labels):
 
         img_embd = self.conv.forward_features(img)
 

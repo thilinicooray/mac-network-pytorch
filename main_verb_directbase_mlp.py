@@ -273,7 +273,7 @@ def main():
     lr = 0.0001
     lr_max = 5e-4
     lr_gamma = 0.1
-    lr_step = 15
+    lr_step = 20
     clip_norm = 50
     weight_decay = 1e-4
     n_epoch = 500
@@ -332,14 +332,14 @@ def main():
     utils.set_trainable(model, False)
     utils.set_trainable_param(model.conv.vgg_classifier.parameters(), True)
 
-    optimizer = torch.optim.Adam([
+    optimizer = torch.optim.SGD([
         {'params': model.conv.vgg_classifier.parameters()},
     ], lr=1e-3)
 
     #optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
-    #scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=lr_step, gamma=lr_gamma)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=lr_step, gamma=lr_gamma)
     #gradient clipping, grad check
-    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.9)
+    #scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.9)
 
     if args.evaluate:
         top1, top5, val_loss = eval(model, dev_loader, encoder, args.gpuid, write_to_file = True)
