@@ -330,13 +330,10 @@ def main():
         torch.backends.cudnn.deterministic = True
 
     utils.set_trainable(model, False)
-    utils.set_trainable_param(model.conv.parameters(), True)
-    utils.set_trainable_param(model.convtry.parameters(), True)
+    utils.set_trainable_param(model.conv.vgg_classifier.parameters(), True)
 
     optimizer = torch.optim.Adam([
-        {'params': model.conv.vgg_features.parameters(), 'lr': 5e-5},
         {'params': model.conv.vgg_classifier.parameters()},
-        {'params': model.convtry.parameters()}
     ], lr=1e-3)
 
     #optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)

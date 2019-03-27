@@ -17,8 +17,8 @@ class vgg16_modified(nn.Module):
         vgg = tv.models.vgg16_bn(pretrained=True)
         self.vgg_features = vgg.features
 
-        '''for param in self.vgg_features.parameters():
-            param.require_grad = False'''
+        for param in self.vgg_features.parameters():
+            param.require_grad = False
 
         self.out_features = vgg.classifier[6].in_features
         features = list(vgg.classifier.children())[:-1] # Remove last layer
@@ -38,7 +38,7 @@ class vgg16_modified(nn.Module):
         return y
 
     def forward_classify(self,x):
-        y =  self.vgg_classifier(x.view(-1, 512*7*7))
+        y =  self.vgg_classifier(x.contiguous().view(-1, 512*7*7))
         #print('y size :',  y.size())
         return y
 
@@ -80,11 +80,11 @@ class BaseModel(nn.Module):
 
         self.conv = vgg16_modified(self.n_verbs)
 
-        self.convtry = nn.Sequential(
+        '''self.convtry = nn.Sequential(
             nn.Conv2d(mlp_hidden*2, mlp_hidden, [1, 1], 1, 0, bias=False),
             nn.BatchNorm2d(mlp_hidden),
             nn.ReLU()
-        )
+        )'''
 
     def train_preprocess(self):
         return self.train_transform
@@ -103,15 +103,18 @@ class BaseModel(nn.Module):
         tot_role_att_img = torch.sum(role_attented_img,1)
         tot_role_att_img = tot_role_att_img.permute(0, 2, 1)
 
-        img_embd = self.conv.forward_features(img)
-        batch_size, n_channel, conv_h, conv_w = img_embd.size()
-        context_embed = tot_role_att_img.view(batch_size, n_channel, conv_h, conv_w)
+        #img_embd = self.conv.forward_features(img)
+        #print('org :', img_embd)
+        #batch_size, n_channel, conv_h, conv_w = img_embd.size()
+        context_embed = tot_role_att_img.view(img.size(0), 512, 7, 7)
 
-        contexted_img = torch.cat([img_embd,context_embed], 1)
+        #contexted_img = torch.cat([img_embd,context_embed], 1)
 
-        reduced_contexted_img = self.convtry(contexted_img)
+        #reduced_contexted_img = self.convtry(context_embed)
 
-        verb_pred = self.conv.forward_classify(reduced_contexted_img)
+        #print('ctx :', reduced_contexted_img)
+
+        verb_pred = self.conv.forward_classify(context_embed)
 
         return verb_pred
 
