@@ -3,7 +3,7 @@ from imsitu_encoder_roleq_updated import imsitu_encoder
 from imsitu_loader import imsitu_loader_roleq_updated
 from imsitu_scorer_log import imsitu_scorer
 import json
-import model_roles_ctxqcat
+import model_roles_sepattbyctx
 import os
 import utils
 import time
@@ -148,7 +148,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 max_score = max(dev_score_list)
 
                 if max_score == dev_score_list[-1]:
-                    torch.save(model.state_dict(), model_dir + "/{}_roles__rolenverbonly_lstmqwithroles_iter_big.model".format( model_name))
+                    torch.save(model.state_dict(), model_dir + "/{}_roles__rolenverbonly_sepattbyroles_iter.model".format( model_name))
                     print ('New best model saved! {0}'.format(max_score))
 
                 #eval on the trainset
@@ -267,18 +267,18 @@ def main():
     imsitu_roleq = json.load(open("imsitu_data/imsitu_questions_prev.json"))
     encoder = imsitu_encoder(train_set, imsitu_roleq)
 
-    model = model_roles_ctxqcat.BaseModel(encoder, args.gpuid)
+    model = model_roles_sepattbyctx.BaseModel(encoder, args.gpuid)
 
     # To group up the features
     cnn_features, role_features = utils.group_features_noun(model)
 
     train_set = imsitu_loader_roleq_updated(imgset_folder, train_set, encoder, model.train_preprocess())
 
-    train_loader = torch.utils.data.DataLoader(train_set, batch_size=256, shuffle=True, num_workers=n_worker)
+    train_loader = torch.utils.data.DataLoader(train_set, batch_size=64, shuffle=True, num_workers=n_worker)
 
     dev_set = json.load(open(dataset_folder +"/dev.json"))
     dev_set = imsitu_loader_roleq_updated(imgset_folder, dev_set, encoder, model.dev_preprocess())
-    dev_loader = torch.utils.data.DataLoader(dev_set, batch_size=256, shuffle=True, num_workers=n_worker)
+    dev_loader = torch.utils.data.DataLoader(dev_set, batch_size=64, shuffle=True, num_workers=n_worker)
 
     test_set = json.load(open(dataset_folder +"/test.json"))
     test_set = imsitu_loader_roleq_updated(imgset_folder, test_set, encoder, model.dev_preprocess())

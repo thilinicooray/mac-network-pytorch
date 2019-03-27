@@ -12,7 +12,7 @@ import numpy as np
 class vgg16_modified(nn.Module):
     def __init__(self):
         super(vgg16_modified, self).__init__()
-        vgg = tv.models.vgg16_bn(pretrained=True)
+        vgg = tv.models.vgg16(pretrained=True)
         self.vgg_features = vgg.features
 
     def rep_size(self):
@@ -95,7 +95,7 @@ class TopDown(nn.Module):
             #context making
             att = self.v_att(img_org_exp, labelrep_expand)
             v_emb = (att * img_org_exp) # [batch, v_dim]
-
+            #this is what i want for verb
             #joint_repr_ctx = torch.cat([v_emb, labelrep_expand.unsqueeze(1)], 1)
             #joint_repr_ctx = joint_repr_ctx.view(img_org.size(0), -1, img_org.size(1)+1, self.mlp_hidden)
             joint_repr_ctx = v_emb.view(img_org.size(0), -1, img_org.size(1), self.mlp_hidden)
@@ -109,8 +109,6 @@ class TopDown(nn.Module):
             joint_repr_new = q_repr * v_repr
 
             joint_repr = joint_repr + self.dropout(joint_repr_new)
-
-
 
         logits = self.classifier(joint_repr)
 
