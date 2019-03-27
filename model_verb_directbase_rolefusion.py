@@ -9,7 +9,7 @@ import torchvision as tv
 import utils
 import numpy as np
 import model_verb_directcnn
-import model_roles_verbcatrole2img
+import model_roles_ctxq_4verb
 
 class vgg16_modified(nn.Module):
     def __init__(self, num_classes):
@@ -74,13 +74,13 @@ class BaseModel(nn.Module):
         self.n_verbs = self.encoder.get_num_verbs()
 
         self.verb_module = model_verb_directcnn.BaseModel(self.encoder, self.gpu_mode)
-        self.role_module = model_roles_verbcatrole2img.BaseModel(self.encoder, self.gpu_mode)
+        self.role_module = model_roles_ctxq_4verb.BaseModel(self.encoder, self.gpu_mode)
         self.verb_module.eval()
         self.role_module.eval()
 
         self.conv = vgg16_modified(self.n_verbs)
 
-        #self.convtry = nn.Conv2d(mlp_hidden*2, mlp_hidden, [1, 1], 1, 0, bias=False)
+        self.convtry = nn.Conv2d(mlp_hidden*2, mlp_hidden, [1, 1], 1, 0, bias=False)
 
     def train_preprocess(self):
         return self.train_transform
@@ -88,7 +88,7 @@ class BaseModel(nn.Module):
     def dev_preprocess(self, ):
         return self.dev_transform
 
-    def forward_new(self, img, verb, labels):
+    def forward(self, img, verb, labels):
 
         verb_pred_prev = self.verb_module(img)
 
@@ -111,7 +111,7 @@ class BaseModel(nn.Module):
 
         return verb_pred
 
-    def forward(self, img, verb, labels):
+    def forward_base(self, img, verb, labels):
 
 
         img_embd = self.conv.forward_features(img)
