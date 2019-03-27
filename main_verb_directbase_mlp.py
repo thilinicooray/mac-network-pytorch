@@ -3,7 +3,7 @@ from imsitu_encoder_roleq_verbtemplate import imsitu_encoder
 from imsitu_loader import imsitu_loader_roleq_updated
 from imsitu_scorer_log import imsitu_scorer
 import json
-import model_verb_directbbase_vqabyrole
+import model_verb_directbase_rolefusion
 import os
 import utils
 import time
@@ -174,7 +174,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 max_score = max(dev_score_list)
 
                 if max_score == dev_score_list[-1]:
-                    torch.save(model.state_dict(), model_dir + "/{}_verb_directbase_roleqasum.model".format( model_name))
+                    torch.save(model.state_dict(), model_dir + "/{}_verb_directbase_only.model".format( model_name))
                     print ('New best model saved! {0}'.format(max_score))
 
                 #eval on the trainset
@@ -291,7 +291,7 @@ def main():
     verb_templates = json.load(open("imsitu_data/verb_questions_template.json"))
     encoder = imsitu_encoder(train_set, imsitu_roleq, verb_templates)
 
-    model = model_verb_directbbase_vqabyrole.BaseModel(encoder, args.gpuid)
+    model = model_verb_directbase_rolefusion.BaseModel(encoder, args.gpuid)
 
     # To group up the features
     #cnn_features, role_features = utils.group_features_noun(model)
@@ -331,11 +331,10 @@ def main():
 
     utils.set_trainable(model, False)
     utils.set_trainable_param(model.conv.parameters(), True)
-    utils.set_trainable_param(model.verbqa.parameters(), True)
 
     optimizer = torch.optim.Adam([
-        {'params': model.conv.parameters(), 'lr': 5e-5},
-        {'params': model.verbqa.parameters()}
+        {'params': model.conv.vgg_features.parameters(), 'lr': 5e-5},
+        {'params': model.conv.vgg_classifier.parameters()}
     ], lr=1e-3)
 
     #optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
