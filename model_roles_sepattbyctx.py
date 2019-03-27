@@ -96,9 +96,9 @@ class TopDown(nn.Module):
             att = self.v_att(img_org_exp, labelrep_expand)
             v_emb = (att * img_org_exp) # [batch, v_dim]
             #this is what i want for verb
-            #joint_repr_ctx = torch.cat([v_emb, labelrep_expand.unsqueeze(1)], 1)
-            #joint_repr_ctx = joint_repr_ctx.view(img_org.size(0), -1, img_org.size(1)+1, self.mlp_hidden)
-            joint_repr_ctx = v_emb.view(img_org.size(0), -1, img_org.size(1), self.mlp_hidden)
+            joint_repr_ctx = torch.cat([v_emb, labelrep_expand.unsqueeze(1)], 1)
+            joint_repr_ctx = joint_repr_ctx.view(img_org.size(0), -1, img_org.size(1)+1, self.mlp_hidden)
+            #joint_repr_ctx = joint_repr_ctx.view(img_org.size(0), -1, img_org.size(1), self.mlp_hidden)
             ctx_img = torch.sum(joint_repr_ctx, 1)
 
             att = self.v_att(ctx_img, q_emb)
