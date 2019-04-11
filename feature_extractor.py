@@ -52,7 +52,7 @@ def extract_features(model, split, data_loader, gpu_mode, dataset_size):
                 image_id = img_id[j]
                 imgids.add(image_id)
                 indices[image_id] = counter
-                img_features[counter, :, :] = features[j].numpy()
+                img_features[counter, :, :] = features[j].cpu().numpy()
                 counter += 1
 
     cPickle.dump(imgids, open(ids_file[split],'wb'))
