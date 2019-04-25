@@ -220,7 +220,7 @@ def main():
     imsitu_roleq = json.load(open("imsitu_data/imsitu_questions_prev.json"))
     encoder = imsitu_encoder(train_set, imsitu_roleq)
 
-    model = model_ft_cnn4imsitu.BaseModel(encoder)
+    model = model_ft_cnn4imsitu.BaseModel(encoder, args.gpuid)
 
     # To group up the features
     train_set = imsitu_loader_objects(imgset_folder, train_set, encoder, model.train_preprocess())

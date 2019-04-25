@@ -34,7 +34,7 @@ class resnet_modified_large(nn.Module):
 
 
 class BaseModel(nn.Module):
-    def __init__(self, encoder):
+    def __init__(self, encoder, gpu_mode):
         super(BaseModel, self).__init__()
 
         self.normalize = tv.transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
@@ -54,6 +54,7 @@ class BaseModel(nn.Module):
             self.normalize,
         ])
         self.encoder = encoder
+        self.gpu_mode = gpu_mode
         self.num_labels = self.encoder.get_num_labels()
         self.pos_weights = self.encoder.get_obj_weights()
 
