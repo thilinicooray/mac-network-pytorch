@@ -74,6 +74,9 @@ class BaseModel(nn.Module):
 
     def calculate_loss(self, pred, gt_labels):
 
+        if self.gpu_mode >= 0:
+            self.pos_weights = self.pos_weights.to(torch.device('cuda'))
+
         criterion = torch.nn.BCEWithLogitsLoss(pos_weight=self.pos_weights)
 
         final_loss = criterion(pred, gt_labels)
