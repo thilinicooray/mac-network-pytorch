@@ -9,7 +9,7 @@ import numpy as np
 #todo: the structure
 
 class imsitu_encoder():
-    def __init__(self, train_set, role_questions, obj_det):
+    def __init__(self, train_set, role_questions):
         # json structure -> {<img_id>:{frames:[{<role1>:<label1>, ...},{}...], verb:<verb1>}}
         print('imsitu encoder initialization started.')
         self.verb_list = []
@@ -24,7 +24,7 @@ class imsitu_encoder():
         self.vrole_question = {}
         self.obj_det_details = {}
         self.max_det_objects = 5
-        self.total_det_objcount = len(next(iter(obj_det.items()))[1])
+        #self.total_det_objcount = len(next(iter(obj_det.items()))[1])
 
         for verb, values in role_questions.items():
             roles = values['roles']
@@ -56,7 +56,7 @@ class imsitu_encoder():
                         self.verb2_role_dict[current_verb].append(role)
                     if len(self.verb2_role_dict[current_verb]) > self.max_role_count:
                         self.max_role_count = len(self.verb2_role_dict[current_verb])
-                    if label not in self.label_list:
+                    if label not in self.label_list and label != 'UNK':
                         '''if label not in label_frequency:
                             label_frequency[label] = 1
                         else:
@@ -64,14 +64,17 @@ class imsitu_encoder():
                         #only labels occur at least 20 times are considered
                         if label_frequency[label] == 20:
                             self.label_list.append(label)'''
-                        self.label_list.append(label)
-        for img_id, det in obj_det.items():
+                        #self.label_list.append(label)
+        '''for img_id, det in obj_det.items():
             det = np.asarray(det)
             det_ids = np.where( det > 0 )
             det_ids = det_ids[0].tolist()
             #print(img_id, det_ids)
 
-            self.obj_det_details[img_id] = det_ids
+            self.obj_det_details[img_id] = det_ids'''
+        with open('imsitu_data/new_obj_names.txt') as f:
+            content = f.readlines()
+        self.label_list = [x.strip() for x in content]
 
         print('train set stats: \n\t verb count:', len(self.verb_list), '\n\t role count:',len(self.role_list),
               '\n\t label count:', len(self.label_list) ,
@@ -129,6 +132,13 @@ class imsitu_encoder():
         #print('item encoding size : v r l', verb.size(), roles.size(), labels.size())
         #assuming labels are also in order of roles in encoder
         return verb, labels
+
+    def encode_objlist(self, item):
+        labels = self.get_object_ids(item['frames'])
+
+        #print('item encoding size : v r l', verb.size(), roles.size(), labels.size())
+        #assuming labels are also in order of roles in encoder
+        return labels
 
     def get_verb2role_encoding(self):
         verb2role_embedding_list = []
@@ -326,6 +336,26 @@ class imsitu_encoder():
         labels = torch.stack(all_frame_id_list,0)
 
         return labels
+
+    def get_object_ids(self, frames):
+        all_frame_id_list = [0] * len(self.label_list)
+        for frame in frames:
+            for role,label in frame.items():
+                if label in self.label_list:
+                    label_id = self.label_list.index(label)
+                    all_frame_id_list[label_id] = 1
+
+        encoded_objlist = torch.FloatTensor(all_frame_id_list)
+
+        return encoded_objlist
+
+    def get_obj_weights(self):
+        with open('imsitu_data/new_obj_weights.txt') as f:
+            content = f.readlines()
+        obj2000_weights = [float(x.strip()) for x in content]
+
+        weights = torch.FloatTensor(obj2000_weights)
+        return weights
 
     def get_adj_matrix(self, verb_ids):
         adj_matrix_list = []

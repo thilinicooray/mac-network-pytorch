@@ -154,6 +154,26 @@ class imsitu_loader_roleq_updated(data.Dataset):
     def __len__(self):
         return len(self.annotations)
 
+class imsitu_loader_objects(data.Dataset):
+    def __init__(self, img_dir, annotation_file, encoder, transform=None):
+        self.img_dir = img_dir
+        self.annotations = annotation_file
+        self.ids = list(self.annotations.keys())
+        self.encoder = encoder
+        self.transform = transform
+
+    def __getitem__(self, index):
+        _id = self.ids[index]
+        ann = self.annotations[_id]
+        img = Image.open(os.path.join(self.img_dir, _id)).convert('RGB')
+        #transform must be None in order to give it as a tensor
+        if self.transform is not None: img = self.transform(img)
+        labels = self.encoder.encode_objlist(ann)
+        return img, labels
+
+    def __len__(self):
+        return len(self.annotations)
+
 class imsitu_loader_resnet_featextract(data.Dataset):
     def __init__(self, img_dir, annotation_file, transform=None):
         self.img_dir = img_dir
