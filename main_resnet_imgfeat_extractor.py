@@ -73,6 +73,14 @@ def main():
 
 
     utils.set_trainable(model, False)
+
+    if args.resume_training:
+        print('Resume training from: {}'.format(args.resume_model))
+        args.train_all = True
+        if len(args.resume_model) == 0:
+            raise Exception('[pretrained verb module] not specified')
+        utils.load_net(args.resume_model, [model])
+
     if args.gpuid >= 0:
         model.cuda()
     extract_features(model, 'train', train_loader, args.gpuid, len(train_loader)*batch_size)
