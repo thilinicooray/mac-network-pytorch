@@ -129,7 +129,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 min_error = min(dev_score_list)
 
                 if min_error == dev_score_list[-1]:
-                    torch.save(model.state_dict(), model_dir + "/{}_imsitu_trained_cnn.model".format( model_name))
+                    torch.save(model.state_dict(), model_dir + "/{}__role_directcnn_topkmultilabelcls_rmsprop_4ggnn.model".format( model_name))
                     print ('New best model saved! {0}'.format(min_error))
 
             del loss, img, labels
@@ -252,12 +252,12 @@ def main():
 
     utils.set_trainable(model, True)
     model_name = 'train_full'
-    optimizer = torch.optim.SGD([{'params': model.conv.resnet.parameters(), 'lr': 5e-5},
-                                  {'params': model.conv.out.parameters()}],
-                                 lr=1e-3)
+    optimizer = torch.optim.RMSprop([{'params': model.conv.vgg_features.paramerters(), 'lr': 5e-5},
+                                    {'params': model.conv.vgg_classifier.paramerters()}],
+                                   lr=1e-3)
 
     #optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.1)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.85)
     #gradient clipping, grad check
     #scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.9)
 

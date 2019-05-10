@@ -115,7 +115,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 max_score = max(dev_score_list)
 
                 if max_score == dev_score_list[-1]:
-                    torch.save(model.state_dict(), model_dir + "/{}_verb_directcnn_nobn_featfreeze_20epochsch.model".format(model_name))
+                    torch.save(model.state_dict(), model_dir + "/{}_verb_directcnn_rmsprop_4ggnn.model".format(model_name))
                     print ('New best model saved! {0}'.format(max_score))
 
                 #eval on the trainset
@@ -226,7 +226,7 @@ def main():
 
     print('model spec :, verb role with context ')
 
-    train_set = json.load(open(dataset_folder + "/updated_train_new.json"))
+    train_set = json.load(open(dataset_folder + "/train_new_2000.json"))
     encoder = imsitu_encoder(train_set)
 
     model = model_verb_directcnn_nobn.BaseModel(encoder, args.gpuid)
@@ -239,7 +239,7 @@ def main():
 
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=64, shuffle=True, num_workers=n_worker)
 
-    dev_set = json.load(open(dataset_folder +"/dev.json"))
+    dev_set = json.load(open(dataset_folder +"/dev_new_2000.json"))
     dev_set = imsitu_loader_verb(imgset_folder, dev_set, encoder, model.dev_preprocess())
     dev_loader = torch.utils.data.DataLoader(dev_set, batch_size=64, shuffle=True, num_workers=n_worker)
 
@@ -306,17 +306,17 @@ def main():
         torch.cuda.manual_seed(1234)
         torch.backends.cudnn.deterministic = True
 
-    '''optimizer = torch.optim.Adamax([{'params': cnn_features, 'lr': 5e-5},
-                                    {'params': role_features}],
+    optimizer = torch.optim.RMSprop([{'params': model.conv.vgg_features.paramerters(), 'lr': 5e-5},
+                                    {'params': model.conv.vgg_classifier.paramerters()}],
                                    lr=1e-3)
 
-    #optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+    '''#optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     #scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=lr_step, gamma=lr_gamma)
     #gradient clipping, grad check
     scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.9)'''
 
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.1)
+    #optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.85)
 
     if args.evaluate:
         top1, top5, val_loss = eval(model, dev_loader, encoder, args.gpuid, write_to_file = True)

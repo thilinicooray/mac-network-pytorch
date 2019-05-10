@@ -32,6 +32,30 @@ class resnet_modified_large(nn.Module):
         #print x.size()
         return x
 
+class vgg16_modified(nn.Module):
+    def __init__(self, num_classes):
+        super(vgg16_modified, self).__init__()
+        vgg = tv.models.vgg16(pretrained=True)
+        self.vgg_features = vgg.features
+
+        self.out_features = vgg.classifier[6].in_features
+        features = list(vgg.classifier.children())[:-1] # Remove last layer
+        features.extend([nn.Linear(self.out_features, num_classes)])
+        self.vgg_classifier = nn.Sequential(*features) # Replace the model classifier
+        #print(self.vgg_classifier)
+
+    def rep_size(self):
+        return 1024
+
+    def base_size(self):
+        return 512
+
+    def forward(self,x):
+        y =  self.vgg_classifier(self.vgg_features(x).view(-1, 512*7*7))
+        #print('y size :',  y.size())
+        return y
+
+
 
 class BaseModel(nn.Module):
     def __init__(self, encoder, gpu_mode):
@@ -58,7 +82,7 @@ class BaseModel(nn.Module):
         self.num_labels = self.encoder.get_num_labels()
         self.pos_weights = self.encoder.get_obj_weights()
 
-        self.conv = resnet_modified_large(self.num_labels)
+        self.conv = vgg16_modified(self.num_labels)
 
     def train_preprocess(self):
         return self.train_transform
