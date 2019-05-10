@@ -306,8 +306,8 @@ def main():
         torch.cuda.manual_seed(1234)
         torch.backends.cudnn.deterministic = True
 
-    optimizer = torch.optim.RMSprop([{'params': model.conv.vgg_features.paramerters(), 'lr': 5e-5},
-                                    {'params': model.conv.vgg_classifier.paramerters()}],
+    optimizer = torch.optim.RMSprop([{'params': model.conv.vgg_features.parameters(), 'lr': 5e-5},
+                                    {'params': model.conv.vgg_classifier.parameters()}],
                                    lr=1e-3)
 
     '''#optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
