@@ -129,7 +129,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 min_error = min(dev_score_list)
 
                 if min_error == dev_score_list[-1]:
-                    torch.save(model.state_dict(), model_dir + "/{}__role_directcnn_topkmultilabelcls_rmsprop_4ggnn.model".format( model_name))
+                    torch.save(model.state_dict(), model_dir + "/{}__role_directcnn_topkmultilabelcls_adam_4ggnn.model".format( model_name))
                     print ('New best model saved! {0}'.format(min_error))
 
             del loss, img, labels
