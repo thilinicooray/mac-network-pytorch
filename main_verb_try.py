@@ -306,17 +306,17 @@ def main():
         torch.cuda.manual_seed(1234)
         torch.backends.cudnn.deterministic = True
 
-    optimizer = torch.optim.RMSprop([{'params': model.conv.vgg_features.parameters(), 'lr': 5e-5},
+    optimizer = torch.optim.Adam([{'params': model.conv.vgg_features.parameters(), 'lr': 5e-5},
                                     {'params': model.conv.vgg_classifier.parameters()}],
                                    lr=1e-3)
 
-    '''#optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+    #optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     #scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=lr_step, gamma=lr_gamma)
     #gradient clipping, grad check
-    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.9)'''
+    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.9)
 
     #optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.85)
+    #scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.85)
 
     if args.evaluate:
         top1, top5, val_loss = eval(model, dev_loader, encoder, args.gpuid, write_to_file = True)
