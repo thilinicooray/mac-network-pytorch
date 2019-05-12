@@ -86,6 +86,7 @@ def main():
         utils.load_net(args.resume_model, [model])'''
 
     #load verb and role modules
+    print(model.conv_verbs)
     utils.load_net(args.verb_module, [model.conv_verbs], ['conv_verbs'])
     utils.load_net(args.role_module, [model.conv_nouns], ['conv_nouns'])
 

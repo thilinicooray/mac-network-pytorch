@@ -569,7 +569,7 @@ def load_net(fname, net_list, prefix_list = None):
         dict = torch.load(fname)
         try:
             for k, v in net_list[i].state_dict().items():
-                print('trying to copy :', k, v.size(), v.type())
+                print('trying to copy :', k)
                 if need_modification:
                     k = prefix_list[i] + '.' + k
                     print('modified :', k)
