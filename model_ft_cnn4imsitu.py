@@ -73,7 +73,7 @@ class vgg16_addedlayer(nn.Module):
         features.extend(features1)
         features.extend([nn.Linear(self.out_features, num_classes)])
         self.vgg_classifier = nn.Sequential(*features) # Replace the model classifier
-        print(self.vgg_classifier)
+        #print(self.vgg_classifier)
 
     def rep_size(self):
         return 1024
