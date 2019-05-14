@@ -253,7 +253,9 @@ def main():
     utils.set_trainable(model, True)
     utils.set_trainable(model.conv.vgg_features, False)
     model_name = 'train_full'
-    optimizer = torch.optim.SGD([{'params': model.conv.vgg_classifier.parameters()}],
+    optimizer = torch.optim.SGD([
+        {'params': model.conv.conv_exp.parameters()},
+        {'params': model.conv.vgg_classifier.parameters()}],
                                    lr=1e-3)
 
     #optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)

@@ -82,7 +82,7 @@ class vgg16_addedlayer(nn.Module):
         return 512
 
     def forward(self,x):
-        y =  self.vgg_classifier(self.vgg_features(x).view(-1, 2048*7*7))
+        y =  self.vgg_classifier(self.conv_exp(self.vgg_features(x)).view(-1, 2048*7*7))
         #print('y size :',  y.size())
         return y
 
