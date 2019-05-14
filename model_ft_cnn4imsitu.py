@@ -67,12 +67,22 @@ class vgg16_addedlayer(nn.Module):
             nn.ReLU()
         )
 
-        self.out_features = vgg.classifier[6].in_features
+        self.vgg_classifier = nn.Sequential(
+            nn.Linear(2048*7*7, 4096),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            nn.Linear(4096, 4096),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            nn.Linear(4096, num_classes)
+        )
+
+        '''self.out_features = vgg.classifier[6].in_features
         features = [nn.Linear(2048*7*7, 4096)]
         features1 = list(vgg.classifier.children())[1:-1] # Remove first and last layer
         features.extend(features1)
         features.extend([nn.Linear(self.out_features, num_classes)])
-        self.vgg_classifier = nn.Sequential(*features) # Replace the model classifier
+        self.vgg_classifier = nn.Sequential(*features) # Replace the model classifier'''
         #print(self.vgg_classifier)
 
     def rep_size(self):
