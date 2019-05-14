@@ -55,6 +55,37 @@ class vgg16_modified(nn.Module):
         #print('y size :',  y.size())
         return y
 
+class vgg16_addedlayer(nn.Module):
+    def __init__(self, num_classes):
+        super(vgg16_addedlayer, self).__init__()
+        vgg = tv.models.vgg16(pretrained=True)
+        self.vgg_features = vgg.features
+
+        self.conv_exp = nn.Sequential(
+            nn.Conv2d(512, 2048, [1, 1], 1, 0, bias=False),
+            nn.BatchNorm2d(2048),
+            nn.ReLU()
+        )
+
+        self.out_features = vgg.classifier[6].in_features
+        features = [nn.Linear(2048*7*7, 4096)]
+        features1 = list(vgg.classifier.children())[1:-1] # Remove first and last layer
+        features.extend(features1)
+        features.extend([nn.Linear(self.out_features, num_classes)])
+        self.vgg_classifier = nn.Sequential(*features) # Replace the model classifier
+        #print(self.vgg_classifier)
+
+    def rep_size(self):
+        return 1024
+
+    def base_size(self):
+        return 512
+
+    def forward(self,x):
+        y =  self.vgg_classifier(self.vgg_features(x).view(-1, 2048*7*7))
+        #print('y size :',  y.size())
+        return y
+
 
 
 class BaseModel(nn.Module):
@@ -82,7 +113,7 @@ class BaseModel(nn.Module):
         self.num_labels = self.encoder.get_num_labels()
         self.pos_weights = self.encoder.get_obj_weights()
 
-        self.conv = vgg16_modified(self.num_labels)
+        self.conv = vgg16_addedlayer(self.num_labels)
 
     def train_preprocess(self):
         return self.train_transform

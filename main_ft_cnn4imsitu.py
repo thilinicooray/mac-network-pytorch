@@ -129,7 +129,7 @@ def train(model, train_loader, dev_loader, traindev_loader, optimizer, scheduler
                 min_error = min(dev_score_list)
 
                 if min_error == dev_score_list[-1]:
-                    torch.save(model.state_dict(), model_dir + "/{}__role_directcnn_topkmultilabelcls_sgdstep20_4ggnn.model".format( model_name))
+                    torch.save(model.state_dict(), model_dir + "/{}__role_directcnn_topkmultilabelcls_sgdstep20_addedlayer.model".format( model_name))
                     print ('New best model saved! {0}'.format(min_error))
 
             del loss, img, labels
@@ -251,9 +251,9 @@ def main():
         torch.backends.cudnn.deterministic = True
 
     utils.set_trainable(model, True)
+    utils.set_trainable(model.conv.vgg_features, False)
     model_name = 'train_full'
-    optimizer = torch.optim.SGD([{'params': model.conv.vgg_features.parameters(), 'lr': 5e-5},
-                                    {'params': model.conv.vgg_classifier.parameters()}],
+    optimizer = torch.optim.SGD([{'params': model.conv.vgg_classifier.parameters()}],
                                    lr=1e-3)
 
     #optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
